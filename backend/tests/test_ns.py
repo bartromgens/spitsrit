@@ -88,6 +88,7 @@ TRIP_ITEM: dict[str, Any] = {
             },
             "destination": {"plannedDateTime": "2026-11-20T08:20:00+0100"},
             "product": {"shortCategoryName": "IC", "number": "2736"},
+            "stock": {"numberOfParts": 8},
         },
         {
             "origin": {"plannedDateTime": "2026-11-20T08:25:00+0100"},
@@ -111,6 +112,7 @@ def test_parse_trip() -> None:
     assert trip.departure_track == "6"
     assert trip.transfers == 1
     assert trip.train == "IC 2736"
+    assert trip.train_length == 8
     assert trip.crowd_forecast == "MEDIUM"
     assert not trip.cancelled
 
@@ -120,6 +122,13 @@ def test_parse_trip_marks_cancelled_legs() -> None:
     trip = ns.parse_trip(item)
     assert trip is not None
     assert trip.cancelled
+
+
+def test_parse_trip_without_stock_has_no_train_length() -> None:
+    leg = {k: v for k, v in TRIP_ITEM["legs"][0].items() if k != "stock"}
+    trip = ns.parse_trip({**TRIP_ITEM, "legs": [leg]})
+    assert trip is not None
+    assert trip.train_length is None
 
 
 def test_parse_trip_without_legs_or_times_is_dropped() -> None:

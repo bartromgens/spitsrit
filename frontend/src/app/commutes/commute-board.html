@@ -22,7 +22,11 @@
               @if (trip.cancelled) {
                 Cancelled
               } @else {
-                {{ trip.train }} · platform {{ trip.departure_track || '?' }} · arrives
+                {{ trip.train }}
+                @if (trip.train_length) {
+                  · {{ trip.train_length }} treinstellen
+                }
+                · platform {{ trip.departure_track || '?' }} · arrives
                 {{ trip.arrival_actual | date: 'HH:mm' }}
                 @if (trip.arrival_delay_minutes > 0) {
                   (+{{ trip.arrival_delay_minutes }})

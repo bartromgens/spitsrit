@@ -30,6 +30,7 @@ function trip(overrides: Partial<Trip>): Trip {
     cancelled: false,
     crowd_forecast: 'LOW',
     train: 'IC 1234',
+    train_length: 8,
     ...overrides,
   };
 }
@@ -65,6 +66,7 @@ describe('CommuteBoard', () => {
     expect(text()).toContain('Utrecht Centraal → Amsterdam Centraal');
     expect(text()).toContain('Leave now');
     expect(text()).toContain('IC 2736');
+    expect(text()).toContain('8 treinstellen');
     expect(text()).toContain('platform 5');
   });
 
