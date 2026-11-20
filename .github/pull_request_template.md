@@ -8,6 +8,10 @@ Closes #<issue>
 
 <!-- New or changed tests, and anything checked by hand. -->
 
+## Manual steps
+
+<!-- Link the issue for anything a person must do outside the repo (a secret, console setup, DNS), or write "None". -->
+
 ## Checklist
 
 - [ ] `make check` and `make test` pass locally

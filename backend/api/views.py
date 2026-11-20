@@ -41,12 +41,23 @@ def ns_error_response(error: ns.NsError) -> Response:
     return Response({"detail": "The NS API is not answering."}, status=status.HTTP_502_BAD_GATEWAY)
 
 
-def trips_response(origin_code: str, destination_code: str) -> Response:
+def trips_response(
+    origin_code: str,
+    destination_code: str,
+    max_duration_minutes: int | None = None,
+    max_transfers: int | None = None,
+) -> Response:
     now = timezone.now()
     try:
         trips = ns.fetch_trips(origin_code, destination_code, now)
     except ns.NsError as error:
         return ns_error_response(error)
+    trips = [
+        t
+        for t in trips
+        if (max_duration_minutes is None or t.duration_minutes <= max_duration_minutes)
+        and (max_transfers is None or t.transfers <= max_transfers)
+    ]
     advice = ns.advise(trips, now)
     return Response(
         {
@@ -70,9 +81,14 @@ class CommuteViewSet(viewsets.ModelViewSet[Commute]):
     @extend_schema(responses={200: CommuteTripsSerializer, 502: None, 503: None})
     @action(detail=True, methods=["get"])
     def trips(self, request: Request, pk: str | None = None) -> Response:
-        """Upcoming trips for this commute, with delays, and which one to take."""
+        """Upcoming trips for this commute within its saved filters, and which one to take."""
         commute = self.get_object()
-        return trips_response(commute.origin_code, commute.destination_code)
+        return trips_response(
+            commute.origin_code,
+            commute.destination_code,
+            commute.max_duration_minutes,
+            commute.max_transfers,
+        )
 
 
 @extend_schema(

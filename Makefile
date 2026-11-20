@@ -26,6 +26,7 @@ check:
 	$(BACKEND) ruff check .
 	$(BACKEND) ruff format --check .
 	$(BACKEND) mypy .
+	$(BACKEND) python manage.py makemigrations --check --dry-run
 	cd frontend && npx prettier --check .
 	cd frontend && npx ng lint
 	cd frontend && npx tsc --noEmit -p tsconfig.app.json

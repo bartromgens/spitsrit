@@ -36,6 +36,13 @@
   font: var(--mat-sys-title-large);
 }
 
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
 .error {
   color: var(--mat-sys-error);
 }
