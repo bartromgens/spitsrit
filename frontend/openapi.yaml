@@ -3,6 +3,39 @@ info:
   title: Spitsrit API
   version: dev
 paths:
+  /api/auth/google/:
+    get:
+      operationId: auth_google_retrieve
+      description: Send the browser to Google to sign in.
+      tags:
+      - auth
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '302':
+          description: No response body
+  /api/auth/google/callback/:
+    get:
+      operationId: auth_google_callback_retrieve
+      description: Finish the Google sign-in, creating the account on first login.
+      parameters:
+      - in: query
+        name: code
+        schema:
+          type: string
+      - in: query
+        name: state
+        schema:
+          type: string
+      tags:
+      - auth
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '302':
+          description: No response body
   /api/auth/login/:
     post:
       operationId: auth_login_create
@@ -293,8 +326,11 @@ components:
           type: string
         release:
           type: string
+        google_login:
+          type: boolean
       required:
       - environment
+      - google_login
       - release
       - sentry_dsn
     Commute:

@@ -14,6 +14,8 @@ urlpatterns = [
     path("config/", views.client_config, name="client-config"),
     path("auth/me/", views.me, name="auth-me"),
     path("auth/login/", views.login_view, name="auth-login"),
+    path("auth/google/", views.google_start, name="auth-google"),
+    path("auth/google/callback/", views.google_callback, name="auth-google-callback"),
     path("auth/logout/", views.logout_view, name="auth-logout"),
     path("schema/", SpectacularAPIView.as_view(), name="schema"),
 ]

@@ -1,10 +1,13 @@
+import secrets
 from typing import cast
 
 from django.conf import settings
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
+from django.db import transaction
 from django.db.models import QuerySet
-from django.http import FileResponse, Http404, HttpRequest
+from django.http import FileResponse, Http404, HttpRequest, HttpResponse, HttpResponseRedirect
+from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.csrf import ensure_csrf_cookie
 from drf_spectacular.utils import OpenApiParameter, extend_schema
@@ -15,8 +18,8 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
 
-from api import ns
-from api.models import Commute
+from api import google, ns
+from api.models import Commute, GoogleAccount
 from api.serializers import (
     ClientConfigSerializer,
     CommuteSerializer,
@@ -118,6 +121,7 @@ def client_config(request: Request) -> Response:
             "sentry_dsn": settings.SENTRY_DSN,
             "environment": settings.SENTRY_ENVIRONMENT,
             "release": settings.GIT_SHA,
+            "google_login": google.is_configured(),
         }
     )
 
@@ -150,6 +154,81 @@ def login_view(request: Request) -> Response:
         )
     login(request._request, user)
     return Response(UserSerializer(user).data)
+
+
+GOOGLE_STATE_KEY = "google_oauth_state"
+LOGIN_ERROR_URL = "/login?error=google"
+
+
+def google_redirect_uri(request: HttpRequest) -> str:
+    return request.build_absolute_uri(reverse("auth-google-callback"))
+
+
+def user_for_google(profile: google.GoogleProfile) -> User:
+    """The user for a Google account, created on the first login.
+
+    Accounts are matched on Google's stable subject id and never on email, so a Google
+    login cannot take over an existing password account.
+    """
+    linked = GoogleAccount.objects.select_related("user").filter(sub=profile.sub).first()
+    if linked:
+        return linked.user
+    with transaction.atomic():
+        username = profile.email
+        if User.objects.filter(username=username).exists():
+            username = f"{profile.email}#{profile.sub}"
+        user = User.objects.create_user(
+            username=username[:150], email=profile.email, first_name=profile.name[:150]
+        )
+        user.set_unusable_password()
+        user.save(update_fields=["password"])
+        GoogleAccount.objects.create(user=user, sub=profile.sub)
+    return user
+
+
+@extend_schema(request=None, responses={302: None})
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def google_start(request: Request) -> HttpResponse:
+    """Send the browser to Google to sign in."""
+    if not google.is_configured():
+        return HttpResponseRedirect(LOGIN_ERROR_URL)
+    state = secrets.token_urlsafe(32)
+    request._request.session[GOOGLE_STATE_KEY] = state
+    return HttpResponseRedirect(
+        google.authorization_url(google_redirect_uri(request._request), state)
+    )
+
+
+@extend_schema(
+    parameters=[OpenApiParameter("code", str), OpenApiParameter("state", str)],
+    request=None,
+    responses={302: None},
+)
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def google_callback(request: Request) -> HttpResponse:
+    """Finish the Google sign-in, creating the account on first login."""
+    expected = request._request.session.pop(GOOGLE_STATE_KEY, None)
+    state = request.query_params.get("state", "")
+    code = request.query_params.get("code", "")
+    if (
+        not google.is_configured()
+        or not expected
+        or not secrets.compare_digest(str(expected), state)
+        or not code
+    ):
+        return HttpResponseRedirect(LOGIN_ERROR_URL)
+    try:
+        profile = google.fetch_profile(code, google_redirect_uri(request._request))
+    except google.GoogleError:
+        return HttpResponseRedirect(LOGIN_ERROR_URL)
+    login(
+        request._request,
+        user_for_google(profile),
+        backend="django.contrib.auth.backends.ModelBackend",
+    )
+    return HttpResponseRedirect("/commutes")
 
 
 @extend_schema(request=None, responses={204: None})

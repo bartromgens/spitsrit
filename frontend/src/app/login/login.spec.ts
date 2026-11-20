@@ -1,7 +1,7 @@
 import { HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { Router } from '@angular/router';
-import { testProviders } from '../testing';
+import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
+import { settle, testProviders } from '../testing';
 import { Login } from './login';
 
 describe('Login', () => {
@@ -40,5 +40,35 @@ describe('Login', () => {
       .flush({ detail: 'Invalid' }, { status: 400, statusText: 'Bad Request' });
     await fixture.whenStable();
     expect((fixture.nativeElement as HTMLElement).querySelector('[role="alert"]')).not.toBeNull();
+  });
+
+  describe('with Google', () => {
+    async function open(googleLogin: boolean, error: string | null = null) {
+      TestBed.overrideProvider(ActivatedRoute, {
+        useValue: { snapshot: { queryParamMap: convertToParamMap(error ? { error } : {}) } },
+      });
+      const fixture = TestBed.createComponent(Login);
+      await fixture.whenStable();
+      TestBed.inject(HttpTestingController)
+        .expectOne('/api/config/')
+        .flush({ sentry_dsn: '', environment: 'test', release: 'x', google_login: googleLogin });
+      await settle(fixture);
+      return fixture.nativeElement as HTMLElement;
+    }
+
+    it('shows the Google button when Google login is configured', async () => {
+      const link = (await open(true)).querySelector('a.google');
+      expect(link?.getAttribute('href')).toBe('/api/auth/google/');
+      expect(link?.textContent).toContain('Log in with Google');
+    });
+
+    it('hides the Google button when it is not configured', async () => {
+      expect((await open(false)).querySelector('a.google')).toBeNull();
+    });
+
+    it('shows an error after a failed Google login', async () => {
+      const element = await open(true, 'google');
+      expect(element.querySelector('[role="alert"]')?.textContent).toContain('Google');
+    });
   });
 });
