@@ -4,6 +4,8 @@
 export interface CommuteRequest {
   destination_code: string;
   destination_name: string;
+  max_duration_minutes?: number | null;
+  max_transfers?: number | null;
   name: string;
   origin_code: string;
   origin_name: string;

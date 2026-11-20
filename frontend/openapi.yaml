@@ -215,8 +215,8 @@ paths:
   /api/commutes/{id}/trips/:
     get:
       operationId: commutes_trips_retrieve
-      description: Upcoming trips for this commute, with delays, and which one to
-        take.
+      description: Upcoming trips for this commute within its saved filters, and which
+        one to take.
       parameters:
       - in: path
         name: id
@@ -268,6 +268,7 @@ paths:
       - stations
       security:
       - cookieAuth: []
+      - {}
       responses:
         '200':
           content:
@@ -302,6 +303,7 @@ paths:
       - trips
       security:
       - cookieAuth: []
+      - {}
       responses:
         '200':
           content:
@@ -358,6 +360,16 @@ components:
           type: string
           format: time
           nullable: true
+        max_duration_minutes:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+        max_transfers:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
         created_at:
           type: string
           format: date-time
@@ -396,6 +408,16 @@ components:
         usual_departure_time:
           type: string
           format: time
+          nullable: true
+        max_duration_minutes:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+        max_transfers:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
           nullable: true
       required:
       - destination_code
@@ -486,6 +508,16 @@ components:
         usual_departure_time:
           type: string
           format: time
+          nullable: true
+        max_duration_minutes:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+        max_transfers:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
           nullable: true
     Station:
       type: object

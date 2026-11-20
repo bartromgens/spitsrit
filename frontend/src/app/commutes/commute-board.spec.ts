@@ -111,6 +111,63 @@ describe('CommuteBoard', () => {
     expect(text()).toContain('Train times are unavailable');
   });
 
+  it('shows the saved filters', async () => {
+    const filtered = TestBed.createComponent(CommuteBoard);
+    filtered.componentRef.setInput('commute', {
+      ...commute,
+      max_duration_minutes: 45,
+      max_transfers: 1,
+    });
+    filtered.detectChanges();
+    const inputs = (filtered.nativeElement as HTMLElement).querySelectorAll('input');
+    expect(inputs[0].value).toBe('45');
+    expect(inputs[1].value).toBe('1');
+    http.match('/api/commutes/7/trips/').forEach((r) => r.flush(trips({})));
+    await settle(filtered);
+  });
+
+  it('saves changed filters as the commute defaults and reloads the trips', async () => {
+    await flush(trips({}));
+    const input = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>(
+      '[data-testid="max-transfers"]',
+    )!;
+    input.value = '1';
+    input.dispatchEvent(new Event('input'));
+    input.dispatchEvent(new Event('change'));
+    const patch = http.expectOne('/api/commutes/7/');
+    expect(patch.request.method).toBe('PATCH');
+    expect(patch.request.body).toEqual({ max_duration_minutes: null, max_transfers: 1 });
+    patch.flush(commute);
+    await new Promise((resolve) => setTimeout(resolve));
+    await flush(trips({ trips: [trip({})], recommended_uid: 'a', wait_minutes: 0 }));
+    expect(text()).toContain('Leave now');
+  });
+
+  it('does not save an invalid filter', async () => {
+    await flush(trips({}));
+    const input = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>(
+      '[data-testid="max-duration"]',
+    )!;
+    input.value = '0';
+    input.dispatchEvent(new Event('input'));
+    input.dispatchEvent(new Event('change'));
+    await settle(fixture);
+    http.expectNone('/api/commutes/7/');
+  });
+
+  it('says when the filters could not be saved', async () => {
+    await flush(trips({}));
+    const input = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>(
+      '[data-testid="max-duration"]',
+    )!;
+    input.value = '30';
+    input.dispatchEvent(new Event('input'));
+    input.dispatchEvent(new Event('change'));
+    http.expectOne('/api/commutes/7/').flush(null, { status: 500, statusText: 'Error' });
+    await settle(fixture);
+    expect(text()).toContain('Could not save the filters.');
+  });
+
   it('refreshes on demand and emits removal', async () => {
     await flush(trips({}));
     const removed: Commute[] = [];

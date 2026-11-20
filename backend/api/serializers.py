@@ -17,6 +17,8 @@ class CommuteSerializer(serializers.ModelSerializer[Commute]):
             "destination_code",
             "destination_name",
             "usual_departure_time",
+            "max_duration_minutes",
+            "max_transfers",
             "created_at",
         ]
         read_only_fields = ["created_at"]
