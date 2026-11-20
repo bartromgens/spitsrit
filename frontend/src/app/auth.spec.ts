@@ -29,10 +29,19 @@ describe('Auth', () => {
     expect(auth.loggedIn()).toBe(false);
   });
 
+  it('registers and is logged in', async () => {
+    const registering = auth.register('bart@example.com', 'secret');
+    const request = http.expectOne('/api/auth/register/');
+    expect(request.request.body).toEqual({ email: 'bart@example.com', password: 'secret' });
+    request.flush({ id: 1, username: 'bart@example.com' }, { status: 201, statusText: 'Created' });
+    await registering;
+    expect(auth.loggedIn()).toBe(true);
+  });
+
   it('logs in and out', async () => {
-    const login = auth.login('bart', 'secret');
+    const login = auth.login('bart@example.com', 'secret');
     const request = http.expectOne('/api/auth/login/');
-    expect(request.request.body).toEqual({ username: 'bart', password: 'secret' });
+    expect(request.request.body).toEqual({ email: 'bart@example.com', password: 'secret' });
     request.flush({ id: 1, username: 'bart' });
     await login;
     expect(auth.user()?.username).toBe('bart');

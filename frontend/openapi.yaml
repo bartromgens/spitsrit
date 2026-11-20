@@ -88,6 +88,30 @@ paths:
           description: ''
         '204':
           description: No response body
+  /api/auth/register/:
+    post:
+      operationId: auth_register_create
+      description: Create an account with an email address and password, and log in.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+        '400':
+          description: No response body
   /api/commutes/:
     get:
       operationId: commutes_list
@@ -268,6 +292,7 @@ paths:
       - stations
       security:
       - cookieAuth: []
+      - {}
       responses:
         '200':
           content:
@@ -302,6 +327,7 @@ paths:
       - trips
       security:
       - cookieAuth: []
+      - {}
       responses:
         '200':
           content:
@@ -427,7 +453,7 @@ components:
     LoginRequest:
       type: object
       properties:
-        username:
+        email:
           type: string
           minLength: 1
         password:
@@ -435,8 +461,8 @@ components:
           writeOnly: true
           minLength: 1
       required:
+      - email
       - password
-      - username
     PaginatedCommuteList:
       type: object
       required:
@@ -487,6 +513,21 @@ components:
           type: string
           format: time
           nullable: true
+    RegisterRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+          maxLength: 150
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - email
+      - password
     Station:
       type: object
       properties:

@@ -8,6 +8,7 @@ export type { CommuteTrips } from './models/commute-trips';
 export type { LoginRequest } from './models/login-request';
 export type { PaginatedCommuteList } from './models/paginated-commute-list';
 export type { PatchedCommuteRequest } from './models/patched-commute-request';
+export type { RegisterRequest } from './models/register-request';
 export type { Station } from './models/station';
 export type { Trip } from './models/trip';
 export type { User } from './models/user';

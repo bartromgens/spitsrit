@@ -1,6 +1,11 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Api } from './api/api';
-import { authLoginCreate, authLogoutCreate, authMeRetrieve } from './api/functions';
+import {
+  authLoginCreate,
+  authLogoutCreate,
+  authMeRetrieve,
+  authRegisterCreate,
+} from './api/functions';
 import { User } from './api/models';
 
 @Injectable({ providedIn: 'root' })
@@ -17,8 +22,13 @@ export class Auth {
     this.user.set(user);
   }
 
-  async login(username: string, password: string): Promise<void> {
-    this.user.set(await this.api.invoke(authLoginCreate, { body: { username, password } }));
+  async login(email: string, password: string): Promise<void> {
+    this.user.set(await this.api.invoke(authLoginCreate, { body: { email, password } }));
+  }
+
+  /** Creates the account; the server logs the new user in. */
+  async register(email: string, password: string): Promise<void> {
+    this.user.set(await this.api.invoke(authRegisterCreate, { body: { email, password } }));
   }
 
   async logout(): Promise<void> {

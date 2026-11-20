@@ -5,6 +5,7 @@
     <span class="user">{{ user.username }}</span>
     <button matButton (click)="logout()">Log out</button>
   } @else {
+    <a matButton routerLink="/register">Create account</a>
     <a matButton routerLink="/login">Log in</a>
   }
 </mat-toolbar>
