@@ -44,7 +44,7 @@ class UserSerializer(serializers.ModelSerializer[User]):
 
 class LoginSerializer(serializers.Serializer[None]):
     email = serializers.CharField()
-    password = serializers.CharField(write_only=True)
+    password = serializers.CharField(write_only=True, trim_whitespace=False)
 
 
 class RegisterSerializer(serializers.Serializer[None]):

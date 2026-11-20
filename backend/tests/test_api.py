@@ -69,6 +69,25 @@ def test_register_creates_account_and_logs_in(client_api: APIClient, db: None) -
     assert login.status_code == 200
 
 
+def test_register_then_login_with_surrounding_spaces_in_password(
+    client_api: APIClient, db: None
+) -> None:
+    password = "  a good passphrase 42  "
+    client_api.post("/api/auth/register/", {"email": "spaces@example.com", "password": password})
+    client_api.post("/api/auth/logout/")
+    login = client_api.post(
+        "/api/auth/login/", {"email": "spaces@example.com", "password": password}
+    )
+    assert login.status_code == 200
+
+
+def test_login_prefers_exact_username_match(client_api: APIClient, db: None) -> None:
+    UserFactory.create(username="bob")
+    exact = UserFactory.create(username="Bob")
+    response = client_api.post("/api/auth/login/", {"email": "Bob", "password": "secret-password"})
+    assert response.json()["id"] == exact.id
+
+
 def test_register_rejects_duplicate_email(client_api: APIClient, db: None) -> None:
     UserFactory.create(username="taken@example.com", email="taken@example.com")
     response = client_api.post(

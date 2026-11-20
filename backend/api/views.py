@@ -4,7 +4,7 @@ from typing import cast
 from django.conf import settings
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models import QuerySet
 from django.http import FileResponse, Http404, HttpRequest, HttpResponse, HttpResponseRedirect
 from django.urls import reverse
@@ -165,7 +165,8 @@ def login_view(request: Request) -> Response:
     identifier = serializer.validated_data["email"].strip()
     # Accounts made before email login may have a username that is not an email address.
     account = (
-        User.objects.filter(username__iexact=identifier).first()
+        User.objects.filter(username=identifier).first()
+        or User.objects.filter(username__iexact=identifier).order_by("id").first()
         or User.objects.filter(email__iexact=identifier).order_by("id").first()
     )
     user = authenticate(
@@ -189,9 +190,17 @@ def register_view(request: Request) -> Response:
     serializer = RegisterSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     email = serializer.validated_data["email"]
-    user = User.objects.create_user(
-        username=email, email=email, password=serializer.validated_data["password"]
-    )
+    try:
+        with transaction.atomic():
+            user = User.objects.create_user(
+                username=email, email=email, password=serializer.validated_data["password"]
+            )
+    except IntegrityError:
+        # A concurrent registration with the same email won the race.
+        return Response(
+            {"email": ["An account with this email address already exists."]},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
     login(request._request, user, backend="django.contrib.auth.backends.ModelBackend")
     return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)
 
