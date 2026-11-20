@@ -12,6 +12,8 @@ class Commute(models.Model):
     destination_code = models.CharField(max_length=20)
     destination_name = models.CharField(max_length=100)
     usual_departure_time = models.TimeField(null=True, blank=True)
+    max_duration_minutes = models.PositiveIntegerField(null=True, blank=True)
+    max_transfers = models.PositiveIntegerField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
