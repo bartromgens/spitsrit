@@ -268,6 +268,7 @@ paths:
       - stations
       security:
       - cookieAuth: []
+      - {}
       responses:
         '200':
           content:
@@ -302,6 +303,7 @@ paths:
       - trips
       security:
       - cookieAuth: []
+      - {}
       responses:
         '200':
           content:
