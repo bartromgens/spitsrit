@@ -37,7 +37,7 @@ describe('Home', () => {
     await settle(fixture);
     const link = (fixture.nativeElement as HTMLElement).querySelector('a[href="/login"]');
     expect(link?.textContent).toContain('Log in');
-    expect((fixture.nativeElement as HTMLElement).querySelector('app-trip-planner')).toBeNull();
+    expect((fixture.nativeElement as HTMLElement).querySelector('app-trip-planner')).not.toBeNull();
   });
 
   it('links to the commutes when logged in', async () => {

@@ -76,6 +76,7 @@ class CommuteViewSet(viewsets.ModelViewSet[Commute]):
     responses={200: StationSerializer(many=True), 502: None, 503: None},
 )
 @api_view(["GET"])
+@permission_classes([AllowAny])
 def stations(request: Request) -> Response:
     """Search NS stations by name or code, for the commute form."""
     try:
@@ -93,6 +94,7 @@ def stations(request: Request) -> Response:
     responses={200: CommuteTripsSerializer, 400: None, 502: None, 503: None},
 )
 @api_view(["GET"])
+@permission_classes([AllowAny])
 def plan_trip(request: Request) -> Response:
     """Plan upcoming trips between two stations, without saving a commute."""
     origin = request.query_params.get("from", "").strip()
