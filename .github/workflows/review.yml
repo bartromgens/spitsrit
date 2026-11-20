@@ -1,5 +1,6 @@
 # Thin caller: the AI review lives in gantry. Renovate bumps the gantry SHA.
-# Runs after CI succeeds on a PR.
+# Runs after CI finishes on a PR: the review when CI succeeded, a repair attempt when it
+# failed. Also runs on a push to main, to repair agent PRs that no longer merge cleanly.
 # Variable: MERGE_GATE_CLIENT_ID. Secrets: CLAUDE_CODE_OAUTH_TOKEN (or ANTHROPIC_API_KEY),
 # MERGE_GATE_PRIVATE_KEY.
 name: review
@@ -8,16 +9,18 @@ on:
   workflow_run:
     workflows: [ci]
     types: [completed]
+  push:
+    branches: [main]
 
 permissions: {}
 
 concurrency:
-  group: review-${{ github.event.workflow_run.head_sha }}
+  group: review-${{ github.event.workflow_run.head_sha || github.sha }}
   cancel-in-progress: true
 
 jobs:
   review:
-    uses: bartromgens/gantry/.github/workflows/review.yml@a43cbf0da98b92787862ddb154e09237e582fd35 # main
+    uses: bartromgens/gantry/.github/workflows/review.yml@d46f7ebe0ef53c0e29ec1247f9d3f281b54c0187 # main
     permissions:
       contents: read
       pull-requests: read
