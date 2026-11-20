@@ -37,6 +37,23 @@ def ns_error_response(error: ns.NsError) -> Response:
     return Response({"detail": "The NS API is not answering."}, status=status.HTTP_502_BAD_GATEWAY)
 
 
+def trips_response(origin_code: str, destination_code: str) -> Response:
+    now = timezone.now()
+    try:
+        trips = ns.fetch_trips(origin_code, destination_code, now)
+    except ns.NsError as error:
+        return ns_error_response(error)
+    advice = ns.advise(trips, now)
+    return Response(
+        {
+            "fetched_at": now,
+            "trips": TripSerializer(trips, many=True).data,
+            "recommended_uid": advice.recommended_uid,
+            "wait_minutes": advice.wait_minutes,
+        }
+    )
+
+
 class CommuteViewSet(viewsets.ModelViewSet[Commute]):
     serializer_class = CommuteSerializer
 
@@ -51,20 +68,7 @@ class CommuteViewSet(viewsets.ModelViewSet[Commute]):
     def trips(self, request: Request, pk: str | None = None) -> Response:
         """Upcoming trips for this commute, with delays, and which one to take."""
         commute = self.get_object()
-        now = timezone.now()
-        try:
-            trips = ns.fetch_trips(commute.origin_code, commute.destination_code, now)
-        except ns.NsError as error:
-            return ns_error_response(error)
-        advice = ns.advise(trips, now)
-        return Response(
-            {
-                "fetched_at": now,
-                "trips": TripSerializer(trips, many=True).data,
-                "recommended_uid": advice.recommended_uid,
-                "wait_minutes": advice.wait_minutes,
-            }
-        )
+        return trips_response(commute.origin_code, commute.destination_code)
 
 
 @extend_schema(
@@ -79,6 +83,29 @@ def stations(request: Request) -> Response:
     except ns.NsError as error:
         return ns_error_response(error)
     return Response(StationSerializer(found, many=True).data)
+
+
+@extend_schema(
+    parameters=[
+        OpenApiParameter("from", str, required=True, description="Origin station code"),
+        OpenApiParameter("to", str, required=True, description="Destination station code"),
+    ],
+    responses={200: CommuteTripsSerializer, 400: None, 502: None, 503: None},
+)
+@api_view(["GET"])
+def plan_trip(request: Request) -> Response:
+    """Plan upcoming trips between two stations, without saving a commute."""
+    origin = request.query_params.get("from", "").strip()
+    destination = request.query_params.get("to", "").strip()
+    if not origin or not destination:
+        return Response(
+            {"detail": "Both 'from' and 'to' are required."}, status=status.HTTP_400_BAD_REQUEST
+        )
+    if origin == destination:
+        return Response(
+            {"detail": "Origin and destination must differ."}, status=status.HTTP_400_BAD_REQUEST
+        )
+    return trips_response(origin, destination)
 
 
 @extend_schema(responses=ClientConfigSerializer)

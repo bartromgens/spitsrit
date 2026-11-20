@@ -1,0 +1,54 @@
+<mat-card appearance="outlined">
+  <mat-card-header>
+    <mat-card-title>Plan a trip</mat-card-title>
+  </mat-card-header>
+  <mat-card-content>
+    <form [formGroup]="form" (ngSubmit)="plan()">
+      <mat-form-field>
+        <mat-label>From</mat-label>
+        <input matInput formControlName="origin" [matAutocomplete]="fromAuto" />
+        <mat-autocomplete #fromAuto (optionSelected)="pick('origin', $event)">
+          @for (station of originOptions(); track station.code) {
+            <mat-option [value]="station">{{ station.name }}</mat-option>
+          }
+        </mat-autocomplete>
+      </mat-form-field>
+      <mat-form-field>
+        <mat-label>To</mat-label>
+        <input matInput formControlName="destination" [matAutocomplete]="toAuto" />
+        <mat-autocomplete #toAuto (optionSelected)="pick('destination', $event)">
+          @for (station of destinationOptions(); track station.code) {
+            <mat-option [value]="station">{{ station.name }}</mat-option>
+          }
+        </mat-autocomplete>
+      </mat-form-field>
+      <button matButton="filled" type="submit">Plan</button>
+    </form>
+    @if (error()) {
+      <p class="error" role="alert">{{ error() }}</p>
+    }
+    @if (result(); as r) {
+      <ul class="trips" data-testid="trip-results">
+        @for (trip of r.trips; track trip.uid) {
+          <li [class.best]="trip.uid === r.recommended_uid" [class.cancelled]="trip.cancelled">
+            <span class="time">{{ trip.departure_actual | date: 'HH:mm' }}</span>
+            @if (trip.departure_delay_minutes > 0) {
+              <span class="delay">+{{ trip.departure_delay_minutes }}</span>
+            }
+            @if (trip.cancelled) {
+              Cancelled
+            } @else {
+              {{ trip.train }} · platform {{ trip.departure_track || '?' }} · arrives
+              {{ trip.arrival_actual | date: 'HH:mm' }} · {{ trip.duration_minutes }} min
+              @if (trip.transfers > 0) {
+                · {{ trip.transfers }} transfer{{ trip.transfers === 1 ? '' : 's' }}
+              }
+            }
+          </li>
+        } @empty {
+          <li>No upcoming trips.</li>
+        }
+      </ul>
+    }
+  </mat-card-content>
+</mat-card>

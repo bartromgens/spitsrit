@@ -135,3 +135,42 @@ def test_stations_ns_down(logged_in: APIClient, monkeypatch: pytest.MonkeyPatch)
 
     monkeypatch.setattr(ns, "fetch_stations", fail)
     assert logged_in.get("/api/stations/?q=utr").status_code == 502
+
+
+def test_plan_trip_requires_login(client_api: APIClient) -> None:
+    assert client_api.get("/api/trips/?from=UT&to=ASD").status_code == 403
+
+
+def test_plan_trip_returns_trips_and_advice(
+    logged_in: APIClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    seen: list[tuple[str, str]] = []
+
+    def fake_fetch(origin: str, destination: str, when: object) -> list[ns.Trip]:
+        seen.append((origin, destination))
+        return [make_trip("only", 5, base=timezone.now())]
+
+    monkeypatch.setattr(ns, "fetch_trips", fake_fetch)
+    response = logged_in.get("/api/trips/?from=UT&to=ASD")
+    assert response.status_code == 200
+    assert seen == [("UT", "ASD")]
+    assert response.json()["recommended_uid"] == "only"
+
+
+@pytest.mark.parametrize("query", ["", "?from=UT", "?to=ASD", "?from=UT&to=UT"])
+def test_plan_trip_validates_stations(logged_in: APIClient, query: str) -> None:
+    assert logged_in.get(f"/api/trips/{query}").status_code == 400
+
+
+@pytest.mark.parametrize(
+    ("error", "expected"),
+    [(ns.NsNotConfigured("no key"), 503), (ns.NsError("boom"), 502)],
+)
+def test_plan_trip_ns_failures(
+    logged_in: APIClient, monkeypatch: pytest.MonkeyPatch, error: ns.NsError, expected: int
+) -> None:
+    def fail(*args: object) -> list[ns.Trip]:
+        raise error
+
+    monkeypatch.setattr(ns, "fetch_trips", fail)
+    assert logged_in.get("/api/trips/?from=UT&to=ASD").status_code == expected

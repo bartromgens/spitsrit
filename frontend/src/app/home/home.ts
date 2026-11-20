@@ -5,6 +5,7 @@ import { MatCardModule } from '@angular/material/card';
 import { RouterLink } from '@angular/router';
 import { catchError, of } from 'rxjs';
 import { Auth } from '../auth';
+import { TripPlanner } from '../trip-planner/trip-planner';
 
 interface Health {
   status: string;
@@ -13,7 +14,7 @@ interface Health {
 }
 
 @Component({
-  imports: [MatCardModule, RouterLink],
+  imports: [MatCardModule, RouterLink, TripPlanner],
   selector: 'app-home',
   styleUrl: './home.scss',
   templateUrl: './home.html',
