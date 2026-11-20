@@ -1,6 +1,6 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -12,6 +12,7 @@ import { Auth } from '../auth';
 @Component({
   imports: [
     ReactiveFormsModule,
+    RouterLink,
     MatButtonModule,
     MatCardModule,
     MatFormFieldModule,
@@ -28,7 +29,7 @@ export class Login implements OnInit {
   private readonly route = inject(ActivatedRoute);
 
   protected readonly form = inject(NonNullableFormBuilder).group({
-    username: ['', Validators.required],
+    email: ['', Validators.required],
     password: ['', Validators.required],
   });
   protected readonly error = signal('');
@@ -49,11 +50,11 @@ export class Login implements OnInit {
     if (this.form.invalid) {
       return;
     }
-    const { username, password } = this.form.getRawValue();
+    const { email, password } = this.form.getRawValue();
     try {
-      await this.auth.login(username, password);
+      await this.auth.login(email, password);
     } catch {
-      this.error.set('Invalid username or password.');
+      this.error.set('Invalid email or password.');
       return;
     }
     await this.router.navigateByUrl(this.route.snapshot.queryParamMap.get('next') ?? '/commutes');

@@ -33,6 +33,15 @@ describe('Login', () => {
     expect(navigate).toHaveBeenCalledWith('/commutes');
   });
 
+  it('asks for an email address, not a username', async () => {
+    const fixture = TestBed.createComponent(Login);
+    await fixture.whenStable();
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.textContent).toContain('Email');
+    expect(element.textContent).not.toContain('Username');
+    expect(element.querySelector('a[href="/register"]')).not.toBeNull();
+  });
+
   it('shows an error for a wrong password', async () => {
     const fixture = await submit('bart', 'wrong');
     TestBed.inject(HttpTestingController)

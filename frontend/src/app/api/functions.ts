@@ -11,6 +11,8 @@ export type { AuthLogoutCreate$Params as AuthLogoutCreate$Params } from './fn/au
 export { authLogoutCreate as authLogoutCreate } from './fn/auth/auth-logout-create';
 export type { AuthMeRetrieve$Params as AuthMeRetrieve$Params } from './fn/auth/auth-me-retrieve';
 export { authMeRetrieve as authMeRetrieve } from './fn/auth/auth-me-retrieve';
+export type { AuthRegisterCreate$Params as AuthRegisterCreate$Params } from './fn/auth/auth-register-create';
+export { authRegisterCreate as authRegisterCreate } from './fn/auth/auth-register-create';
 export type { CommutesList$Params as CommutesList$Params } from './fn/commutes/commutes-list';
 export { commutesList as commutesList } from './fn/commutes/commutes-list';
 export type { CommutesCreate$Params as CommutesCreate$Params } from './fn/commutes/commutes-create';

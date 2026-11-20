@@ -5,6 +5,8 @@ from django.contrib.auth.models import User
 from django.test import override_settings
 from rest_framework.test import APIClient
 
+from tests.factories import UserFactory
+
 
 @override_settings(SENTRY_DSN="https://key@sentry.example/1", GIT_SHA="abc123")
 def test_client_config_is_public(client_api: APIClient) -> None:
@@ -26,7 +28,7 @@ def test_me_logged_out_sets_csrf_cookie(client_api: APIClient) -> None:
 
 def test_login_and_logout(client_api: APIClient, user: User) -> None:
     response = client_api.post(
-        "/api/auth/login/", {"username": user.username, "password": "secret-password"}
+        "/api/auth/login/", {"email": user.username, "password": "secret-password"}
     )
     assert response.status_code == 200
     assert response.json() == {"id": user.id, "username": user.username}
@@ -37,8 +39,80 @@ def test_login_and_logout(client_api: APIClient, user: User) -> None:
 
 
 def test_login_wrong_password(client_api: APIClient, user: User) -> None:
-    response = client_api.post("/api/auth/login/", {"username": user.username, "password": "x"})
+    response = client_api.post("/api/auth/login/", {"email": user.username, "password": "x"})
     assert response.status_code == 400
+
+
+def test_login_with_email_address(client_api: APIClient, db: None) -> None:
+    account = UserFactory.create(username="someone", email="Someone@Example.com")
+    response = client_api.post(
+        "/api/auth/login/", {"email": "someone@example.com", "password": "secret-password"}
+    )
+    assert response.status_code == 200
+    assert response.json()["id"] == account.id
+
+
+def test_register_creates_account_and_logs_in(client_api: APIClient, db: None) -> None:
+    response = client_api.post(
+        "/api/auth/register/", {"email": "New@Example.com", "password": "a-good-passphrase-42"}
+    )
+    assert response.status_code == 201
+    assert response.json()["username"] == "new@example.com"
+    created = User.objects.get(email="new@example.com")
+    assert created.check_password("a-good-passphrase-42")
+    assert client_api.get("/api/auth/me/").json()["id"] == created.id
+
+    client_api.post("/api/auth/logout/")
+    login = client_api.post(
+        "/api/auth/login/", {"email": "new@example.com", "password": "a-good-passphrase-42"}
+    )
+    assert login.status_code == 200
+
+
+def test_register_then_login_with_surrounding_spaces_in_password(
+    client_api: APIClient, db: None
+) -> None:
+    password = "  a good passphrase 42  "
+    client_api.post("/api/auth/register/", {"email": "spaces@example.com", "password": password})
+    client_api.post("/api/auth/logout/")
+    login = client_api.post(
+        "/api/auth/login/", {"email": "spaces@example.com", "password": password}
+    )
+    assert login.status_code == 200
+
+
+def test_login_prefers_exact_username_match(client_api: APIClient, db: None) -> None:
+    UserFactory.create(username="bob")
+    exact = UserFactory.create(username="Bob")
+    response = client_api.post("/api/auth/login/", {"email": "Bob", "password": "secret-password"})
+    assert response.json()["id"] == exact.id
+
+
+def test_register_rejects_duplicate_email(client_api: APIClient, db: None) -> None:
+    UserFactory.create(username="taken@example.com", email="taken@example.com")
+    response = client_api.post(
+        "/api/auth/register/", {"email": "TAKEN@example.com", "password": "a-good-passphrase-42"}
+    )
+    assert response.status_code == 400
+    assert "email" in response.json()
+    assert User.objects.count() == 1
+
+
+@pytest.mark.parametrize(
+    ("email", "password", "field"),
+    [
+        ("not-an-email", "a-good-passphrase-42", "email"),
+        ("a@example.com", "short", "password"),
+        ("a@example.com", "password", "password"),
+    ],
+)
+def test_register_validates_input(
+    client_api: APIClient, db: None, email: str, password: str, field: str
+) -> None:
+    response = client_api.post("/api/auth/register/", {"email": email, "password": password})
+    assert response.status_code == 400
+    assert field in response.json()
+    assert not User.objects.exists()
 
 
 @pytest.mark.django_db

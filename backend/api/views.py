@@ -4,7 +4,7 @@ from typing import cast
 from django.conf import settings
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models import QuerySet
 from django.http import FileResponse, Http404, HttpRequest, HttpResponse, HttpResponseRedirect
 from django.urls import reverse
@@ -25,6 +25,7 @@ from api.serializers import (
     CommuteSerializer,
     CommuteTripsSerializer,
     LoginSerializer,
+    RegisterSerializer,
     StationSerializer,
     TripSerializer,
     UserSerializer,
@@ -161,17 +162,47 @@ def me(request: Request) -> Response:
 def login_view(request: Request) -> Response:
     serializer = LoginSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
+    identifier = serializer.validated_data["email"].strip()
+    # Accounts made before email login may have a username that is not an email address.
+    account = (
+        User.objects.filter(username=identifier).first()
+        or User.objects.filter(username__iexact=identifier).order_by("id").first()
+        or User.objects.filter(email__iexact=identifier).order_by("id").first()
+    )
     user = authenticate(
         request._request,
-        username=serializer.validated_data["username"],
+        username=account.username if account else identifier,
         password=serializer.validated_data["password"],
     )
     if user is None:
         return Response(
-            {"detail": "Invalid username or password."}, status=status.HTTP_400_BAD_REQUEST
+            {"detail": "Invalid email or password."}, status=status.HTTP_400_BAD_REQUEST
         )
     login(request._request, user)
     return Response(UserSerializer(user).data)
+
+
+@extend_schema(request=RegisterSerializer, responses={201: UserSerializer, 400: None})
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def register_view(request: Request) -> Response:
+    """Create an account with an email address and password, and log in."""
+    serializer = RegisterSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    email = serializer.validated_data["email"]
+    try:
+        with transaction.atomic():
+            user = User.objects.create_user(
+                username=email, email=email, password=serializer.validated_data["password"]
+            )
+    except IntegrityError:
+        # A concurrent registration with the same email won the race.
+        return Response(
+            {"email": ["An account with this email address already exists."]},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    login(request._request, user, backend="django.contrib.auth.backends.ModelBackend")
+    return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)
 
 
 GOOGLE_STATE_KEY = "google_oauth_state"

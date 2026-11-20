@@ -12,7 +12,7 @@ test('log in and open the commutes page', { tag: '@smoke' }, async ({ page }) =>
 
   await page.goto('/commutes');
   await expect(page).toHaveURL(/\/login/);
-  await page.getByLabel('Username').fill(username);
+  await page.getByLabel('Email').fill(username);
   await page.getByLabel('Password').fill(password);
   await page.getByRole('button', { name: 'Log in' }).click();
   await expect(page).toHaveURL(/\/commutes/);
