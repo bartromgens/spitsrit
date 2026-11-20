@@ -3,6 +3,7 @@
 
 export interface ClientConfig {
   environment: string;
+  google_login: boolean;
   release: string;
   sentry_dsn: string;
 }

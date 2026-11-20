@@ -19,3 +19,13 @@ class Commute(models.Model):
 
     def __str__(self) -> str:
         return self.name
+
+
+class GoogleAccount(models.Model):
+    """Links a user to the Google account they sign in with."""
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="google_account")
+    sub = models.CharField(max_length=255, unique=True)
+
+    def __str__(self) -> str:
+        return f"{self.user} ({self.sub})"

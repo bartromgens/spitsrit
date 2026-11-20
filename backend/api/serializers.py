@@ -75,3 +75,4 @@ class ClientConfigSerializer(serializers.Serializer[None]):
     sentry_dsn = serializers.CharField()
     environment = serializers.CharField()
     release = serializers.CharField()
+    google_login = serializers.BooleanField()
