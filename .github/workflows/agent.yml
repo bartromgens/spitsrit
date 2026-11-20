@@ -24,7 +24,7 @@ concurrency:
 
 jobs:
   agent:
-    uses: bartromgens/gantry/.github/workflows/agent.yml@a43cbf0da98b92787862ddb154e09237e582fd35 # main
+    uses: bartromgens/gantry/.github/workflows/agent.yml@d46f7ebe0ef53c0e29ec1247f9d3f281b54c0187 # main
     permissions:
       contents: read
       issues: write
