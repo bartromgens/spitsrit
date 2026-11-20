@@ -248,6 +248,40 @@ paths:
           description: No response body
         '503':
           description: No response body
+  /api/trips/:
+    get:
+      operationId: trips_retrieve
+      description: Plan upcoming trips between two stations, without saving a commute.
+      parameters:
+      - in: query
+        name: from
+        schema:
+          type: string
+        description: Origin station code
+        required: true
+      - in: query
+        name: to
+        schema:
+          type: string
+        description: Destination station code
+        required: true
+      tags:
+      - trips
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommuteTrips'
+          description: ''
+        '400':
+          description: No response body
+        '502':
+          description: No response body
+        '503':
+          description: No response body
 components:
   schemas:
     ClientConfig:

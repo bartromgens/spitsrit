@@ -9,6 +9,7 @@ router.register("commutes", views.CommuteViewSet, basename="commute")
 
 urlpatterns = [
     path("stations/", views.stations, name="stations"),
+    path("trips/", views.plan_trip, name="plan-trip"),
     path("", include(router.urls)),
     path("config/", views.client_config, name="client-config"),
     path("auth/me/", views.me, name="auth-me"),

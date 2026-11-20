@@ -12,6 +12,12 @@ dd {
   margin: 0;
 }
 
-mat-card + mat-card {
+mat-card + mat-card,
+.planner {
   margin-top: 16px;
+}
+
+.planner {
+  display: block;
+  max-width: 400px;
 }
