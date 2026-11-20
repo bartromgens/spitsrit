@@ -53,6 +53,7 @@ class Trip:
     cancelled: bool
     crowd_forecast: str
     train: str
+    train_length: int | None = None
 
     @property
     def departure_delay_minutes(self) -> int:
@@ -95,6 +96,12 @@ def parse_stations(payload: Any) -> list[Station]:
     return stations
 
 
+def _train_length(leg: dict[str, Any]) -> int | None:
+    """Number of train units (treinstellen) of the leg's train, if NS reports it."""
+    parts = (leg.get("stock") or {}).get("numberOfParts")
+    return parts if isinstance(parts, int) and parts > 0 else None
+
+
 def parse_trip(item: dict[str, Any]) -> Trip | None:
     legs = item.get("legs") or []
     if not legs:
@@ -119,6 +126,7 @@ def parse_trip(item: dict[str, Any]) -> Trip | None:
         cancelled=any(leg.get("cancelled") for leg in legs) or item.get("status") == "CANCELLED",
         crowd_forecast=str(item.get("crowdForecast") or ""),
         train=train,
+        train_length=_train_length(first),
     )
 
 
