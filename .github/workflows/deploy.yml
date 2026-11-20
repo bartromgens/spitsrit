@@ -3,6 +3,8 @@
 # Repository variables: DEPLOY_HOST, DEPLOY_KNOWN_HOSTS (ssh-keyscan output for the host).
 # Secrets: DEPLOY_SSH_KEY, POSTGRES_PASSWORD, DJANGO_SECRET_KEY, SENTRY_DSN,
 # SENTRY_AUTH_TOKEN, SMOKE_USER (username:password).
+# Optional secret: PROJECT_ENV, NAME=value lines for the app's own variables (API keys),
+# appended to the server's .env.
 name: deploy
 
 on:
@@ -18,7 +20,7 @@ concurrency:
 
 jobs:
   build:
-    uses: bartromgens/gantry/.github/workflows/build.yml@1b099d5c7a612f9d32ca8d121ef8bc3411ee5423 # main
+    uses: bartromgens/gantry/.github/workflows/build.yml@a43cbf0da98b92787862ddb154e09237e582fd35 # main
     permissions:
       contents: read
       packages: write
@@ -27,7 +29,7 @@ jobs:
 
   deploy:
     needs: build
-    uses: bartromgens/gantry/.github/workflows/deploy.yml@1b099d5c7a612f9d32ca8d121ef8bc3411ee5423 # main
+    uses: bartromgens/gantry/.github/workflows/deploy.yml@a43cbf0da98b92787862ddb154e09237e582fd35 # main
     permissions:
       contents: read
       packages: read
@@ -42,3 +44,4 @@ jobs:
       SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
       SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
       SMOKE_USER: ${{ secrets.SMOKE_USER }}
+      PROJECT_ENV: ${{ secrets.PROJECT_ENV }}

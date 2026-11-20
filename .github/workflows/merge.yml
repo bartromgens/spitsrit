@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   merge:
-    uses: bartromgens/gantry/.github/workflows/merge.yml@1b099d5c7a612f9d32ca8d121ef8bc3411ee5423 # main
+    uses: bartromgens/gantry/.github/workflows/merge.yml@a43cbf0da98b92787862ddb154e09237e582fd35 # main
     permissions:
       id-token: write
     with:
