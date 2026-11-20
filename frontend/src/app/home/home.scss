@@ -2,22 +2,8 @@ mat-card {
   max-width: 400px;
 }
 
-dl {
-  display: grid;
-  grid-template-columns: max-content 1fr;
-  gap: 4px 16px;
-}
-
-dd {
-  margin: 0;
-}
-
-mat-card + mat-card,
-.planner {
-  margin-top: 16px;
-}
-
 .planner {
   display: block;
   max-width: 400px;
+  margin-top: 16px;
 }

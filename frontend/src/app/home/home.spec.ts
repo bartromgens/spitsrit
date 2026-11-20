@@ -10,25 +10,14 @@ describe('Home', () => {
     TestBed.configureTestingModule({ imports: [Home], providers: testProviders });
   });
 
-  it('shows the health check', async () => {
+  it('does not show the health check', async () => {
     const fixture = TestBed.createComponent(Home);
     fixture.detectChanges();
-    TestBed.inject(HttpTestingController)
-      .expectOne('/healthz')
-      .flush({ status: 'ok', version: 'abc123', db: 'ok' });
-    await fixture.whenStable();
+    await settle(fixture);
     const element = fixture.nativeElement as HTMLElement;
-    expect(element.querySelector('[data-testid="health"]')?.textContent).toContain('abc123');
-  });
-
-  it('says when the backend is unreachable', async () => {
-    const fixture = TestBed.createComponent(Home);
-    fixture.detectChanges();
-    TestBed.inject(HttpTestingController)
-      .expectOne('/healthz')
-      .flush(null, { status: 503, statusText: 'Unavailable' });
-    await fixture.whenStable();
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain('not reachable');
+    expect(element.querySelector('[data-testid="health"]')).toBeNull();
+    expect(element.textContent).not.toContain('Health');
+    TestBed.inject(HttpTestingController).expectNone('/healthz');
   });
 
   it('links to the login page when logged out', async () => {
@@ -37,7 +26,7 @@ describe('Home', () => {
     await settle(fixture);
     const link = (fixture.nativeElement as HTMLElement).querySelector('a[href="/login"]');
     expect(link?.textContent).toContain('Log in');
-    expect((fixture.nativeElement as HTMLElement).querySelector('app-trip-planner')).toBeNull();
+    expect((fixture.nativeElement as HTMLElement).querySelector('app-trip-planner')).not.toBeNull();
   });
 
   it('links to the commutes when logged in', async () => {

@@ -23,6 +23,7 @@ const trip: Trip = {
   cancelled: false,
   crowd_forecast: 'LOW',
   train: 'IC 2736',
+  train_length: 8,
 };
 
 /** The protected members the template uses, reachable from the test. */
@@ -64,6 +65,7 @@ describe('TripPlanner', () => {
     await planned;
     await settle(fixture);
     expect(text()).toContain('IC 2736');
+    expect(text()).toContain('8 treinstellen');
     expect(text()).toContain('platform 5');
     expect(text()).toContain('1 transfer');
     expect((fixture.nativeElement as HTMLElement).querySelector('li.best')).not.toBeNull();

@@ -14,6 +14,7 @@ export interface Trip {
   duration_minutes: number;
   status: string;
   train: string;
+  train_length: number | null;
   transfers: number;
   uid: string;
 }

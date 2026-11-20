@@ -21,6 +21,8 @@ GIT_SHA = os.environ.get("GIT_SHA", "dev")
 SENTRY_DSN = os.environ.get("SENTRY_DSN", "")
 SENTRY_ENVIRONMENT = os.environ.get("SENTRY_ENVIRONMENT", "production")
 NS_API_KEY = os.environ.get("NS_API_KEY", "")
+GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")
+GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "")
 
 INSTALLED_APPS = [
     "django.contrib.admin",

@@ -64,6 +64,7 @@ class TripSerializer(serializers.Serializer[Any]):
     cancelled = serializers.BooleanField()
     crowd_forecast = serializers.CharField()
     train = serializers.CharField()
+    train_length = serializers.IntegerField(allow_null=True)
 
 
 class CommuteTripsSerializer(serializers.Serializer[None]):
@@ -77,3 +78,4 @@ class ClientConfigSerializer(serializers.Serializer[None]):
     sentry_dsn = serializers.CharField()
     environment = serializers.CharField()
     release = serializers.CharField()
+    google_login = serializers.BooleanField()

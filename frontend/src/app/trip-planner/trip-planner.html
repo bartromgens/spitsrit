@@ -38,7 +38,11 @@
             @if (trip.cancelled) {
               Cancelled
             } @else {
-              {{ trip.train }} · platform {{ trip.departure_track || '?' }} · arrives
+              {{ trip.train }}
+              @if (trip.train_length) {
+                · {{ trip.train_length }} treinstellen
+              }
+              · platform {{ trip.departure_track || '?' }} · arrives
               {{ trip.arrival_actual | date: 'HH:mm' }} · {{ trip.duration_minutes }} min
               @if (trip.transfers > 0) {
                 · {{ trip.transfers }} transfer{{ trip.transfers === 1 ? '' : 's' }}

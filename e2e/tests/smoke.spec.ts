@@ -1,11 +1,10 @@
 import { expect, test } from '@playwright/test';
 import { smokeUser } from './smoke-user';
 
-test('home page shows a healthy backend', { tag: '@smoke' }, async ({ page }) => {
+test('home page loads without the health debug card', { tag: '@smoke' }, async ({ page }) => {
   await page.goto('/');
-  const health = page.getByTestId('health');
-  await expect(health).toContainText('ok');
-  await expect(health).not.toContainText('error');
+  await expect(page.getByText('Your commutes')).toBeVisible();
+  await expect(page.getByTestId('health')).toHaveCount(0);
 });
 
 test('log in and open the commutes page', { tag: '@smoke' }, async ({ page }) => {

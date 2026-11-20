@@ -14,6 +14,7 @@ def test_client_config_is_public(client_api: APIClient) -> None:
         "sentry_dsn": "https://key@sentry.example/1",
         "environment": "production",
         "release": "abc123",
+        "google_login": False,
     }
 
 

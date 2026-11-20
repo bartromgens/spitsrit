@@ -12,7 +12,6 @@ from tests.test_ns import make_trip
 @pytest.mark.django_db
 def test_commutes_require_login(client_api: APIClient) -> None:
     assert client_api.get("/api/commutes/").status_code == 403
-    assert client_api.get("/api/stations/?q=ut").status_code == 403
 
 
 def test_commute_crud(logged_in: APIClient, user: User) -> None:
@@ -137,8 +136,15 @@ def test_stations_ns_down(logged_in: APIClient, monkeypatch: pytest.MonkeyPatch)
     assert logged_in.get("/api/stations/?q=utr").status_code == 502
 
 
-def test_plan_trip_requires_login(client_api: APIClient) -> None:
-    assert client_api.get("/api/trips/?from=UT&to=ASD").status_code == 403
+def test_plan_trip_and_stations_are_public(
+    client_api: APIClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(ns, "fetch_stations", lambda: [ns.Station("UT", "Utrecht Centraal")])
+    monkeypatch.setattr(
+        ns, "fetch_trips", lambda *args: [make_trip("only", 5, base=timezone.now())]
+    )
+    assert client_api.get("/api/stations/?q=utr").status_code == 200
+    assert client_api.get("/api/trips/?from=UT&to=ASD").status_code == 200
 
 
 def test_plan_trip_returns_trips_and_advice(
