@@ -1,0 +1,47 @@
+# Production-like stack for `make e2e` and local development.
+# Migrations run as a one-off service before web starts, the same order as in production.
+x-app: &app
+  build:
+    context: .
+    args:
+      NODE_VERSION: ${NODE_VERSION:-}
+      PYTHON_VERSION: ${PYTHON_VERSION:-}
+      GIT_SHA: compose
+  environment:
+    DATABASE_URL: postgres://app:app@db:5432/app
+    DJANGO_SECRET_KEY: compose-only
+    ALLOWED_HOSTS: localhost
+    # The account the smoke tests log in with (see e2e/tests/smoke-user.ts).
+    DJANGO_SUPERUSER_USERNAME: smoke
+    DJANGO_SUPERUSER_PASSWORD: smoke-password
+    DJANGO_SUPERUSER_EMAIL: smoke@localhost
+
+services:
+  db:
+    image: postgres:18
+    environment:
+      POSTGRES_DB: app
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+    # An uncommon host port, so it does not clash with a local Postgres (often on 5432 or 5433).
+    ports: ["127.0.0.1:${DB_PORT:-55432}:5432"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app"]
+      interval: 2s
+      retries: 15
+
+  migrate:
+    <<: *app
+    command: sh -c "python manage.py migrate --noinput && python manage.py createsuperuser --noinput"
+    depends_on:
+      db: { condition: service_healthy }
+
+  web:
+    <<: *app
+    ports: ["127.0.0.1:8000:8000"]
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz')"]
+      interval: 2s
+      retries: 15

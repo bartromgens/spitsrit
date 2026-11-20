@@ -1,0 +1,499 @@
+openapi: 3.0.3
+info:
+  title: Spitsrit API
+  version: dev
+paths:
+  /api/auth/login/:
+    post:
+      operationId: auth_login_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+        '400':
+          description: No response body
+  /api/auth/logout/:
+    post:
+      operationId: auth_logout_create
+      tags:
+      - auth
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/auth/me/:
+    get:
+      operationId: auth_me_retrieve
+      description: The logged-in user, or 204 when logged out. Also sets the CSRF
+        cookie.
+      tags:
+      - auth
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+        '204':
+          description: No response body
+  /api/commutes/:
+    get:
+      operationId: commutes_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - commutes
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCommuteList'
+          description: ''
+    post:
+      operationId: commutes_create
+      tags:
+      - commutes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommuteRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Commute'
+          description: ''
+  /api/commutes/{id}/:
+    get:
+      operationId: commutes_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - commutes
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Commute'
+          description: ''
+    put:
+      operationId: commutes_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - commutes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommuteRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Commute'
+          description: ''
+    patch:
+      operationId: commutes_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - commutes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCommuteRequest'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Commute'
+          description: ''
+    delete:
+      operationId: commutes_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - commutes
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/commutes/{id}/trips/:
+    get:
+      operationId: commutes_trips_retrieve
+      description: Upcoming trips for this commute, with delays, and which one to
+        take.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - commutes
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommuteTrips'
+          description: ''
+        '502':
+          description: No response body
+        '503':
+          description: No response body
+  /api/config/:
+    get:
+      operationId: config_retrieve
+      description: Runtime config for the frontend, so one image serves every environment.
+      tags:
+      - config
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientConfig'
+          description: ''
+  /api/stations/:
+    get:
+      operationId: stations_list
+      description: Search NS stations by name or code, for the commute form.
+      parameters:
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: Part of a station name or its code
+      tags:
+      - stations
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Station'
+          description: ''
+        '502':
+          description: No response body
+        '503':
+          description: No response body
+components:
+  schemas:
+    ClientConfig:
+      type: object
+      properties:
+        sentry_dsn:
+          type: string
+        environment:
+          type: string
+        release:
+          type: string
+      required:
+      - environment
+      - release
+      - sentry_dsn
+    Commute:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        origin_code:
+          type: string
+          maxLength: 20
+        origin_name:
+          type: string
+          maxLength: 100
+        destination_code:
+          type: string
+          maxLength: 20
+        destination_name:
+          type: string
+          maxLength: 100
+        usual_departure_time:
+          type: string
+          format: time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - destination_code
+      - destination_name
+      - id
+      - name
+      - origin_code
+      - origin_name
+    CommuteRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        origin_code:
+          type: string
+          minLength: 1
+          maxLength: 20
+        origin_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        destination_code:
+          type: string
+          minLength: 1
+          maxLength: 20
+        destination_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        usual_departure_time:
+          type: string
+          format: time
+          nullable: true
+      required:
+      - destination_code
+      - destination_name
+      - name
+      - origin_code
+      - origin_name
+    CommuteTrips:
+      type: object
+      properties:
+        fetched_at:
+          type: string
+          format: date-time
+        trips:
+          type: array
+          items:
+            $ref: '#/components/schemas/Trip'
+        recommended_uid:
+          type: string
+          nullable: true
+        wait_minutes:
+          type: integer
+          nullable: true
+      required:
+      - fetched_at
+      - recommended_uid
+      - trips
+      - wait_minutes
+    LoginRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 1
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - password
+      - username
+    PaginatedCommuteList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Commute'
+    PatchedCommuteRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        origin_code:
+          type: string
+          minLength: 1
+          maxLength: 20
+        origin_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        destination_code:
+          type: string
+          minLength: 1
+          maxLength: 20
+        destination_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        usual_departure_time:
+          type: string
+          format: time
+          nullable: true
+    Station:
+      type: object
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+      required:
+      - code
+      - name
+    Trip:
+      type: object
+      properties:
+        uid:
+          type: string
+        departure_planned:
+          type: string
+          format: date-time
+        departure_actual:
+          type: string
+          format: date-time
+        arrival_planned:
+          type: string
+          format: date-time
+        arrival_actual:
+          type: string
+          format: date-time
+        departure_delay_minutes:
+          type: integer
+        arrival_delay_minutes:
+          type: integer
+        duration_minutes:
+          type: integer
+        departure_track:
+          type: string
+        transfers:
+          type: integer
+        status:
+          type: string
+        cancelled:
+          type: boolean
+        crowd_forecast:
+          type: string
+        train:
+          type: string
+      required:
+      - arrival_actual
+      - arrival_delay_minutes
+      - arrival_planned
+      - cancelled
+      - crowd_forecast
+      - departure_actual
+      - departure_delay_minutes
+      - departure_planned
+      - departure_track
+      - duration_minutes
+      - status
+      - train
+      - transfers
+      - uid
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+      required:
+      - id
+      - username
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid

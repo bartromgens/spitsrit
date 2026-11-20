@@ -1,0 +1,22 @@
+# Python
+.venv/
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+backend/config/settings_local.py
+backend/staticfiles/
+backend/frontend_dist/
+
+# Node
+node_modules/
+frontend/coverage/
+
+# Playwright
+e2e/test-results/
+e2e/playwright-report/
+
+# IDEs
+.idea/

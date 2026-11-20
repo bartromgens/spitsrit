@@ -1,0 +1,36 @@
+# Thin caller: the author agent lives in gantry. Renovate bumps the gantry SHA.
+# Starts when an allowlisted user labels an issue `agent`, or when the AI review
+# dispatches a rework round. Secret: CLAUDE_CODE_OAUTH_TOKEN (or ANTHROPIC_API_KEY).
+name: agent
+
+on:
+  issues:
+    types: [labeled]
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: PR number to rework
+        required: true
+        type: string
+
+permissions: {}
+
+concurrency:
+  # One run per issue or PR, so labelling again restarts the agent. Labels other than
+  # `agent` get a group of their own: they only start a run that does nothing, and in
+  # the shared group such a run would cancel the real agent run labelled a moment earlier.
+  group: agent-${{ github.event.issue.number || inputs.pr }}-${{ (github.event.label.name == 'agent' || github.event_name == 'workflow_dispatch') && 'run' || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  agent:
+    uses: bartromgens/gantry/.github/workflows/agent.yml@1b099d5c7a612f9d32ca8d121ef8bc3411ee5423 # main
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+      id-token: write
+    with:
+      pr: ${{ inputs.pr }}
+    secrets:
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}

@@ -1,0 +1,6 @@
+review_rounds: 3
+diff_coverage: 80
+frontend: true
+sentry_project: spitsrit
+domain: spitsrit.sandbox.romgens.com
+smoke_user: SMOKE_USER

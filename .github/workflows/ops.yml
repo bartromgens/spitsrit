@@ -1,0 +1,24 @@
+# Thin caller: allowlisted operations live in gantry. Renovate bumps the gantry SHA.
+name: ops
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: Operation to run
+        type: choice
+        options: [restart, prune-images]
+
+permissions: {}
+
+jobs:
+  ops:
+    uses: bartromgens/gantry/.github/workflows/ops.yml@1b099d5c7a612f9d32ca8d121ef8bc3411ee5423 # main
+    permissions:
+      contents: read
+    with:
+      action: ${{ inputs.action }}
+      host: ${{ vars.DEPLOY_HOST }}
+      known_hosts: ${{ vars.DEPLOY_KNOWN_HOSTS }}
+    secrets:
+      DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}

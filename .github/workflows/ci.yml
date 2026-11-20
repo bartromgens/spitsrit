@@ -1,0 +1,18 @@
+# Thin caller: CI lives in gantry. Renovate bumps the gantry SHA.
+name: ci
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    uses: bartromgens/gantry/.github/workflows/ci.yml@1b099d5c7a612f9d32ca8d121ef8bc3411ee5423 # main
+    permissions:
+      contents: read

@@ -1,0 +1,29 @@
+<mat-toolbar>
+  <span>Spitsrit</span>
+  <span class="spacer"></span>
+  @if (auth.user(); as user) {
+    <span class="user">{{ user.username }}</span>
+    <button matButton (click)="logout()">Log out</button>
+  } @else {
+    <a matButton routerLink="/login">Log in</a>
+  }
+</mat-toolbar>
+<mat-sidenav-container>
+  <mat-sidenav mode="side" opened>
+    <mat-nav-list>
+      <a
+        mat-list-item
+        routerLink="/"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: true }"
+        >Home</a
+      >
+      <a mat-list-item routerLink="/commutes" routerLinkActive="active">Commutes</a>
+    </mat-nav-list>
+  </mat-sidenav>
+  <mat-sidenav-content>
+    <main>
+      <router-outlet />
+    </main>
+  </mat-sidenav-content>
+</mat-sidenav-container>

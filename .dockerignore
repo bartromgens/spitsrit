@@ -1,0 +1,11 @@
+.git
+**/.venv
+**/node_modules
+**/__pycache__
+frontend/dist
+frontend/coverage
+backend/staticfiles
+backend/frontend_dist
+backend/config/settings_local.py
+backend/coverage.xml
+e2e

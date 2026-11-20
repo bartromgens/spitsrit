@@ -1,0 +1,44 @@
+# Thin caller: build and deploy live in gantry. Renovate bumps the gantry SHA.
+#
+# Repository variables: DEPLOY_HOST, DEPLOY_KNOWN_HOSTS (ssh-keyscan output for the host).
+# Secrets: DEPLOY_SSH_KEY, POSTGRES_PASSWORD, DJANGO_SECRET_KEY, SENTRY_DSN,
+# SENTRY_AUTH_TOKEN, SMOKE_USER (username:password).
+name: deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  build:
+    uses: bartromgens/gantry/.github/workflows/build.yml@1b099d5c7a612f9d32ca8d121ef8bc3411ee5423 # main
+    permissions:
+      contents: read
+      packages: write
+    secrets:
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+
+  deploy:
+    needs: build
+    uses: bartromgens/gantry/.github/workflows/deploy.yml@1b099d5c7a612f9d32ca8d121ef8bc3411ee5423 # main
+    permissions:
+      contents: read
+      packages: read
+      issues: write
+    with:
+      host: ${{ vars.DEPLOY_HOST }}
+      known_hosts: ${{ vars.DEPLOY_KNOWN_HOSTS }}
+    secrets:
+      DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+      DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
+      SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+      SMOKE_USER: ${{ secrets.SMOKE_USER }}

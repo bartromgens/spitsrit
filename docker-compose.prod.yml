@@ -1,0 +1,42 @@
+# Production: the app and its own Postgres. Caddy is shared and runs from gantry's server/.
+name: spitsrit
+
+services:
+  web:
+    image: ghcr.io/bartromgens/spitsrit:${GIT_SHA}
+    env_file: .env
+    restart: unless-stopped
+    depends_on:
+      db: { condition: service_healthy }
+    networks:
+      default:
+      gantry:
+        aliases: [spitsrit]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz')"]
+      interval: 10s
+      retries: 3
+
+  # The project's own Postgres, only on the project's default network.
+  db:
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: app
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set in .env by the deploy}
+    volumes:
+      - db:/var/lib/postgresql
+    labels:
+      gantry.backup: postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app"]
+      interval: 5s
+      retries: 10
+
+volumes:
+  db:
+
+networks:
+  gantry:
+    external: true

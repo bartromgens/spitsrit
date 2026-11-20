@@ -1,0 +1,3 @@
+spitsrit.sandbox.romgens.com {
+	reverse_proxy spitsrit:8000
+}

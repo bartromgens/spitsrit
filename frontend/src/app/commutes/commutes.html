@@ -1,0 +1,50 @@
+<h1>My commutes</h1>
+
+@if (error()) {
+  <p class="error" role="alert">{{ error() }}</p>
+}
+
+@for (commute of commutes(); track commute.id) {
+  <app-commute-board [commute]="commute" (removed)="remove($event)" />
+} @empty {
+  @if (loaded()) {
+    <p>No commutes yet. Add your first one below.</p>
+  }
+}
+
+<mat-card appearance="outlined" class="add">
+  <mat-card-header>
+    <mat-card-title>Add a commute</mat-card-title>
+  </mat-card-header>
+  <mat-card-content>
+    <form [formGroup]="form" (ngSubmit)="add()">
+      <mat-form-field>
+        <mat-label>Name</mat-label>
+        <input matInput formControlName="name" />
+      </mat-form-field>
+      <mat-form-field>
+        <mat-label>From</mat-label>
+        <input matInput formControlName="origin" [matAutocomplete]="fromAuto" />
+        <mat-autocomplete #fromAuto (optionSelected)="pick('origin', $event)">
+          @for (station of originOptions(); track station.code) {
+            <mat-option [value]="station">{{ station.name }}</mat-option>
+          }
+        </mat-autocomplete>
+      </mat-form-field>
+      <mat-form-field>
+        <mat-label>To</mat-label>
+        <input matInput formControlName="destination" [matAutocomplete]="toAuto" />
+        <mat-autocomplete #toAuto (optionSelected)="pick('destination', $event)">
+          @for (station of destinationOptions(); track station.code) {
+            <mat-option [value]="station">{{ station.name }}</mat-option>
+          }
+        </mat-autocomplete>
+      </mat-form-field>
+      <mat-form-field>
+        <mat-label>Usual departure (optional)</mat-label>
+        <input matInput type="time" formControlName="usualTime" />
+      </mat-form-field>
+      <button matButton="filled" type="submit">Save</button>
+    </form>
+  </mat-card-content>
+</mat-card>

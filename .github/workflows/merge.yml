@@ -1,0 +1,23 @@
+# Thin caller: the merge gate lives in gantry. Renovate bumps the gantry SHA.
+# Runs on commit status changes; merges only when the merge-gate App approved.
+# Variable: MERGE_GATE_CLIENT_ID. Secret: MERGE_GATE_PRIVATE_KEY.
+name: merge
+
+on:
+  status:
+
+permissions: {}
+
+concurrency:
+  group: merge-${{ github.event.sha }}
+  cancel-in-progress: false
+
+jobs:
+  merge:
+    uses: bartromgens/gantry/.github/workflows/merge.yml@1b099d5c7a612f9d32ca8d121ef8bc3411ee5423 # main
+    permissions:
+      id-token: write
+    with:
+      merge_gate_client_id: ${{ vars.MERGE_GATE_CLIENT_ID }}
+    secrets:
+      MERGE_GATE_PRIVATE_KEY: ${{ secrets.MERGE_GATE_PRIVATE_KEY }}

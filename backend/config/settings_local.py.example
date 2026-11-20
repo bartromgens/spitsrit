@@ -1,0 +1,8 @@
+import dj_database_url
+
+DEBUG = True
+SECRET_KEY = "change-me-to-a-random-secret-key"
+ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+DATABASES = {"default": dj_database_url.parse("postgres://app:app@localhost:55432/app")}
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = False

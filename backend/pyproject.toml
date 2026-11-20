@@ -1,0 +1,76 @@
+[project]
+name = "spitsrit-backend"
+version = "0.1.0"
+description = "Spitsrit, a trip planner for daily NS commuters"
+requires-python = ">=3.14"
+dependencies = [
+    "dj-database-url>=3.1.2",
+    "django>=6.1.2",
+    "djangorestframework>=3.18.3",
+    "drf-spectacular>=0.30.0",
+    "gunicorn>=26.2.0",
+    "psycopg[binary]>=3.3.6",
+    "sentry-sdk>=2.73.0",
+    "whitenoise>=6.12.0",
+]
+
+[dependency-groups]
+dev = [
+    "diff-cover>=10.6.0",
+    "django-stubs>=6.1.2",
+    "djangorestframework-stubs>=3.18.1",
+    "factory-boy>=3.3.3",
+    "mypy>=2.4.0",
+    "pytest>=9.1.1",
+    "pytest-cov>=7.1.0",
+    "pytest-django>=4.14.0",
+    "ruff>=0.17.2",
+]
+
+[tool.ruff]
+line-length = 100
+extend-exclude = ["api/migrations"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF", "DJ"]
+ignore = [
+    "E501",  # the formatter handles line length
+    "RUF012",  # Django Meta and DRF class attributes are lists by convention
+]
+
+[tool.ruff.lint.per-file-ignores]
+"config/settings.py" = ["SIM105"]  # keep the settings_local import readable
+
+[tool.mypy]
+strict = true
+plugins = ["mypy_django_plugin.main", "mypy_drf_plugin.main"]
+exclude = ["^api/migrations/"]
+
+[[tool.mypy.overrides]]
+# settings_local.py is optional and gitignored, so it is missing on a clean checkout and in CI
+module = ["config.settings_local"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+# factory_boy has no type hints
+module = ["factory", "factory.*"]
+follow_imports = "skip"
+
+[[tool.mypy.overrides]]
+# factories subclass the untyped factory_boy classes
+module = ["tests.*"]
+disallow_subclassing_any = false
+warn_return_any = false
+
+[tool.django-stubs]
+django_settings_module = "config.settings"
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings"
+testpaths = ["tests"]
+# whitenoise warns when collectstatic has not run, as in tests
+filterwarnings = ["ignore:No directory at:UserWarning"]
+
+[tool.coverage.run]
+source = ["api", "config"]
+omit = ["*/migrations/*"]

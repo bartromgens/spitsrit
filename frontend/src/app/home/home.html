@@ -1,0 +1,34 @@
+<mat-card appearance="outlined">
+  <mat-card-header>
+    <mat-card-title>Health</mat-card-title>
+  </mat-card-header>
+  <mat-card-content>
+    @if (health(); as h) {
+      <dl data-testid="health">
+        <dt>Status</dt>
+        <dd>{{ h.status }}</dd>
+        <dt>Version</dt>
+        <dd>{{ h.version }}</dd>
+        <dt>Database</dt>
+        <dd>{{ h.db }}</dd>
+      </dl>
+    } @else if (health() === null) {
+      <p>The backend is not reachable.</p>
+    } @else {
+      <p>Loading…</p>
+    }
+  </mat-card-content>
+</mat-card>
+
+<mat-card appearance="outlined">
+  <mat-card-header>
+    <mat-card-title>Your commutes</mat-card-title>
+  </mat-card-header>
+  <mat-card-content>
+    @if (auth.loggedIn()) {
+      <a routerLink="/commutes">See when your next train leaves</a>
+    } @else {
+      <a routerLink="/login">Log in</a>
+    }
+  </mat-card-content>
+</mat-card>

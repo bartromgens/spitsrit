@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <title>Spitsrit</title>
+  <polygon points="14,34 2,26 4,44 16,44" fill="#e6a000" />
+  <ellipse cx="32" cy="40" rx="20" ry="15" fill="#ffcd1e" />
+  <circle cx="42" cy="22" r="13" fill="#ffcd1e" />
+  <polygon points="53,18 63,23 53,27" fill="#f06e14" />
+  <ellipse cx="30" cy="42" rx="11" ry="7" fill="#e6a000" />
+  <circle cx="45" cy="19" r="2.2" fill="#1e1e1e" />
+  <rect x="26" y="54" width="2" height="6" fill="#f06e14" />
+  <rect x="36" y="54" width="2" height="6" fill="#f06e14" />
+</svg>
