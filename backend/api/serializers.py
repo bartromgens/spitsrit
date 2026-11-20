@@ -1,6 +1,9 @@
 from typing import Any
 
 from django.contrib.auth.models import User
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError as DjangoValidationError
+from django.db.models import Q
 from rest_framework import serializers
 
 from api.models import Commute
@@ -38,8 +41,27 @@ class UserSerializer(serializers.ModelSerializer[User]):
 
 
 class LoginSerializer(serializers.Serializer[None]):
-    username = serializers.CharField()
+    email = serializers.CharField()
     password = serializers.CharField(write_only=True)
+
+
+class RegisterSerializer(serializers.Serializer[None]):
+    email = serializers.EmailField(max_length=150)
+    password = serializers.CharField(write_only=True, trim_whitespace=False)
+
+    def validate_email(self, value: str) -> str:
+        email = value.strip().lower()
+        if User.objects.filter(Q(username__iexact=email) | Q(email__iexact=email)).exists():
+            raise serializers.ValidationError("An account with this email address already exists.")
+        return email
+
+    def validate(self, attrs: dict[str, str]) -> dict[str, str]:
+        candidate = User(username=attrs["email"], email=attrs["email"])
+        try:
+            validate_password(attrs["password"], candidate)
+        except DjangoValidationError as error:
+            raise serializers.ValidationError({"password": list(error.messages)}) from error
+        return attrs
 
 
 class StationSerializer(serializers.Serializer[Any]):
