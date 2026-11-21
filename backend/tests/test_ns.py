@@ -80,7 +80,10 @@ TRIP_ITEM: dict[str, Any] = {
     "crowdForecast": "MEDIUM",
     "legs": [
         {
+            "travelType": "PUBLIC_TRANSIT",
+            "journeyDetailRef": "1|231691|0|784|20112026",
             "origin": {
+                "uicCode": "8400621",
                 "plannedDateTime": "2026-11-20T08:00:00+0100",
                 "actualDateTime": "2026-11-20T08:03:00+0100",
                 "plannedTrack": "5",
@@ -88,9 +91,9 @@ TRIP_ITEM: dict[str, Any] = {
             },
             "destination": {"plannedDateTime": "2026-11-20T08:20:00+0100"},
             "product": {"shortCategoryName": "IC", "number": "2736"},
-            "stock": {"numberOfParts": 8},
         },
         {
+            "travelType": "PUBLIC_TRANSIT",
             "origin": {"plannedDateTime": "2026-11-20T08:25:00+0100"},
             "destination": {
                 "plannedDateTime": "2026-11-20T08:50:00+0100",
@@ -112,7 +115,8 @@ def test_parse_trip() -> None:
     assert trip.departure_track == "6"
     assert trip.transfers == 1
     assert trip.train == "IC 2736"
-    assert trip.train_length == 8
+    assert trip.seats is None
+    assert trip.shorter_stock is None
     assert trip.crowd_forecast == "MEDIUM"
     assert not trip.cancelled
 
@@ -124,11 +128,119 @@ def test_parse_trip_marks_cancelled_legs() -> None:
     assert trip.cancelled
 
 
-def test_parse_trip_without_stock_has_no_train_length() -> None:
-    leg = {k: v for k, v in TRIP_ITEM["legs"][0].items() if k != "stock"}
-    trip = ns.parse_trip({**TRIP_ITEM, "legs": [leg]})
+def test_parse_trip_passes_shorter_stock_flags_through() -> None:
+    shorter = {
+        **TRIP_ITEM["legs"][1],
+        "shorterStock": True,
+        "shorterStockClassification": "EXTRA_BUSY",
+        "shorterStockWarning": "Kortere trein dan normaal",
+    }
+    trip = ns.parse_trip({**TRIP_ITEM, "legs": [TRIP_ITEM["legs"][0], shorter]})
     assert trip is not None
-    assert trip.train_length is None
+    assert trip.shorter_stock == "EXTRA_BUSY"
+    assert trip.shorter_stock_warning == "Kortere trein dan normaal"
+
+
+def stop(uic: str, kind: str | None = None, **stock: Any) -> dict[str, Any]:
+    return {"id": uic, "stop": {"UICCode": uic}, **({"kind": kind} if kind else {}), **stock}
+
+
+def stock(seats: int, parts: int = 3, train_type: str = "VIRM") -> dict[str, Any]:
+    return {
+        "hasSignificantChange": False,
+        "numberOfParts": parts,
+        "numberOfSeats": seats,
+        "trainParts": [],
+        "trainType": train_type,
+    }
+
+
+def journey(*stops: dict[str, Any]) -> dict[str, Any]:
+    return {"payload": {"productNumbers": ["2736"], "stops": list(stops)}}
+
+
+def trips_with_journey(
+    monkeypatch: pytest.MonkeyPatch, journeys: Any, item: dict[str, Any] = TRIP_ITEM
+) -> list[tuple[str, dict[str, str] | None]]:
+    """Mock NS: one trip, and `journeys` (a payload, or a callable raising) for /v2/journey."""
+    calls: list[tuple[str, dict[str, str] | None]] = []
+
+    def fake_get(path: str, params: dict[str, str] | None = None) -> Any:
+        calls.append((path, params))
+        if path == "v3/trips":
+            return {"trips": [item]}
+        if isinstance(journeys, Exception):
+            raise journeys
+        return journeys
+
+    cache.clear()
+    monkeypatch.setattr(ns, "_get", fake_get)
+    return calls
+
+
+def test_fetch_trips_reads_size_from_the_boarding_stop(monkeypatch: pytest.MonkeyPatch) -> None:
+    # The train starts at 8400000; the leg boards at 8400621, where it has more units.
+    payload = journey(
+        stop("8400000", "DEPARTURE", plannedStock=stock(300, 2, "SLT")),
+        stop("8400621", actualStock=stock(620, 4, "VIRM"), plannedStock=stock(400, 3, "DDZ")),
+    )
+    calls = trips_with_journey(monkeypatch, payload)
+    [trip] = ns.fetch_trips("UT", "ASD", NOW)
+    assert (trip.seats, trip.units, trip.train_type) == (620, 4, "VIRM")
+    assert ("v2/journey", {"id": "1|231691|0|784|20112026"}) in calls
+
+
+def test_fetch_trips_falls_back_to_planned_stock(monkeypatch: pytest.MonkeyPatch) -> None:
+    trips_with_journey(monkeypatch, journey(stop("8400621", plannedStock=stock(400, 3, "DDZ"))))
+    [trip] = ns.fetch_trips("UT", "ASD", NOW)
+    assert (trip.seats, trip.units, trip.train_type) == (400, 3, "DDZ")
+
+
+def test_fetch_trips_uses_the_departure_stop_when_uic_does_not_match(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    payload = journey(
+        stop("1", plannedStock=stock(100)), stop("2", "DEPARTURE", actualStock=stock(250))
+    )
+    trips_with_journey(monkeypatch, payload)
+    [trip] = ns.fetch_trips("UT", "ASD", NOW)
+    assert trip.seats == 250
+
+
+def test_fetch_trips_falls_back_to_train_number(monkeypatch: pytest.MonkeyPatch) -> None:
+    leg = {k: v for k, v in TRIP_ITEM["legs"][0].items() if k != "journeyDetailRef"}
+    calls = trips_with_journey(
+        monkeypatch, journey(stop("8400621", actualStock=stock(500))), {**TRIP_ITEM, "legs": [leg]}
+    )
+    [trip] = ns.fetch_trips("UT", "ASD", NOW)
+    assert trip.seats == 500
+    assert (
+        "v2/journey",
+        {"train": "2736", "dateTime": "2026-11-20T08:00:00+0100"},
+    ) in calls
+
+
+def test_failed_journey_leaves_size_unknown_but_returns_the_trip(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    trips_with_journey(monkeypatch, ns.NsError("boom"))
+    [trip] = ns.fetch_trips("UT", "ASD", NOW)
+    assert trip.uid == "abc"
+    assert (trip.seats, trip.units, trip.train_type) == (None, None, None)
+
+
+def test_malformed_journey_leaves_size_unknown(monkeypatch: pytest.MonkeyPatch) -> None:
+    trips_with_journey(monkeypatch, {"payload": None})
+    [trip] = ns.fetch_trips("UT", "ASD", NOW)
+    assert trip.seats is None
+
+
+def test_journey_is_cached(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls = trips_with_journey(monkeypatch, journey(stop("8400621", actualStock=stock(620))))
+    assert ns.fetch_trips("UT", "ASD", NOW)[0].seats == 620
+    assert ns.fetch_trips("UT", "ASD", NOW)[0].seats == 620
+    assert [path for path, _ in calls].count("v2/journey") == 1
+    cache.clear()
 
 
 def test_parse_trip_without_legs_or_times_is_dropped() -> None:
@@ -182,6 +294,8 @@ def test_fetch_trips_limits_and_filters(monkeypatch: pytest.MonkeyPatch) -> None
     seen: dict[str, Any] = {}
 
     def fake_get(path: str, params: dict[str, str] | None = None) -> Any:
+        if path != "v3/trips":
+            return {}
         seen.update(path=path, params=params)
         return {"trips": [TRIP_ITEM] * 10 + [{"legs": []}]}
 

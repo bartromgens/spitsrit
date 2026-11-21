@@ -12,9 +12,13 @@ export interface Trip {
   departure_planned: string;
   departure_track: string;
   duration_minutes: number;
+  seats: number | null;
+  shorter_stock: string | null;
+  shorter_stock_warning: string | null;
   status: string;
   train: string;
-  train_length: number | null;
+  train_type: string | null;
   transfers: number;
   uid: string;
+  units: number | null;
 }
