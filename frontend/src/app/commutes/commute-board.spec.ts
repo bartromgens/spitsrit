@@ -63,6 +63,16 @@ describe('CommuteBoard', () => {
     await settle(fixture);
   };
 
+  const el = (): HTMLElement => fixture.nativeElement as HTMLElement;
+  const toggle = async (): Promise<void> => {
+    el().querySelector<HTMLButtonElement>('[data-testid="filters-toggle"]')!.click();
+    await settle(fixture);
+  };
+  const chipTexts = (): string[] =>
+    Array.from(el().querySelectorAll('[data-testid="filter-chip"]')).map((c) =>
+      (c.textContent ?? '').trim(),
+    );
+
   it('shows the route and tells you to leave now', async () => {
     await flush(
       trips({ trips: [trip({ train: 'IC 2736' })], recommended_uid: 'a', wait_minutes: 0 }),
@@ -123,6 +133,10 @@ describe('CommuteBoard', () => {
       max_transfers: 1,
     });
     filtered.detectChanges();
+    (filtered.nativeElement as HTMLElement)
+      .querySelector<HTMLButtonElement>('[data-testid="filters-toggle"]')!
+      .click();
+    filtered.detectChanges();
     const inputs = (filtered.nativeElement as HTMLElement).querySelectorAll('input');
     expect(inputs[0].value).toBe('45');
     expect(inputs[1].value).toBe('1');
@@ -132,6 +146,7 @@ describe('CommuteBoard', () => {
 
   it('saves changed filters as the commute defaults and reloads the trips', async () => {
     await flush(trips({}));
+    await toggle();
     const input = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>(
       '[data-testid="max-transfers"]',
     )!;
@@ -149,6 +164,7 @@ describe('CommuteBoard', () => {
 
   it('does not save an invalid filter', async () => {
     await flush(trips({}));
+    await toggle();
     const input = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>(
       '[data-testid="max-duration"]',
     )!;
@@ -161,6 +177,7 @@ describe('CommuteBoard', () => {
 
   it('says when the filters could not be saved', async () => {
     await flush(trips({}));
+    await toggle();
     const input = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>(
       '[data-testid="max-duration"]',
     )!;
@@ -176,11 +193,67 @@ describe('CommuteBoard', () => {
     await flush(trips({}));
     const removed: Commute[] = [];
     fixture.componentInstance.removed.subscribe((c) => removed.push(c));
-    const buttons = (fixture.nativeElement as HTMLElement).querySelectorAll('button');
-    buttons[0].click();
+    const buttons = Array.from(el().querySelectorAll('button'));
+    const refresh = buttons.find((b) => b.textContent?.trim() === 'Refresh')!;
+    const remove = buttons.find((b) => b.textContent?.trim() === 'Delete')!;
+    refresh.click();
     await flush(trips({ trips: [trip({})], recommended_uid: 'a', wait_minutes: 3 }));
     expect(text()).toContain('Wait 3 min');
-    buttons[1].click();
+    remove.click();
     expect(removed).toEqual([commute]);
+  });
+
+  it('hides the fields and chips when no filter is set', async () => {
+    await flush(trips({}));
+    expect(el().querySelector('input')).toBeNull();
+    expect(chipTexts()).toEqual([]);
+    expect(el().querySelector('[data-testid="filters-toggle"]')).not.toBeNull();
+  });
+
+  it('shows chips only for the filters that are set, and expands from a chip', async () => {
+    const filtered = TestBed.createComponent(CommuteBoard);
+    filtered.componentRef.setInput('commute', { ...commute, max_transfers: 1 });
+    filtered.detectChanges();
+    const root = filtered.nativeElement as HTMLElement;
+    const chips = root.querySelectorAll<HTMLElement>('[data-testid="filter-chip"]');
+    expect(Array.from(chips).map((c) => c.textContent?.trim())).toEqual(['≤ 1 transfer']);
+    expect(root.querySelector('input')).toBeNull();
+    root.querySelector<HTMLButtonElement>('[data-testid="filter-chip"] button')!.click();
+    filtered.detectChanges();
+    expect(root.querySelectorAll('input').length).toBe(2);
+    http.match('/api/commutes/7/trips/').forEach((r) => r.flush(trips({})));
+    await settle(filtered);
+  });
+
+  it('expands and collapses with the Filters button', async () => {
+    await flush(trips({}));
+    await toggle();
+    expect(el().querySelectorAll('input').length).toBe(2);
+    await toggle();
+    expect(el().querySelector('input')).toBeNull();
+  });
+
+  it('updates the chips after saving', async () => {
+    await flush(trips({}));
+    await toggle();
+    const input = el().querySelector<HTMLInputElement>('[data-testid="max-duration"]')!;
+    input.value = '50';
+    input.dispatchEvent(new Event('input'));
+    input.dispatchEvent(new Event('change'));
+    http.expectOne('/api/commutes/7/').flush(commute);
+    await new Promise((resolve) => setTimeout(resolve));
+    await flush(trips({}));
+    await toggle();
+    expect(chipTexts()).toEqual(['≤ 50 min']);
+  });
+
+  it('expands on a filter error', async () => {
+    await flush(trips({}));
+    expect(el().querySelector('input')).toBeNull();
+    // Collapsed fields cannot fail validation, so drive the save path directly.
+    fixture.componentInstance['maxDuration'].setValue(0);
+    await fixture.componentInstance['saveFilters']();
+    await settle(fixture);
+    expect(el().querySelectorAll('input').length).toBe(2);
   });
 });
