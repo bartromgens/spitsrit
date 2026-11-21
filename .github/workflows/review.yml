@@ -20,7 +20,7 @@ concurrency:
 
 jobs:
   review:
-    uses: bartromgens/gantry/.github/workflows/review.yml@d46f7ebe0ef53c0e29ec1247f9d3f281b54c0187 # main
+    uses: bartromgens/gantry/.github/workflows/review.yml@49b6f40ffc1a8b4d1dc225ba3b968e940669cc8a # main
     permissions:
       contents: read
       pull-requests: read
