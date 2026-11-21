@@ -1,43 +1,9 @@
+:host {
+  display: block;
+}
+
 form {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-}
-
-.trips {
-  list-style: none;
-  margin: 16px 0 0;
-  padding: 0;
-}
-
-.trips li {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  padding: 8px;
-  border-radius: 8px;
-}
-
-.trips li.best {
-  background: var(--mat-sys-primary-container);
-  color: var(--mat-sys-on-primary-container);
-}
-
-.trips li.cancelled {
-  text-decoration: line-through;
-  opacity: 0.7;
-}
-
-.time {
-  font: var(--mat-sys-title-medium);
-  min-width: 3.5em;
-}
-
-.delay {
-  color: var(--mat-sys-error);
-  font-weight: 500;
-}
-
-.error {
-  color: var(--mat-sys-error);
+  gap: var(--sp-space-1);
 }

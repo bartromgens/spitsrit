@@ -1,0 +1,43 @@
+:host {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-space-1);
+  min-width: 0;
+}
+
+.signal {
+  flex: none;
+  align-self: center;
+  width: var(--sp-space-2);
+  height: var(--sp-space-2);
+  border-radius: var(--sp-radius-pill);
+  background: var(--sp-signal-green);
+  box-shadow: var(--sp-elevation-1);
+}
+
+.detail {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: var(--sp-space-1);
+  row-gap: var(--sp-space-half);
+  min-width: 0;
+}
+
+.train {
+  font-weight: var(--sp-weight-medium);
+}
+
+.journey {
+  font-size: var(--sp-text-sm);
+}
+
+.arrival-delay {
+  color: var(--sp-signal-red);
+  font-weight: var(--sp-weight-bold);
+}
+
+.cancelled-label {
+  color: var(--sp-signal-red);
+  font-weight: var(--sp-weight-bold);
+}

@@ -28,26 +28,10 @@
       <p class="error" role="alert">{{ error() }}</p>
     }
     @if (result(); as r) {
-      <ul class="trips" data-testid="trip-results">
+      <ul class="sp-trips" data-testid="trip-results">
         @for (trip of r.trips; track trip.uid) {
           <li [class.best]="trip.uid === r.recommended_uid" [class.cancelled]="trip.cancelled">
-            <span class="time">{{ trip.departure_actual | date: 'HH:mm' }}</span>
-            @if (trip.departure_delay_minutes > 0) {
-              <span class="delay">+{{ trip.departure_delay_minutes }}</span>
-            }
-            @if (trip.cancelled) {
-              Cancelled
-            } @else {
-              {{ trip.train }}
-              @if (trip.train_length) {
-                · {{ trip.train_length }} treinstellen
-              }
-              · platform {{ trip.departure_track || '?' }} · arrives
-              {{ trip.arrival_actual | date: 'HH:mm' }} · {{ trip.duration_minutes }} min
-              @if (trip.transfers > 0) {
-                · {{ trip.transfers }} transfer{{ trip.transfers === 1 ? '' : 's' }}
-              }
-            }
+            <app-trip-row [trip]="trip" [recommended]="trip.uid === r.recommended_uid" />
           </li>
         } @empty {
           <li>No upcoming trips.</li>

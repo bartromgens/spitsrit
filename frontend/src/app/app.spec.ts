@@ -15,6 +15,13 @@ describe('App', () => {
     expect(element.querySelector('mat-toolbar')?.textContent).toContain('Log in');
   });
 
+  it('says it is not affiliated with NS in the footer', async () => {
+    const fixture = TestBed.createComponent(App);
+    await fixture.whenStable();
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector('footer')?.textContent).toContain('Not affiliated with NS');
+  });
+
   it('shows the username when logged in', async () => {
     TestBed.inject(Auth).user.set({ id: 1, username: 'bart' });
     const fixture = TestBed.createComponent(App);

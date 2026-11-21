@@ -1,0 +1,24 @@
+:host {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-space-1);
+}
+
+.cars {
+  display: inline-flex;
+  gap: var(--sp-space-half);
+}
+
+.car {
+  width: 0.5em;
+  height: 0.75em;
+  border-radius: var(--sp-radius-xs);
+  background: var(--sp-brand);
+  outline: var(--sp-border-width) solid var(--sp-on-brand);
+}
+
+.count {
+  font-family: var(--sp-font-mono);
+  font-size: var(--sp-text-sm);
+  font-variant-numeric: tabular-nums;
+}

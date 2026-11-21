@@ -1,7 +1,18 @@
 :host {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  min-height: 100%;
+}
+
+// The yellow toolbar keeps navy text and controls in both colour schemes.
+mat-toolbar {
+  --mat-toolbar-container-background-color: var(--sp-brand);
+  --mat-toolbar-container-text-color: var(--sp-on-brand);
+  --mat-button-text-label-text-color: var(--sp-on-brand);
+  --mat-button-text-state-layer-color: var(--sp-on-brand);
+  --mat-icon-button-icon-color: var(--sp-on-brand);
+  --mat-icon-button-state-layer-color: var(--sp-on-brand);
+  padding-inline: var(--sp-space-2);
 }
 
 .spacer {
@@ -9,31 +20,45 @@
 }
 
 .brand {
-  margin-right: 16px;
+  margin-right: var(--sp-space-2);
+  font-size: var(--sp-text-xl);
+  font-weight: var(--sp-weight-bold);
+  letter-spacing: -0.02em;
 }
 
 .nav {
   display: flex;
-  gap: 4px;
+  gap: var(--sp-space-half);
 }
 
 .nav .active {
-  font-weight: 600;
+  font-weight: var(--sp-weight-bold);
+  text-decoration: underline;
+  text-underline-offset: var(--sp-space-half);
+  text-decoration-thickness: var(--sp-border-width-strong);
 }
 
 .menu-toggle {
   display: none;
-  margin-right: 8px;
+  margin-right: var(--sp-space-1);
 }
 
 .user {
-  margin-right: 8px;
-  font: var(--mat-sys-body-medium);
+  margin-right: var(--sp-space-1);
+  font-family: var(--sp-font-mono);
+  font-size: var(--sp-text-sm);
 }
 
 main {
   flex: 1;
-  padding: 24px;
+  padding: var(--sp-space-3);
+}
+
+footer {
+  padding: var(--sp-space-2) var(--sp-space-3);
+  color: var(--mat-sys-on-surface-variant);
+  font-size: var(--sp-text-xs);
+  text-align: center;
 }
 
 @media (max-width: 600px) {
@@ -43,5 +68,13 @@ main {
 
   .nav {
     display: none;
+  }
+
+  .brand {
+    margin-right: 0;
+  }
+
+  main {
+    padding: var(--sp-space-2);
   }
 }

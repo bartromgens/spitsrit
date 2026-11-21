@@ -1,0 +1,49 @@
+// Tonal palettes for the Angular Material theme. Colours live here and in _tokens.scss only.
+@use 'sass:map';
+@use '@angular/material' as mat;
+
+// Spitsrit yellow: tone 80 is the bright train yellow, tone 40 a dark ochre that stays readable
+// as text on a light surface.
+$yellow: (
+  0: #000000,
+  10: #231b00,
+  20: #3b2f00,
+  25: #483a00,
+  30: #564500,
+  35: #645000,
+  40: #735b00,
+  50: #917400,
+  60: #b08c00,
+  70: #d3aa00,
+  80: #ffd21f,
+  90: #ffe383,
+  95: #fff0c4,
+  98: #fff8ec,
+  99: #fffbff,
+  100: #ffffff,
+);
+
+// Deep signal-box blue, used as the supporting accent.
+$blue: (
+  0: #000000,
+  10: #001a43,
+  20: #0a2e6d,
+  25: #123a82,
+  30: #1b4796,
+  35: #2653a6,
+  40: #3360b8,
+  50: #4d7bd8,
+  60: #6b96f5,
+  70: #8fb0ff,
+  80: #b2c8ff,
+  90: #d9e2ff,
+  95: #edf0ff,
+  98: #faf8ff,
+  99: #fefbff,
+  100: #ffffff,
+);
+
+// Secondary, neutral and error tones come from the Material azure palette: its neutrals are a
+// blue-tinted graphite, which suits the departure-board dark mode.
+$primary: map.merge(mat.$azure-palette, $yellow);
+$tertiary: map.merge(mat.$azure-palette, $blue);

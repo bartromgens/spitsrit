@@ -1,21 +1,17 @@
 :host {
   display: block;
-  max-width: 720px;
+  max-width: var(--sp-page-width);
 }
 
 app-commute-board,
 .add {
   display: block;
-  margin-bottom: 16px;
+  margin-bottom: var(--sp-space-2);
 }
 
 form {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  max-width: 400px;
-}
-
-.error {
-  color: var(--mat-sys-error);
+  gap: var(--sp-space-1);
+  max-width: var(--sp-form-width);
 }
