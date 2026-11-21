@@ -8,6 +8,13 @@ body {
   color: var(--mat-sys-on-surface);
   font: var(--mat-sys-body-medium);
   font-family: var(--sp-font-ui);
+  // Content cards are white (the lowest surface) on the tinted page.
+  --mat-card-outlined-container-color: var(--mat-sys-surface-container-lowest);
+
+  // Without visible cards on a phone, the page itself is the content: give it the cards' white.
+  @include layout.mobile {
+    background-color: var(--mat-sys-surface-container-lowest);
+  }
 }
 
 html {
