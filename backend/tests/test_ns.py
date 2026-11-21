@@ -370,7 +370,8 @@ def test_fetch_trips_limits_and_filters(monkeypatch: pytest.MonkeyPatch) -> None
         if path != "v3/trips":
             return {}
         seen.update(path=path, params=params)
-        return {"trips": [TRIP_ITEM] * 10 + [{"legs": []}]}
+        items = [page_item(f"t{i}", i) for i in range(20)]
+        return {"trips": [*items, {"legs": []}]}
 
     monkeypatch.setattr(ns, "_get", fake_get)
     trips = ns.fetch_trips("UT", "ASD", NOW)
@@ -378,6 +379,106 @@ def test_fetch_trips_limits_and_filters(monkeypatch: pytest.MonkeyPatch) -> None
     assert seen["path"] == "v3/trips"
     assert seen["params"]["fromStation"] == "UT"
     assert seen["params"]["toStation"] == "ASD"
+
+
+def page_item(uid: str, leaves_in: int, duration: int = 30, transfers: int = 0) -> dict[str, Any]:
+    """A raw trip item leaving `leaves_in` minutes after NOW."""
+    departure = NOW + timedelta(minutes=leaves_in)
+    arrival = departure + timedelta(minutes=duration)
+    return {
+        "uid": uid,
+        "transfers": transfers,
+        "legs": [
+            {
+                "travelType": "WALK",
+                "origin": {"plannedDateTime": departure.isoformat()},
+                "destination": {"plannedDateTime": arrival.isoformat()},
+            }
+        ],
+    }
+
+
+def serve_pages(
+    monkeypatch: pytest.MonkeyPatch, pages: list[list[dict[str, Any]]]
+) -> list[dict[str, str] | None]:
+    """Serve `pages` one per trips request, each pointing at the next; returns the params seen."""
+    calls: list[dict[str, str] | None] = []
+
+    def fake_get(path: str, params: dict[str, str] | None = None) -> Any:
+        calls.append(params)
+        index = len(calls) - 1
+        page = pages[min(index, len(pages) - 1)]
+        payload: dict[str, Any] = {"trips": page}
+        if index < len(pages) - 1:
+            payload["scrollRequestForwardContext"] = f"ctx{index + 1}"
+        return payload
+
+    monkeypatch.setattr(ns, "_get", fake_get)
+    return calls
+
+
+def test_fetch_trips_requests_the_next_page_until_an_hour_is_covered(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls = serve_pages(
+        monkeypatch,
+        [
+            [page_item("a", 5), page_item("b", 25)],
+            [page_item("c", 45), page_item("d", 65)],
+            [page_item("e", 85)],
+        ],
+    )
+    trips = ns.fetch_trips("UT", "ASD", NOW)
+    assert [t.uid for t in trips] == ["a", "b", "c", "d"]
+    assert len(calls) == 2
+    assert calls[0] is not None and "context" not in calls[0]
+    assert calls[1] is not None and calls[1]["context"] == "ctx1"
+
+
+def test_fetch_trips_makes_at_most_three_requests(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls = serve_pages(
+        monkeypatch,
+        [[page_item("a", 5)], [page_item("b", 10)], [page_item("c", 15)], [page_item("d", 20)]],
+    )
+    trips = ns.fetch_trips("UT", "ASD", NOW)
+    assert len(calls) == ns.MAX_TRIP_REQUESTS == 3
+    assert [t.uid for t in trips] == ["a", "b", "c"]
+
+
+def test_fetch_trips_stops_without_forward_context(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls = serve_pages(monkeypatch, [[page_item("a", 5)]])
+    assert [t.uid for t in ns.fetch_trips("UT", "ASD", NOW)] == ["a"]
+    assert len(calls) == 1
+
+
+def test_fetch_trips_stops_when_a_page_adds_nothing_new(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls = serve_pages(
+        monkeypatch, [[page_item("a", 5)], [page_item("a", 5)], [page_item("b", 9)]]
+    )
+    assert [t.uid for t in ns.fetch_trips("UT", "ASD", NOW)] == ["a"]
+    assert len(calls) == 2
+
+
+def test_fetch_trips_lists_duplicates_across_pages_once(monkeypatch: pytest.MonkeyPatch) -> None:
+    serve_pages(
+        monkeypatch,
+        [[page_item("a", 5), page_item("b", 20)], [page_item("b", 20), page_item("c", 70)]],
+    )
+    assert [t.uid for t in ns.fetch_trips("UT", "ASD", NOW)] == ["a", "b", "c"]
+
+
+def test_fetch_trips_filters_before_checking_the_hour(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls = serve_pages(
+        monkeypatch,
+        [
+            [page_item("slow", 5, duration=90), page_item("far", 70, duration=90)],
+            [page_item("hop", 40, transfers=3), page_item("ok", 50, duration=30)],
+            [page_item("late", 80, duration=30)],
+        ],
+    )
+    trips = ns.fetch_trips("UT", "ASD", NOW, max_duration_minutes=40, max_transfers=1)
+    assert [t.uid for t in trips] == ["ok", "late"]
+    assert len(calls) == 3
 
 
 @override_settings(NS_API_KEY="")

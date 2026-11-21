@@ -45,6 +45,23 @@ export class CommuteBoard implements OnInit {
   protected readonly data = signal<CommuteTrips | null>(null);
   protected readonly error = signal('');
   protected readonly filterError = signal('');
+  protected readonly filtersOpen = signal(false);
+  private readonly savedDuration = signal<number | null>(null);
+  private readonly savedTransfers = signal<number | null>(null);
+
+  /** Chip labels for the saved filters, shown while the fields are collapsed. */
+  protected readonly chips = computed(() => {
+    const chips: string[] = [];
+    const duration = this.savedDuration();
+    const transfers = this.savedTransfers();
+    if (duration !== null) {
+      chips.push(`≤ ${duration} min`);
+    }
+    if (transfers !== null) {
+      chips.push(`≤ ${transfers} ${transfers === 1 ? 'transfer' : 'transfers'}`);
+    }
+    return chips;
+  });
 
   protected readonly maxDuration = new FormControl<number | null>(null, [Validators.min(1)]);
   protected readonly maxTransfers = new FormControl<number | null>(null, [Validators.min(0)]);
@@ -66,6 +83,8 @@ export class CommuteBoard implements OnInit {
   ngOnInit(): void {
     this.maxDuration.setValue(this.commute().max_duration_minutes ?? null);
     this.maxTransfers.setValue(this.commute().max_transfers ?? null);
+    this.savedDuration.set(this.commute().max_duration_minutes ?? null);
+    this.savedTransfers.set(this.commute().max_transfers ?? null);
     void this.refresh();
     const timer = setInterval(() => void this.refresh(), REFRESH_MS);
     this.destroyRef.onDestroy(() => clearInterval(timer));
@@ -85,6 +104,7 @@ export class CommuteBoard implements OnInit {
   /** Saves the filters as this commute's defaults, then reloads the trips under them. */
   protected async saveFilters(): Promise<void> {
     if (this.maxDuration.invalid || this.maxTransfers.invalid) {
+      this.filtersOpen.set(true);
       return;
     }
     try {
@@ -96,8 +116,11 @@ export class CommuteBoard implements OnInit {
         },
       });
       this.filterError.set('');
+      this.savedDuration.set(this.maxDuration.value);
+      this.savedTransfers.set(this.maxTransfers.value);
     } catch {
       this.filterError.set('Could not save the filters.');
+      this.filtersOpen.set(true);
       return;
     }
     await this.refresh();

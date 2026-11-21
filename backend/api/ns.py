@@ -13,7 +13,7 @@ import urllib.parse
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, replace
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any
 
 from django.conf import settings
@@ -24,7 +24,9 @@ KEY_HEADER = "Ocp-Apim-Subscription-Key"
 STATIONS_CACHE_KEY = "ns:stations"
 STATIONS_CACHE_SECONDS = 24 * 60 * 60
 TIMEOUT_SECONDS = 10
-MAX_TRIPS = 6
+MAX_TRIPS = 15
+MAX_TRIP_REQUESTS = 3
+COVERED_MINUTES = 60
 JOURNEY_CACHE_SECONDS = 2 * 60
 SHORTER_STOCK_CLASSIFICATIONS = ("BUSY", "EXTRA_BUSY")
 
@@ -298,17 +300,56 @@ def _with_journey(trip: Trip, info: JourneyInfo | None) -> Trip:
     )
 
 
-def fetch_trips(origin_code: str, destination_code: str, when: datetime) -> list[Trip]:
-    payload = _get(
-        "v3/trips",
-        {
+def _forward_context(payload: dict[str, Any]) -> str | None:
+    """The `context` that asks for the next page of trips, if NS offers one."""
+    context = payload.get("scrollRequestForwardContext")
+    if not context:
+        items = payload.get("trips") or []
+        context = items[-1].get("scrollRequestForwardContext") if items else None
+    return str(context) if context else None
+
+
+def fetch_trips(
+    origin_code: str,
+    destination_code: str,
+    when: datetime,
+    max_duration_minutes: int | None = None,
+    max_transfers: int | None = None,
+) -> list[Trip]:
+    """Trips from `when` on, within the filters, covering at least the next hour.
+
+    Requests pages forward (at most `MAX_TRIP_REQUESTS`) until the last kept trip leaves
+    `COVERED_MINUTES` or more after `when`, NS has no further page, or a page adds nothing new.
+    """
+    kept: list[tuple[Trip, dict[str, Any]]] = []
+    seen: set[str] = set()
+    context: str | None = None
+    horizon = when + timedelta(minutes=COVERED_MINUTES)
+    for _ in range(MAX_TRIP_REQUESTS):
+        params = {
             "fromStation": origin_code,
             "toStation": destination_code,
             "dateTime": when.isoformat(),
-        },
-    )
-    parsed = [(parse_trip(item), item) for item in payload.get("trips", [])]
-    kept = [(trip, item) for trip, item in parsed if trip is not None][:MAX_TRIPS]
+        }
+        if context:
+            params["context"] = context
+        payload = _get("v3/trips", params)
+        added = False
+        for item in payload.get("trips", []):
+            trip = parse_trip(item)
+            if trip is None or trip.uid in seen:
+                continue
+            seen.add(trip.uid)
+            added = True
+            if (max_duration_minutes is None or trip.duration_minutes <= max_duration_minutes) and (
+                max_transfers is None or trip.transfers <= max_transfers
+            ):
+                kept.append((trip, item))
+        context = _forward_context(payload)
+        covered = any(trip.departure_actual >= horizon for trip, _ in kept)
+        if covered or not added or not context:
+            break
+    kept = kept[:MAX_TRIPS]
     # Only the first train leg of a trip is shown, so only its journey is fetched.
     with ThreadPoolExecutor(max_workers=MAX_TRIPS) as pool:
         journeys = list(pool.map(_leg_journey, [_train_leg(item) for _, item in kept]))

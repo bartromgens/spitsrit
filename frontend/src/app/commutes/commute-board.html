@@ -6,30 +6,51 @@
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-content>
-    <div class="filters">
-      <mat-form-field subscriptSizing="dynamic">
-        <mat-label>Max duration (min)</mat-label>
-        <input
-          matInput
-          type="number"
-          min="1"
-          data-testid="max-duration"
-          [formControl]="maxDuration"
-          (change)="saveFilters()"
-        />
-      </mat-form-field>
-      <mat-form-field subscriptSizing="dynamic">
-        <mat-label>Max transfers</mat-label>
-        <input
-          matInput
-          type="number"
-          min="0"
-          data-testid="max-transfers"
-          [formControl]="maxTransfers"
-          (change)="saveFilters()"
-        />
-      </mat-form-field>
+    <div class="filter-bar">
+      <button
+        matButton="tonal"
+        data-testid="filters-toggle"
+        [attr.aria-expanded]="filtersOpen()"
+        (click)="filtersOpen.set(!filtersOpen())"
+      >
+        Filters
+      </button>
+      @if (!filtersOpen()) {
+        <mat-chip-set aria-label="Active filters">
+          @for (chip of chips(); track chip) {
+            <mat-chip data-testid="filter-chip">
+              <button matChipAction (click)="filtersOpen.set(true)">{{ chip }}</button>
+            </mat-chip>
+          }
+        </mat-chip-set>
+      }
     </div>
+    @if (filtersOpen()) {
+      <div class="filters">
+        <mat-form-field subscriptSizing="dynamic">
+          <mat-label>Max duration (min)</mat-label>
+          <input
+            matInput
+            type="number"
+            min="1"
+            data-testid="max-duration"
+            [formControl]="maxDuration"
+            (change)="saveFilters()"
+          />
+        </mat-form-field>
+        <mat-form-field subscriptSizing="dynamic">
+          <mat-label>Max transfers</mat-label>
+          <input
+            matInput
+            type="number"
+            min="0"
+            data-testid="max-transfers"
+            [formControl]="maxTransfers"
+            (change)="saveFilters()"
+          />
+        </mat-form-field>
+      </div>
+    }
     @if (filterError()) {
       <p class="error" role="alert">{{ filterError() }}</p>
     }
