@@ -1,6 +1,6 @@
 import { Component, input } from '@angular/core';
 
-/** The number of carriages as a large number with a carriage icon; hidden when unknown. */
+/** The number of carriages as a large number with a carriage icon; a ? when unknown. */
 @Component({
   selector: 'app-carriages',
   styleUrl: './carriages.scss',

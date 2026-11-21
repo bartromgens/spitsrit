@@ -139,9 +139,9 @@ describe('TripRow', () => {
     expect(element().textContent).not.toContain('carriages');
   });
 
-  it('hides the carriages and the seats when unknown', async () => {
+  it('shows a ? for the carriages and hides the seats when unknown', async () => {
     await render({ carriages: null, seats: null });
-    expect(element().querySelector('app-carriages svg')).toBeNull();
+    expect(element().querySelector('app-carriages .count')?.textContent).toBe('?');
     expect(element().querySelector('.seats')).toBeNull();
   });
 
