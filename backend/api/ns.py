@@ -1,10 +1,9 @@
 """A small client for the NS Reisinformatie API, and the trip logic built on it.
 
-The request paths, query parameters, header name and response fields below follow the
-NS API portal as remembered at build time. They are NOT yet verified against a live
-response: the portal documentation is behind a login. Check them with a real key
-(`make`-free: `curl -H "Ocp-Apim-Subscription-Key: $NS_API_KEY" <url>`) and fix the
-constants and the `parse_*` functions here; nothing else depends on the wire format.
+The official OpenAPI spec of this API is in `docs/ns-api/reisinformatie-openapi.json`
+(the NS portal docs are behind a login). Check request paths, parameters and response
+fields against it. The wire format is handled only by the constants and the `parse_*`
+functions here; nothing else depends on it.
 """
 
 import json
