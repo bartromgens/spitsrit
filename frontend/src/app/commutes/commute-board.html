@@ -89,7 +89,8 @@
         }
       </ul>
     } @else if (!error()) {
-      <p>Loading…</p>
+      <span class="sp-skeleton advice-skeleton" aria-hidden="true"></span>
+      <app-trip-list-skeleton />
     }
   </mat-card-content>
   <mat-card-actions>

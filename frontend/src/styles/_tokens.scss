@@ -20,6 +20,8 @@
   --sp-on-sign: #ffffff;
   --sp-pip-on: light-dark(#0a2054, #ffd21f);
   --sp-pip-off: light-dark(#c3c8d6, #4a5163);
+  --sp-skeleton: light-dark(#e6e8ee, #2c3140); // loading placeholder
+  --sp-skeleton-shine: light-dark(rgb(255 255 255 / 60%), rgb(255 255 255 / 8%));
 
   // Type
   --sp-font-ui: 'Space Grotesk', sans-serif;

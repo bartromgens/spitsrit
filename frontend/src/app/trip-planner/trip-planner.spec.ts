@@ -83,6 +83,38 @@ describe('TripPlanner', () => {
     expect((fixture.nativeElement as HTMLElement).querySelector('li.best')).not.toBeNull();
   });
 
+  it('holds the place of the results with placeholder rows while planning', async () => {
+    const element = fixture.nativeElement as HTMLElement;
+    const skeleton = (): Element | null =>
+      element.querySelector('[data-testid="trip-list-skeleton"]');
+    const button = (): HTMLButtonElement => element.querySelector('button[type="submit"]')!;
+    expect(skeleton()).toBeNull();
+    choose(utrecht, amsterdam);
+    const planned = planner.plan();
+    await settle(fixture);
+    expect(skeleton()).not.toBeNull();
+    expect(button().disabled).toBe(true);
+    http
+      .expectOne('/api/trips/?from=UT&to=ASD')
+      .flush({ fetched_at: '', trips: [trip], recommended_uid: 'a', wait_minutes: 0 });
+    await planned;
+    await settle(fixture);
+    expect(skeleton()).toBeNull();
+    expect(button().disabled).toBe(false);
+    expect(element.querySelector('[data-testid="trip-results"]')).not.toBeNull();
+  });
+
+  it('drops the placeholders when planning fails', async () => {
+    choose(utrecht, amsterdam);
+    const planned = planner.plan();
+    http.expectOne('/api/trips/?from=UT&to=ASD').flush(null, { status: 503, statusText: 'x' });
+    await planned;
+    await settle(fixture);
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector('[data-testid="trip-list-skeleton"]')).toBeNull();
+    expect(text()).toContain('Train times are unavailable right now.');
+  });
+
   it('remembers the planned stations and pre-fills them next time', async () => {
     choose(utrecht, amsterdam);
     const planned = planner.plan();
