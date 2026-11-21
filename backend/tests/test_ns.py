@@ -324,12 +324,18 @@ def test_parse_trip_without_legs_or_times_is_dropped() -> None:
 def test_parse_stations_skips_incomplete_entries() -> None:
     payload = {
         "payload": [
-            {"code": "UT", "namen": {"lang": "Utrecht Centraal"}},
+            {"code": "UT", "namen": {"lang": "Utrecht Centraal"}, "stationType": "MEGA_STATION"},
+            {"code": "UTM", "namen": {"lang": "Utrecht Maliebaan"}, "stationType": "NEW_TYPE"},
             {"code": "XX"},
             {"namen": {"lang": "Nameless"}},
         ]
     }
-    assert ns.parse_stations(payload) == [ns.Station("UT", "Utrecht Centraal")]
+    stations = ns.parse_stations(payload)
+    assert stations == [
+        ns.Station("UT", "Utrecht Centraal"),
+        ns.Station("UTM", "Utrecht Maliebaan"),
+    ]
+    assert [s.rank for s in stations] == [0, len(ns.STATION_TYPES)]
 
 
 STATIONS = [
@@ -347,6 +353,26 @@ def test_search_stations_ranks_code_then_prefix_then_substring(
     names = [s.name for s in ns.search_stations("ut")]
     assert names == ["Utrecht Centraal", "Utrecht Leidsche Rijn", "Duitsland-Utrecht"]
     assert ns.search_stations("   ") == []
+
+
+def test_search_stations_puts_big_stations_first(monkeypatch: pytest.MonkeyPatch) -> None:
+    rank = ns.STATION_TYPES.index
+    stations = [
+        ns.Station("UTVR", "Utrecht Vaartsche Rijn", rank("KNOOPPUNT_STOPTREIN_STATION")),
+        ns.Station("UTLR", "Utrecht Leidsche Rijn", rank("STOPTREIN_STATION")),
+        ns.Station("UTO", "Utrecht Overvecht", rank("KNOOPPUNT_STOPTREIN_STATION")),
+        ns.Station("UT", "Utrecht Centraal", rank("MEGA_STATION")),
+        ns.Station("DUT", "Duitsland-Utrecht", rank("MEGA_STATION")),
+    ]
+    monkeypatch.setattr(ns, "fetch_stations", lambda: stations)
+    names = [s.name for s in ns.search_stations("Utrecht")]
+    assert names == [
+        "Utrecht Centraal",
+        "Utrecht Overvecht",
+        "Utrecht Vaartsche Rijn",
+        "Utrecht Leidsche Rijn",
+        "Duitsland-Utrecht",
+    ]
 
 
 def test_fetch_stations_is_cached(monkeypatch: pytest.MonkeyPatch) -> None:

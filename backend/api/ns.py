@@ -12,7 +12,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from datetime import datetime, timedelta
 from typing import Any
 
@@ -21,7 +21,8 @@ from django.core.cache import cache
 
 BASE_URL = "https://gateway.apiportal.ns.nl/reisinformatie-api/api"
 KEY_HEADER = "Ocp-Apim-Subscription-Key"
-STATIONS_CACHE_KEY = "ns:stations"
+# Bump the version when `Station` changes, so a cached list of the old shape is not reused.
+STATIONS_CACHE_KEY = "ns:stations:v2"
 STATIONS_CACHE_SECONDS = 24 * 60 * 60
 TIMEOUT_SECONDS = 10
 MAX_TRIPS = 15
@@ -29,6 +30,18 @@ MAX_TRIP_REQUESTS = 3
 COVERED_MINUTES = 60
 JOURNEY_CACHE_SECONDS = 2 * 60
 SHORTER_STOCK_CLASSIFICATIONS = ("BUSY", "EXTRA_BUSY")
+# NS `stationType` values from most to least important, as seen in real `v2/stations` responses.
+# Unknown types rank after all of these.
+STATION_TYPES = (
+    "MEGA_STATION",
+    "KNOOPPUNT_INTERCITY_STATION",
+    "INTERCITY_STATION",
+    "KNOOPPUNT_SNELTREIN_STATION",
+    "SNELTREIN_STATION",
+    "KNOOPPUNT_STOPTREIN_STATION",
+    "STOPTREIN_STATION",
+    "FACULTATIEF_STATION",
+)
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +58,8 @@ class NsNotConfigured(NsError):
 class Station:
     code: str
     name: str
+    # Lower is more important: the index of the NS `stationType` in `STATION_TYPES`.
+    rank: int = field(default=len(STATION_TYPES), compare=False)
 
 
 @dataclass(frozen=True)
@@ -99,13 +114,21 @@ def _time(value: str | None) -> datetime | None:
     return datetime.fromisoformat(value) if value else None
 
 
+def _station_rank(station_type: Any) -> int:
+    if station_type in STATION_TYPES:
+        return STATION_TYPES.index(station_type)
+    return len(STATION_TYPES)
+
+
 def parse_stations(payload: Any) -> list[Station]:
     stations = []
     for item in payload.get("payload", []):
         code = item.get("code")
         name = (item.get("namen") or {}).get("lang")
         if code and name:
-            stations.append(Station(code=code, name=name))
+            stations.append(
+                Station(code=code, name=name, rank=_station_rank(item.get("stationType")))
+            )
     return stations
 
 
@@ -220,10 +243,11 @@ def fetch_stations() -> list[Station]:
 
 
 def search_stations(query: str, limit: int = 15) -> list[Station]:
+    """Code matches, then name prefixes, then name substrings; big stations first in each."""
     needle = query.strip().casefold()
     if not needle:
         return []
-    stations = fetch_stations()
+    stations = sorted(fetch_stations(), key=lambda s: (s.rank, s.name.casefold()))
     exact = [s for s in stations if s.code.casefold() == needle]
     starts = [s for s in stations if s.name.casefold().startswith(needle) and s not in exact]
     contains = [
