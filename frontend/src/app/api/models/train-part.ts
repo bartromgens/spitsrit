@@ -3,5 +3,6 @@
 
 export interface TrainPart {
   facilities: Array<string>;
+  image_url: string | null;
   stock_identifier: string;
 }

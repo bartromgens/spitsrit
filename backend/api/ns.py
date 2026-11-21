@@ -68,6 +68,8 @@ class TrainPart:
 
     stock_identifier: str
     facilities: tuple[str, ...] = ()
+    # NS's side view of the unit (`image.uri`), only when it is an https URL.
+    image_url: str | None = None
 
 
 @dataclass(frozen=True)
@@ -220,6 +222,11 @@ def _positive_int(value: Any) -> int | None:
     return value if isinstance(value, int) and not isinstance(value, bool) and value > 0 else None
 
 
+def _image_url(image: Any) -> str | None:
+    uri = image.get("uri") if isinstance(image, dict) else None
+    return uri if isinstance(uri, str) and uri.startswith("https://") else None
+
+
 def _train_parts(parts: Any) -> tuple[TrainPart, ...]:
     if not isinstance(parts, list):
         return ()
@@ -227,6 +234,7 @@ def _train_parts(parts: Any) -> tuple[TrainPart, ...]:
         TrainPart(
             stock_identifier=str(part.get("stockIdentifier") or ""),
             facilities=tuple(str(f) for f in part.get("facilities") or [] if f),
+            image_url=_image_url(part.get("image")),
         )
         for part in parts
         if isinstance(part, dict)

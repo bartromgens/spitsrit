@@ -102,6 +102,18 @@ export class TripDetails {
     })),
   );
 
+  /** NS's side views of the units in train order, for those that have one. */
+  protected readonly images = computed(() =>
+    this.trip()
+      .train_parts.map((part) => part.image_url)
+      .filter((url): url is string => !!url),
+  );
+
+  protected readonly imagesLabel = computed(() => {
+    const count = this.images().length;
+    return `${this.trip().train_type ?? 'Train'}, ${count} unit${count === 1 ? '' : 's'}`;
+  });
+
   private readonly closeButton = viewChild.required<ElementRef<HTMLButtonElement>>('closeButton');
 
   constructor() {
@@ -111,6 +123,11 @@ export class TripDetails {
       this.trip();
       this.closeButton().nativeElement.focus();
     });
+  }
+
+  /** An image that fails to load leaves no broken-image icon or gap in the strip. */
+  protected hideImage(event: Event): void {
+    (event.target as HTMLElement).hidden = true;
   }
 
   protected facility(code: string): string {

@@ -718,8 +718,13 @@ components:
           type: array
           items:
             type: string
+        image_url:
+          type: string
+          format: uri
+          nullable: true
       required:
       - facilities
+      - image_url
       - stock_identifier
     Trip:
       type: object

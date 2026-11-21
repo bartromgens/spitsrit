@@ -74,6 +74,7 @@ class StationSerializer(serializers.Serializer[Any]):
 class TrainPartSerializer(serializers.Serializer[Any]):
     stock_identifier = serializers.CharField()
     facilities = serializers.ListField(child=serializers.CharField())
+    image_url = serializers.URLField(allow_null=True)
 
 
 class LegStopSerializer(serializers.Serializer[Any]):

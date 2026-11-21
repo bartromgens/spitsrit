@@ -94,6 +94,26 @@ h3 {
   margin: 0;
 }
 
+// The units side by side at a readable height; a long train scrolls sideways, as in the NS app.
+.train-images {
+  display: flex;
+  margin-top: var(--sp-space-1);
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+
+  img {
+    flex: none;
+    width: auto;
+    height: 3rem;
+  }
+
+  &:focus-visible {
+    outline: var(--sp-border-width-strong) solid var(--sp-link);
+    border-radius: var(--sp-radius-xs);
+  }
+}
+
 .units {
   display: grid;
   gap: var(--sp-space-half);

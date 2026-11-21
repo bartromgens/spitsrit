@@ -26,3 +26,9 @@ A real journey response is in `backend/tests/fixtures/ns_journey_3148.json`.
   `KNOOPPUNT_SNELTREIN_STATION`, `SNELTREIN_STATION`, `KNOOPPUNT_STOPTREIN_STATION`,
   `STOPTREIN_STATION` and `FACULTATIEF_STATION` (checked November 2026). Utrecht Centraal is a
   `MEGA_STATION`; station search ranks on this.
+
+- **Train images.** Each entry of `trainParts` in `actualStock`/`plannedStock` has `image.uri`, a
+  side view of that unit on `vt.ns-mlab.nl` (e.g. `virmm1_4.png` and `virm_4.png` for two VIRM
+  units of one train: the file depends on the subtype, not only `trainType`). The images seen are
+  transparent PNGs of 2259 × 119 px per 4-carriage unit (checked November 2026). Placeholder units
+  (`stockIdentifier: "0"`) also carry an image.

@@ -226,9 +226,26 @@ def test_parse_boarding_stock_reads_the_units_and_facilities() -> None:
     stock = ns.parse_boarding_stock(stops, "8400621")
     assert stock is not None
     assert stock.parts == (
-        ns.TrainPart("9469", ("WIFI", "TOILET", "STILTE", "FIETS", "STROOM")),
-        ns.TrainPart("9596", ("WIFI", "TOILET", "STILTE", "FIETS")),
+        ns.TrainPart(
+            "9469",
+            ("WIFI", "TOILET", "STILTE", "FIETS", "STROOM"),
+            "https://vt.ns-mlab.nl/v1/images/virmm1_4.png",
+        ),
+        ns.TrainPart(
+            "9596",
+            ("WIFI", "TOILET", "STILTE", "FIETS"),
+            "https://vt.ns-mlab.nl/v1/images/virm_4.png",
+        ),
     )
+
+
+@pytest.mark.parametrize(
+    "image",
+    [None, {}, {"uri": ""}, {"uri": "http://vt.ns-mlab.nl/a.png"}, {"uri": "javascript:x"}, "x"],
+)
+def test_train_part_without_a_usable_image(image: Any) -> None:
+    [part] = ns._train_parts([{"stockIdentifier": "1", "facilities": [], "image": image}])
+    assert part.image_url is None
 
 
 def test_fetch_trips_passes_the_boarding_units_on(monkeypatch: pytest.MonkeyPatch) -> None:

@@ -99,8 +99,12 @@ const trip: Trip = {
   train_origin: 'Utrecht Centraal',
   train_destination: 'Den Haag Centraal',
   train_parts: [
-    { stock_identifier: '9469', facilities: ['WIFI', 'STILTE', 'NEW_THING'] },
-    { stock_identifier: '9596', facilities: [] },
+    {
+      stock_identifier: '9469',
+      facilities: ['WIFI', 'STILTE', 'NEW_THING'],
+      image_url: 'https://vt.ns-mlab.nl/v1/images/virmm1_4.png',
+    },
+    { stock_identifier: '9596', facilities: [], image_url: null },
   ],
   punctuality: 90,
   messages: ['Storing tussen Gouda en Rotterdam'],
@@ -141,6 +145,27 @@ describe('TripDetails', () => {
     expect(units[0].textContent).toContain('new_thing');
     expect(units[1].textContent).toContain('no facilities listed');
     expect(text()).toContain('8 carriages in 2 units');
+  });
+
+  it('shows the side views of the units that have one, in train order', () => {
+    const strip = element.querySelector('[data-testid="train-images"]')!;
+    const images = [...strip.querySelectorAll('img')].map((img) => img.getAttribute('src'));
+    expect(images).toEqual(['https://vt.ns-mlab.nl/v1/images/virmm1_4.png']);
+    expect(strip.getAttribute('aria-label')).toBe('VIRM, 1 unit');
+  });
+
+  it('hides a unit image that fails to load', () => {
+    const img = element.querySelector<HTMLImageElement>('[data-testid="train-images"] img')!;
+    img.dispatchEvent(new Event('error'));
+    expect(img.hidden).toBe(true);
+  });
+
+  it('leaves out the image strip when no unit has an image', async () => {
+    await render({
+      ...trip,
+      train_parts: trip.train_parts.map((part) => ({ ...part, image_url: null })),
+    });
+    expect(element.querySelector('[data-testid="train-images"]')).toBeNull();
   });
 
   it('shows each leg with its stops, tracks and notes', () => {

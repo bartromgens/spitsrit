@@ -200,13 +200,19 @@ def test_plan_trip_serializes_the_trip_details(
         legs=(leg,),
         messages=("Storing",),
         punctuality=90.0,
-        train_parts=(ns.TrainPart("9469", ("WIFI", "STILTE")),),
+        train_parts=(ns.TrainPart("9469", ("WIFI", "STILTE"), "https://example.org/virm.png"),),
     )
     monkeypatch.setattr(ns, "fetch_trips", lambda *args: [detailed])
     [trip] = logged_in.get("/api/trips/?from=UT&to=ASD").json()["trips"]
     assert trip["messages"] == ["Storing"]
     assert trip["punctuality"] == 90.0
-    assert trip["train_parts"] == [{"stock_identifier": "9469", "facilities": ["WIFI", "STILTE"]}]
+    assert trip["train_parts"] == [
+        {
+            "stock_identifier": "9469",
+            "facilities": ["WIFI", "STILTE"],
+            "image_url": "https://example.org/virm.png",
+        }
+    ]
     [serialized] = trip["legs"]
     assert serialized["name"] == "IC 2136"
     assert serialized["departure_track"] == "7"
