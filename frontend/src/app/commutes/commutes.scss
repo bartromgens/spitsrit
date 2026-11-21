@@ -4,6 +4,7 @@
 }
 
 app-commute-board,
+.board-skeleton,
 .add {
   display: block;
   margin-bottom: var(--sp-space-2);
@@ -14,4 +15,44 @@ form {
   flex-direction: column;
   gap: var(--sp-space-1);
   max-width: var(--sp-form-width);
+}
+
+// A commute board's shape while the commutes load: its name, route, filters button, advice,
+// trips and actions, each the size of the real thing (see commute-board).
+.board-skeleton {
+  .title {
+    width: 8rem;
+  }
+
+  .subtitle {
+    width: 16rem;
+    max-width: 100%;
+  }
+
+  .header-button {
+    flex: none;
+    width: 2.5rem;
+    height: 2.5rem;
+    margin-left: auto;
+
+    &::after {
+      inset: 0;
+      border-radius: var(--sp-radius-pill);
+    }
+  }
+
+  .advice {
+    width: 7rem;
+    margin: 0 0 var(--sp-space-1);
+    font-size: var(--sp-text-lg);
+  }
+
+  .action {
+    width: 5rem;
+    height: 2.5rem;
+
+    &::after {
+      inset: var(--sp-space-1) var(--sp-space-1);
+    }
+  }
 }

@@ -4,6 +4,13 @@
   font-weight: var(--sp-weight-bold);
 }
 
+// Takes the advice line's place while the trips load.
+.advice-skeleton {
+  width: 7rem;
+  margin: 0 0 var(--sp-space-1);
+  font-size: var(--sp-text-lg);
+}
+
 // The filters icon sits at the top right of the card header, next to the commute's name.
 .filters-button {
   margin-left: auto;

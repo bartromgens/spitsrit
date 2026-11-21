@@ -1,0 +1,77 @@
+// The same grid and line heights as a trip row (see trip-row.scss), so swapping the placeholders
+// for real rows keeps the list the same height.
+:host {
+  display: block;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 6.5rem minmax(0, 1fr) 3rem 5.5rem;
+  align-items: center;
+  column-gap: var(--sp-space-1);
+  row-gap: var(--sp-space-half);
+}
+
+.time {
+  width: 4rem;
+  font-size: var(--sp-text-lg);
+}
+
+.train {
+  width: 1.75rem;
+  font-size: var(--sp-text-sm);
+}
+
+// A platform sign is 1.75em of small text, taller than a line of it.
+.platform {
+  justify-self: center;
+  width: 1.75rem;
+  height: calc(1.75 * var(--sp-text-sm));
+  font-size: var(--sp-text-sm);
+
+  &::after {
+    inset: 0;
+  }
+}
+
+.load {
+  justify-self: end;
+  width: 4rem;
+  font-size: var(--sp-text-sm);
+}
+
+// The route and the seats share a baseline like the real line (see train-length), which makes it
+// a little taller than one line of text; the zero-width spaces give the bars that baseline.
+.meta {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  column-gap: var(--sp-space-2);
+}
+
+.route {
+  width: 55%;
+  font-size: var(--sp-text-xs);
+}
+
+.stock {
+  display: inline-flex;
+  align-items: center;
+  width: 5rem;
+  height: auto;
+  font-size: var(--sp-text-sm);
+}
+
+// Sized like the seats icon, which sets the height of the real line.
+.icon {
+  width: 1.1em;
+  height: 1.1em;
+}
+
+.journey {
+  grid-column: 1 / -1;
+  width: 15rem;
+  max-width: 100%;
+  font-size: var(--sp-text-sm);
+}

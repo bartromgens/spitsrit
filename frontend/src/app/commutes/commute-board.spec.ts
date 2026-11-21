@@ -76,6 +76,20 @@ describe('CommuteBoard', () => {
       (c.textContent ?? '').trim(),
     );
 
+  it('holds the place of the trips with placeholder rows while they load', async () => {
+    const skeleton = (): Element | null => el().querySelector('[data-testid="trip-list-skeleton"]');
+    expect(skeleton()).not.toBeNull();
+    expect(el().querySelector('.advice-skeleton')).not.toBeNull();
+    await flush(trips({ trips: [trip({})], recommended_uid: 'a', wait_minutes: 0 }));
+    expect(skeleton()).toBeNull();
+    expect(el().querySelector('.advice-skeleton')).toBeNull();
+  });
+
+  it('shows no placeholders when the trips fail to load', async () => {
+    await flush(null, 503);
+    expect(el().querySelector('[data-testid="trip-list-skeleton"]')).toBeNull();
+  });
+
   it('shows the route and tells you to leave now', async () => {
     await flush(
       trips({ trips: [trip({ train: 'IC 2736' })], recommended_uid: 'a', wait_minutes: 0 }),

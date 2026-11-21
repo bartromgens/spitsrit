@@ -9,6 +9,22 @@
 } @empty {
   @if (loaded()) {
     <p>No commutes yet. Add your first one below.</p>
+  } @else {
+    <mat-card class="sp-card board-skeleton" appearance="outlined" data-testid="commutes-skeleton">
+      <mat-card-header aria-hidden="true">
+        <mat-card-title><span class="sp-skeleton title"></span></mat-card-title>
+        <mat-card-subtitle><span class="sp-skeleton subtitle"></span></mat-card-subtitle>
+        <span class="sp-skeleton header-button"></span>
+      </mat-card-header>
+      <mat-card-content>
+        <span class="sp-skeleton advice" aria-hidden="true"></span>
+        <app-trip-list-skeleton />
+      </mat-card-content>
+      <mat-card-actions aria-hidden="true">
+        <span class="sp-skeleton action"></span>
+        <span class="sp-skeleton action"></span>
+      </mat-card-actions>
+    </mat-card>
   }
 }
 
