@@ -20,3 +20,9 @@ Check these alongside `reisinformatie-openapi.json`.
   `status: "ORIGIN"`); no extra call is needed beyond the one made for the train size.
 
 A real journey response is in `backend/tests/fixtures/ns_journey_3148.json`.
+
+- **`stationType` values.** The spec types `stationType` as a plain string. Real `v2/stations`
+  responses use `MEGA_STATION`, `KNOOPPUNT_INTERCITY_STATION`, `INTERCITY_STATION`,
+  `KNOOPPUNT_SNELTREIN_STATION`, `SNELTREIN_STATION`, `KNOOPPUNT_STOPTREIN_STATION`,
+  `STOPTREIN_STATION` and `FACULTATIEF_STATION` (checked November 2026). Utrecht Centraal is a
+  `MEGA_STATION`; station search ranks on this.
