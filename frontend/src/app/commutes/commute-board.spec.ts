@@ -117,6 +117,13 @@ describe('CommuteBoard', () => {
     expect(rows[1].textContent).toContain('1 transfer');
   });
 
+  it('lays the results out edge to edge on mobile', async () => {
+    await flush(trips({ trips: [trip({ uid: 'a' })] }));
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector('ul.sp-trips')?.classList).toContain('sp-full-bleed');
+    expect(element.querySelector('mat-card')?.classList).toContain('sp-card');
+  });
+
   it('highlights delays and cancellations', async () => {
     await flush(
       trips({

@@ -1,4 +1,4 @@
-<mat-card appearance="outlined">
+<mat-card class="sp-card" appearance="outlined">
   <mat-card-header>
     <mat-card-title>{{ commute().name }}</mat-card-title>
     <mat-card-subtitle>
@@ -60,7 +60,7 @@
     @if (data(); as d) {
       <p class="advice" data-testid="advice">{{ advice() }}</p>
       <app-train-route-toggle />
-      <ul class="sp-trips">
+      <ul class="sp-trips sp-full-bleed">
         @for (trip of d.trips; track trip.uid) {
           <li [class.best]="trip.uid === d.recommended_uid" [class.cancelled]="trip.cancelled">
             <app-trip-row

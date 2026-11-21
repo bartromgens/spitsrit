@@ -1,0 +1,8 @@
+// Layout breakpoints, defined once. Below $sp-bp-mobile the trip results go edge to edge.
+$sp-bp-mobile: 600px;
+
+@mixin mobile {
+  @media (max-width: $sp-bp-mobile) {
+    @content;
+  }
+}

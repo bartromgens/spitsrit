@@ -1,4 +1,4 @@
-<mat-card appearance="outlined">
+<mat-card class="sp-card" appearance="outlined">
   <mat-card-header>
     <mat-card-title>Plan a trip</mat-card-title>
   </mat-card-header>
@@ -29,7 +29,7 @@
     }
     @if (result(); as r) {
       <app-train-route-toggle />
-      <ul class="sp-trips" data-testid="trip-results">
+      <ul class="sp-trips sp-full-bleed" data-testid="trip-results">
         @for (trip of r.trips; track trip.uid) {
           <li [class.best]="trip.uid === r.recommended_uid" [class.cancelled]="trip.cancelled">
             <app-trip-row [trip]="trip" [recommended]="trip.uid === r.recommended_uid" />
