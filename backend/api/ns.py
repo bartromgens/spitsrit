@@ -70,6 +70,22 @@ class TrainPart:
     facilities: tuple[str, ...] = ()
     # NS's side view of the unit (`image.uri`), only when it is an https URL.
     image_url: str | None = None
+    # Where this unit goes; units differ when the train splits along the way.
+    destination: str | None = None
+
+
+@dataclass(frozen=True)
+class Span:
+    """Something placed along the train or platform, in NS's own units from the train's front.
+
+    `start` is NS's `paddingLeft` and `width` its `width`. NS does not document the unit; the
+    frontend scales all spans of a stop to the longest one.
+    """
+
+    start: int
+    width: int
+    kind: str
+    description: str = ""
 
 
 @dataclass(frozen=True)
@@ -118,6 +134,7 @@ class Leg:
     # NS station codes (`stationCode`) of where the leg starts and ends, when it is a station.
     origin_code: str | None = None
     destination_code: str | None = None
+    bicycle_spots: int | None = None
 
 
 @dataclass(frozen=True)
@@ -144,6 +161,13 @@ class Trip:
     punctuality: float | None = None
     messages: tuple[str, ...] = ()
     legs: tuple[Leg, ...] = ()
+    # Crowding per carriage and what stands along the platform, at the boarding stop.
+    coach_crowding: tuple[Span, ...] = ()
+    platform_features: tuple[Span, ...] = ()
+    # Where units of the train stay behind, from the boarding stop on.
+    split_stations: tuple[str, ...] = ()
+    # Only when some units stop short of the rider's stop: where the part to board goes.
+    board_destination: str | None = None
 
     @property
     def departure_delay_minutes(self) -> int:
@@ -225,8 +249,24 @@ class Stock:
     parts: tuple[TrainPart, ...] = field(default=(), compare=False)
 
 
+def _count(value: Any) -> int | None:
+    """A count that may be zero; `None` when NS leaves it out or sends something else."""
+    return value if isinstance(value, int) and not isinstance(value, bool) and value >= 0 else None
+
+
 def _positive_int(value: Any) -> int | None:
     return value if isinstance(value, int) and not isinstance(value, bool) and value > 0 else None
+
+
+def _text(value: Any) -> str | None:
+    return str(value) if value else None
+
+
+def _station_name(station: Any) -> str | None:
+    """The name of a station object: `name` in journey responses, `namen.lang` per the spec."""
+    if not isinstance(station, dict):
+        return None
+    return _text(station.get("name")) or _text((station.get("namen") or {}).get("lang"))
 
 
 def _image_url(image: Any) -> str | None:
@@ -242,6 +282,7 @@ def _train_parts(parts: Any) -> tuple[TrainPart, ...]:
             stock_identifier=str(part.get("stockIdentifier") or ""),
             facilities=tuple(str(f) for f in part.get("facilities") or [] if f),
             image_url=_image_url(part.get("image")),
+            destination=_station_name(part.get("destination")),
         )
         for part in parts
         if isinstance(part, dict)
@@ -260,15 +301,14 @@ def _parse_stock(stock: Any) -> Stock | None:
     return result if result.seats or result.carriages else None
 
 
-def parse_boarding_stock(stops: list[Any], boarding_uic_code: str | None) -> Stock | None:
-    """The stock at the stop where the leg boards, from the `stops` of a `/v2/journey` response.
+def _boarding_stop(stops: list[Any], boarding_uic_code: str | None) -> dict[str, Any] | None:
+    """The stop of a `/v2/journey` response where the leg boards.
 
-    The boarding stop is the one NS marks `kind == "DEPARTURE"` (only set when the request
-    passes `departureUicCode`); failing that, the one whose `uicCode` is the leg's origin.
-    `actualStock` wins over `plannedStock`.
+    That is the one NS marks `kind == "DEPARTURE"` (only set when the request passes
+    `departureUicCode`); failing that, the one whose `uicCode` is the leg's origin.
     """
     journey_stops = [s for s in stops if isinstance(s, dict)]
-    boarding = next((s for s in journey_stops if s.get("kind") == "DEPARTURE"), None) or next(
+    return next((s for s in journey_stops if s.get("kind") == "DEPARTURE"), None) or next(
         (
             s
             for s in journey_stops
@@ -276,9 +316,106 @@ def parse_boarding_stock(stops: list[Any], boarding_uic_code: str | None) -> Sto
         ),
         None,
     )
+
+
+def parse_boarding_stock(stops: list[Any], boarding_uic_code: str | None) -> Stock | None:
+    """The stock at the boarding stop (see `_boarding_stop`); `actualStock` wins over planned."""
+    boarding = _boarding_stop(stops, boarding_uic_code)
     if boarding is None:
         return None
     return _parse_stock(boarding.get("actualStock")) or _parse_stock(boarding.get("plannedStock"))
+
+
+def _spans(items: Any, kind_key: str) -> tuple[Span, ...]:
+    spans = []
+    for item in items if isinstance(items, list) else []:
+        if not isinstance(item, dict):
+            continue
+        start, width = _count(item.get("paddingLeft")), _positive_int(item.get("width"))
+        if start is None or width is None:
+            continue
+        spans.append(
+            Span(
+                start=start,
+                width=width,
+                kind=str(item.get(kind_key) or "UNKNOWN"),
+                description=str(item.get("description") or ""),
+            )
+        )
+    return tuple(spans)
+
+
+def parse_boarding_layout(
+    stops: list[Any], boarding_uic_code: str | None
+) -> tuple[tuple[Span, ...], tuple[Span, ...]]:
+    """Crowding per carriage and the platform features at the boarding stop.
+
+    Real responses have sent both as empty arrays so far (see docs/ns-api/NOTES.md); this is
+    kept so the details show them once NS fills them. The layout of the spans is unverified.
+    """
+    boarding = _boarding_stop(stops, boarding_uic_code)
+    if boarding is None:
+        return (), ()
+    return (
+        _spans(boarding.get("coachCrowdForecast"), "classification"),
+        _spans(boarding.get("platformFeatures"), "type"),
+    )
+
+
+@dataclass(frozen=True)
+class SplitInfo:
+    split_stations: tuple[str, ...] = ()
+    board_destination: str | None = None
+
+
+def _stops_ahead(stops: list[dict[str, Any]], start: dict[str, Any]) -> list[dict[str, Any]]:
+    """The stops from `start` on, following `nextStopId` (the first one where it branches)."""
+    by_id = {str(s["id"]): s for s in stops if s.get("id")}
+    ahead: list[dict[str, Any]] = []
+    current: dict[str, Any] | None = start
+    while current is not None and current not in ahead:
+        ahead.append(current)
+        following = current.get("nextStopId") or []
+        current = by_id.get(str(following[0])) if following else None
+    return ahead
+
+
+def parse_split(
+    stops: list[Any], boarding_uic_code: str | None, alighting_uic_code: str | None
+) -> SplitInfo:
+    """Where units of the train stay behind, and which part to board to reach the rider's stop.
+
+    NS does not mark splits with a `SPLIT` status; the units at the boarding stop each have a
+    `destination` instead, and the journey follows the part that goes furthest. A unit whose
+    destination comes before the journey's end stays behind there. `board_destination` is only
+    set when that matters: when some units do not get as far as the rider's stop.
+    """
+    journey_stops = [s for s in stops if isinstance(s, dict)]
+    boarding = _boarding_stop(journey_stops, boarding_uic_code)
+    if boarding is None:
+        return SplitInfo()
+    ahead = _stops_ahead(journey_stops, boarding)
+    position = {(s.get("stop") or {}).get("uicCode"): i for i, s in enumerate(ahead)}
+    stock = boarding.get("actualStock") or boarding.get("plannedStock") or {}
+    parts = [p for p in stock.get("trainParts") or [] if isinstance(p, dict)]
+    # Each unit's destination with how far along the journey it is, when it is on the journey.
+    reach: list[tuple[int, str]] = []
+    for part in parts:
+        destination = part.get("destination") or {}
+        index = position.get(destination.get("uicCode"))
+        name = _station_name(destination)
+        if index is not None and name:
+            reach.append((index, name))
+    last = len(ahead) - 1
+    split_stations = tuple(dict.fromkeys(name for index, name in sorted(reach) if index < last))
+    if not split_stations:
+        return SplitInfo()
+    alighting = position.get(alighting_uic_code)
+    board_destination = None
+    if alighting is not None and any(index < alighting for index, _ in reach):
+        enough = {name for index, name in reach if index >= alighting}
+        board_destination = enough.pop() if len(enough) == 1 else None
+    return SplitInfo(split_stations, board_destination)
 
 
 def parse_train_origin(stops: list[Any]) -> str | None:
@@ -286,10 +423,6 @@ def parse_train_origin(stops: list[Any]) -> str | None:
     first = stops[0] if stops else None
     name = (first.get("stop") or {}).get("name") if isinstance(first, dict) else None
     return str(name) if name else None
-
-
-def _text(value: Any) -> str | None:
-    return str(value) if value else None
 
 
 def _number(value: Any) -> float | None:
@@ -384,6 +517,7 @@ def parse_leg(leg: dict[str, Any]) -> Leg:
         shorter_stock_warning=_text(leg.get("shorterStockWarning")),
         origin_code=_text(origin.get("stationCode")),
         destination_code=_text(destination.get("stationCode")),
+        bicycle_spots=_count(leg.get("bicycleSpotCount")),
     )
 
 
@@ -482,6 +616,9 @@ def _journey_stops(key: str, params: dict[str, str]) -> list[Any]:
 class JourneyInfo:
     stock: Stock | None
     origin: str | None
+    coach_crowding: tuple[Span, ...] = ()
+    platform_features: tuple[Span, ...] = ()
+    split: SplitInfo = SplitInfo()
 
 
 def _leg_journey(leg: dict[str, Any] | None) -> JourneyInfo | None:
@@ -492,9 +629,15 @@ def _leg_journey(leg: dict[str, Any] | None) -> JourneyInfo | None:
     key, params = request
     try:
         stops = _journey_stops(key, params)
+        boarding = (leg.get("origin") or {}).get("uicCode")
+        alighting = (leg.get("destination") or {}).get("uicCode")
+        coaches, platform = parse_boarding_layout(stops, boarding)
         return JourneyInfo(
-            stock=parse_boarding_stock(stops, (leg.get("origin") or {}).get("uicCode")),
+            stock=parse_boarding_stock(stops, boarding),
             origin=parse_train_origin(stops),
+            coach_crowding=coaches,
+            platform_features=platform,
+            split=parse_split(stops, boarding, alighting),
         )
     except NsError, AttributeError, TypeError:
         logger.warning("Could not read the journey for %s", key, exc_info=True)
@@ -512,6 +655,10 @@ def _with_journey(trip: Trip, info: JourneyInfo | None) -> Trip:
         train_type=stock.train_type if stock else None,
         train_parts=stock.parts if stock else (),
         train_origin=info.origin,
+        coach_crowding=info.coach_crowding,
+        platform_features=info.platform_features,
+        split_stations=info.split.split_stations,
+        board_destination=info.split.board_destination,
     )
 
 

@@ -605,11 +605,15 @@ components:
         destination_code:
           type: string
           nullable: true
+        bicycle_spots:
+          type: integer
+          nullable: true
       required:
       - arrival_actual
       - arrival_planned
       - arrival_track
       - arrival_track_changed
+      - bicycle_spots
       - cancelled
       - category
       - crowd_forecast
@@ -790,6 +794,22 @@ components:
       required:
       - email
       - password
+    Span:
+      type: object
+      properties:
+        start:
+          type: integer
+        width:
+          type: integer
+        kind:
+          type: string
+        description:
+          type: string
+      required:
+      - description
+      - kind
+      - start
+      - width
     Station:
       type: object
       properties:
@@ -835,7 +855,11 @@ components:
           type: string
           format: uri
           nullable: true
+        destination:
+          type: string
+          nullable: true
       required:
+      - destination
       - facilities
       - image_url
       - stock_identifier
@@ -911,12 +935,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Leg'
+        coach_crowding:
+          type: array
+          items:
+            $ref: '#/components/schemas/Span'
+        platform_features:
+          type: array
+          items:
+            $ref: '#/components/schemas/Span'
+        split_stations:
+          type: array
+          items:
+            type: string
+        board_destination:
+          type: string
+          nullable: true
       required:
       - arrival_actual
       - arrival_delay_minutes
       - arrival_planned
+      - board_destination
       - cancelled
       - carriages
+      - coach_crowding
       - crowd_forecast
       - departure_actual
       - departure_delay_minutes
@@ -925,10 +966,12 @@ components:
       - duration_minutes
       - legs
       - messages
+      - platform_features
       - punctuality
       - seats
       - shorter_stock
       - shorter_stock_warning
+      - split_stations
       - status
       - train
       - train_destination

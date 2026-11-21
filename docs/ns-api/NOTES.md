@@ -33,6 +33,18 @@ A real journey response is in `backend/tests/fixtures/ns_journey_3148.json`.
   transparent PNGs of 2259 × 119 px per 4-carriage unit (checked November 2026). Placeholder units
   (`stockIdentifier: "0"`) also carry an image.
 
+- **Splitting trains have no `SPLIT` stop.** In a real `/v2/journey` response for a train that
+  splits (IC 3070 Nijmegen → Den Helder, unit 9404 stays behind at Alkmaar), every stop has a
+  single `nextStopId` and statuses are only `ORIGIN`, `STOP`, `PASSING` and `DESTINATION`. The
+  journey follows the part that goes furthest. The split shows only as a `destination` (a station
+  with `name` and `uicCode`) on each of `trainParts` before the split, missing after it, plus a
+  journey `notes` entry such as "Treinstel 9404 rijdt niet verder dan Alkmaar" (checked
+  November 2026). Fixture: `backend/tests/fixtures/ns_journey_3070_split.json`.
+- **`coachCrowdForecast` and `platformFeatures` are empty.** Across 24 journeys on five routes
+  (November 2026, evening), stops had both as empty arrays, or did not have them at all.
+- **`bicycleSpotCount`** is on some train legs of `v3/trips` (seen: 0, 3, 4, 6, 16) and missing
+  on others. What 0 means (no places, or unknown) is not clear.
+
 ## Places API (`places-openapi.json`)
 
 Checked on 2026-11-21 against UT, ASD and BKL. Same gateway and `Ocp-Apim-Subscription-Key`

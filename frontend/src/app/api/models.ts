@@ -13,6 +13,7 @@ export type { OvFietsLocation } from './models/ov-fiets-location';
 export type { PaginatedCommuteList } from './models/paginated-commute-list';
 export type { PatchedCommuteRequest } from './models/patched-commute-request';
 export type { RegisterRequest } from './models/register-request';
+export type { Span } from './models/span';
 export type { Station } from './models/station';
 export type { StationToilets } from './models/station-toilets';
 export type { Toilet } from './models/toilet';

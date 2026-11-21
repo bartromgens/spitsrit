@@ -211,6 +211,7 @@ def test_plan_trip_serializes_the_trip_details(
             "stock_identifier": "9469",
             "facilities": ["WIFI", "STILTE"],
             "image_url": "https://example.org/virm.png",
+            "destination": None,
         }
     ]
     [serialized] = trip["legs"]

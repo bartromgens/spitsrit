@@ -29,6 +29,10 @@ const trip: Trip = {
   punctuality: null,
   messages: [],
   legs: [],
+  coach_crowding: [],
+  platform_features: [],
+  split_stations: [],
+  board_destination: null,
 };
 
 // The pipe shows times in the runner's timezone; derive the expectation the same way.

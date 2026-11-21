@@ -97,6 +97,14 @@ class TrainPartSerializer(serializers.Serializer[Any]):
     stock_identifier = serializers.CharField()
     facilities = serializers.ListField(child=serializers.CharField())
     image_url = serializers.URLField(allow_null=True)
+    destination = serializers.CharField(allow_null=True)
+
+
+class SpanSerializer(serializers.Serializer[Any]):
+    start = serializers.IntegerField()
+    width = serializers.IntegerField()
+    kind = serializers.CharField()  # crowding classification, or platform feature type
+    description = serializers.CharField(allow_blank=True)
 
 
 class LegStopSerializer(serializers.Serializer[Any]):
@@ -138,6 +146,7 @@ class LegSerializer(serializers.Serializer[Any]):
     shorter_stock_warning = serializers.CharField(allow_null=True)
     origin_code = serializers.CharField(allow_null=True)
     destination_code = serializers.CharField(allow_null=True)
+    bicycle_spots = serializers.IntegerField(allow_null=True)
 
 
 class TripSerializer(serializers.Serializer[Any]):
@@ -166,6 +175,10 @@ class TripSerializer(serializers.Serializer[Any]):
     punctuality = serializers.FloatField(allow_null=True)
     messages = serializers.ListField(child=serializers.CharField())
     legs = LegSerializer(many=True)
+    coach_crowding = SpanSerializer(many=True)
+    platform_features = SpanSerializer(many=True)
+    split_stations = serializers.ListField(child=serializers.CharField())
+    board_destination = serializers.CharField(allow_null=True)
 
 
 class CommuteTripsSerializer(serializers.Serializer[None]):

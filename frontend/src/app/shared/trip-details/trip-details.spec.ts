@@ -65,6 +65,7 @@ const ride: Leg = {
   shorter_stock_warning: null,
   origin_code: 'UT',
   destination_code: 'GD',
+  bicycle_spots: 6,
 };
 
 const walk: Leg = {
@@ -109,12 +110,17 @@ const trip: Trip = {
       stock_identifier: '9469',
       facilities: ['WIFI', 'STILTE', 'NEW_THING'],
       image_url: 'https://vt.ns-mlab.nl/v1/images/virmm1_4.png',
+      destination: null,
     },
-    { stock_identifier: '9596', facilities: [], image_url: null },
+    { stock_identifier: '9596', facilities: [], image_url: null, destination: null },
   ],
   punctuality: 90,
   messages: ['Storing tussen Gouda en Rotterdam'],
   legs: [ride, walk],
+  coach_crowding: [],
+  platform_features: [],
+  split_stations: [],
+  board_destination: null,
 };
 
 describe('TripDetails', () => {
@@ -203,6 +209,86 @@ describe('TripDetails', () => {
       train_parts: trip.train_parts.map((part) => ({ ...part, image_url: null })),
     });
     expect(element.querySelector('[data-testid="train-images"]')).toBeNull();
+  });
+
+  it('shows the bicycle places of a leg', async () => {
+    expect(text()).toContain('6 bicycle places');
+    await render({ ...trip, legs: [{ ...ride, bicycle_spots: 1 }] });
+    expect(text()).toContain('1 bicycle place');
+    await render({ ...trip, legs: [{ ...ride, bicycle_spots: null }] });
+    expect(element.querySelector('[data-testid="bicycle-spots"]')).toBeNull();
+  });
+
+  it('says where the train splits and which part to board', async () => {
+    await render({
+      ...trip,
+      split_stations: ['Amersfoort Centraal'],
+      board_destination: 'Enschede',
+      train_parts: [
+        { ...trip.train_parts[0], destination: 'Zwolle' },
+        {
+          ...trip.train_parts[1],
+          destination: 'Enschede',
+          image_url: 'https://vt.ns-mlab.nl/v1/images/virm_4.png',
+        },
+      ],
+    });
+    expect(text()).toContain('Part of this train stays behind at Amersfoort Centraal.');
+    expect(text()).toContain('Board the part to Enschede.');
+    const units = [...element.querySelectorAll('[data-testid="train-units"] li')];
+    expect(units[0].textContent).toContain('to Zwolle');
+    expect(units[0].textContent).not.toContain('your part');
+    expect(units[1].textContent).toContain('your part');
+    const images = [...element.querySelectorAll('[data-testid="train-images"] img')];
+    expect(images.map((img) => img.classList.contains('other'))).toEqual([true, false]);
+  });
+
+  it('says where part of the train stays behind without a part to pick', async () => {
+    await render({ ...trip, split_stations: ['Alkmaar'] });
+    expect(text()).toContain('Part of this train stays behind at Alkmaar.');
+    expect(text()).not.toContain('Board the part');
+  });
+
+  it('places the crowding per carriage and the platform features along the train', async () => {
+    await render({
+      ...trip,
+      coach_crowding: [
+        { start: 0, width: 100, kind: 'LOW', description: '' },
+        { start: 100, width: 100, kind: 'HIGH', description: '' },
+        { start: 200, width: 200, kind: 'UNKNOWN', description: '' },
+      ],
+      platform_features: [
+        { start: 100, width: 4, kind: 'LIFT', description: 'Lift' },
+        { start: 900, width: 50, kind: 'STAIRS', description: '' },
+      ],
+    });
+    const coaches = [...element.querySelectorAll<HTMLElement>('.coach')];
+    expect(coaches.map((c) => c.className.replace('coach ', ''))).toEqual([
+      'low',
+      'high',
+      'unknown',
+    ]);
+    expect(coaches.map((c) => [c.style.left, c.style.width])).toEqual([
+      ['0%', '25%'],
+      ['25%', '25%'],
+      ['50%', '50%'],
+    ]);
+    expect(coaches[1].getAttribute('aria-label')).toBe('Carriage 2: very busy');
+    const features = [...element.querySelectorAll<HTMLElement>('.feature')];
+    expect(features.map((f) => [f.style.left, f.style.width, f.title])).toEqual([
+      ['25%', '1%', 'Lift'],
+      ['100%', '1%', 'stairs'],
+    ]);
+    expect(text()).toContain('On the platform: Lift, stairs');
+  });
+
+  it('leaves the platform off without carriages to place it along', async () => {
+    await render({
+      ...trip,
+      platform_features: [{ start: 1, width: 1, kind: 'LIFT', description: 'Lift' }],
+    });
+    expect(element.querySelector('[data-testid="platform-features"]')).toBeNull();
+    expect(element.querySelector('[data-testid="coach-crowding"]')).toBeNull();
   });
 
   it('shows each leg with its stops, tracks and notes', () => {

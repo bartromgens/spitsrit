@@ -7,6 +7,7 @@ export interface Leg {
   arrival_planned: string | null;
   arrival_track: string | null;
   arrival_track_changed: boolean;
+  bicycle_spots: number | null;
   cancelled: boolean;
   category: string | null;
   crowd_forecast: string;

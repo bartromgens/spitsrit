@@ -41,6 +41,10 @@ function trip(overrides: Partial<Trip>): Trip {
     punctuality: null,
     messages: [],
     legs: [],
+    coach_crowding: [],
+    platform_features: [],
+    split_stations: [],
+    board_destination: null,
     ...overrides,
   };
 }
