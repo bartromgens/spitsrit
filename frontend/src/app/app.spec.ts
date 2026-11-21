@@ -30,6 +30,23 @@ describe('App', () => {
     expect(element.querySelector('mat-toolbar')?.textContent).toContain('bart');
   });
 
+  it('logs out from the menu under the username, not from the toolbar', async () => {
+    const auth = TestBed.inject(Auth);
+    auth.user.set({ id: 1, username: 'bart' });
+    const logout = vi.spyOn(auth, 'logout').mockResolvedValue();
+    const fixture = TestBed.createComponent(App);
+    await fixture.whenStable();
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector('mat-toolbar')?.textContent).not.toContain('Log out');
+    element.querySelector<HTMLButtonElement>('[data-testid="user-menu"]')!.click();
+    await fixture.whenStable();
+    const item = document.querySelector<HTMLButtonElement>('[data-testid="logout"]');
+    expect(item?.textContent?.trim()).toBe('Log out');
+    item!.click();
+    await fixture.whenStable();
+    expect(logout).toHaveBeenCalled();
+  });
+
   it('shows the navigation links in the toolbar after the brand', async () => {
     const fixture = TestBed.createComponent(App);
     await fixture.whenStable();
