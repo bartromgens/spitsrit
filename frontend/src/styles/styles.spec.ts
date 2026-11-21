@@ -11,8 +11,10 @@ const FORBIDDEN: [string, RegExp][] = [
   // Only `transparent`, `currentColor` and `inherit` are allowed as keywords.
   [
     'named colour',
-    /\b(black|white|gr[ae]y|silver|red|green|blue|yellow|orange|purple|pink|brown|navy|teal|cyan|magenta|lime|maroon|olive|aqua|gold|crimson|indigo|violet)\b(?!-)\s*[;,)!]?\s*$/i,
+    /:[^;{}]*(?<![.\-\w#$])(black|white|gr[ae]y|silver|red|green|blue|yellow|orange|purple|pink|brown|navy|teal|cyan|magenta|lime|maroon|olive|aqua|gold|crimson|indigo|violet)\b(?!-)/i,
   ],
+  // Palettes and tokens are reached through CSS custom properties, never imported.
+  ['palette import', /@(use|import|forward)\s+['"][^'"]*(palettes|tokens)/],
   ['font family', /font-family\s*:\s*(?!\s|var\()/],
   ['font shorthand', /(?<![-\w])font\s*:\s*(?!\s|var\()/],
   ['hard-coded font size', /font-size\s*:\s*(?!\s|var\()/],
