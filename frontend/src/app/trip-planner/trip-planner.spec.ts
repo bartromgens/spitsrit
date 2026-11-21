@@ -83,6 +83,43 @@ describe('TripPlanner', () => {
     expect((fixture.nativeElement as HTMLElement).querySelector('li.best')).not.toBeNull();
   });
 
+  it('remembers the planned stations and pre-fills them next time', async () => {
+    choose(utrecht, amsterdam);
+    const planned = planner.plan();
+    http
+      .expectOne('/api/trips/?from=UT&to=ASD')
+      .flush({ fetched_at: '', trips: [], recommended_uid: null, wait_minutes: null });
+    await planned;
+
+    const again = TestBed.createComponent(TripPlanner);
+    const next = again.componentInstance as unknown as Internals;
+    expect(next.form.getRawValue()).toEqual({
+      origin: 'Utrecht Centraal',
+      destination: 'Amsterdam Centraal',
+    });
+    const replanned = next.plan();
+    http
+      .expectOne('/api/trips/?from=UT&to=ASD')
+      .flush({ fetched_at: '', trips: [], recommended_uid: null, wait_minutes: null });
+    await replanned;
+  });
+
+  it('starts empty without or with unreadable stored stations', () => {
+    expect(planner.form.getRawValue()).toEqual({ origin: '', destination: '' });
+    localStorage.setItem('spitsrit.lastTrip', '{nope');
+    const again = TestBed.createComponent(TripPlanner);
+    expect((again.componentInstance as unknown as Internals).form.getRawValue()).toEqual({
+      origin: '',
+      destination: '',
+    });
+  });
+
+  it('does not remember stations when planning fails', async () => {
+    choose(utrecht, utrecht);
+    await planner.plan();
+    expect(localStorage.getItem('spitsrit.lastTrip')).toBeNull();
+  });
+
   it('lays the results out edge to edge on mobile', async () => {
     choose(utrecht, amsterdam);
     const planned = planner.plan();

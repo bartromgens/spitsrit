@@ -18,7 +18,14 @@ import { TripRow } from '../shared/trip-row/trip-row';
 const SEARCH_DEBOUNCE_MS = 250;
 const MIN_QUERY_LENGTH = 2;
 
+const STORAGE_KEY = 'spitsrit.lastTrip';
+
 type Side = 'origin' | 'destination';
+
+function isStation(value: unknown): value is Station {
+  const station = value as Partial<Station> | null;
+  return typeof station?.code === 'string' && typeof station.name === 'string';
+}
 
 /** Proof of concept: pick two stations and show the NS trip advice for them. */
 @Component({
@@ -50,6 +57,7 @@ export class TripPlanner {
   private readonly picked: Record<Side, Station | null> = { origin: null, destination: null };
 
   constructor() {
+    this.restore();
     this.search('origin', this.originOptions);
     this.search('destination', this.destinationOptions);
   }
@@ -75,8 +83,33 @@ export class TripPlanner {
     try {
       this.result.set(await this.api.invoke(tripsRetrieve, { from: from.code, to: to.code }));
       this.error.set('');
+      this.remember(from, to);
     } catch {
       this.fail('Train times are unavailable right now.');
+    }
+  }
+
+  private remember(origin: Station, destination: Station): void {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ origin, destination }));
+    } catch {
+      // Storage can be full or blocked; remembering is best effort.
+    }
+  }
+
+  private restore(): void {
+    try {
+      const saved: unknown = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? 'null');
+      if (typeof saved !== 'object' || saved === null) return;
+      const stations = saved as Record<Side, unknown>;
+      if (!isStation(stations.origin) || !isStation(stations.destination)) return;
+      for (const side of ['origin', 'destination'] as const) {
+        const station = stations[side] as Station;
+        this.picked[side] = station;
+        this.form.controls[side].setValue(station.name, { emitEvent: false });
+      }
+    } catch {
+      // Unreadable storage or invalid JSON: start with empty fields.
     }
   }
 
