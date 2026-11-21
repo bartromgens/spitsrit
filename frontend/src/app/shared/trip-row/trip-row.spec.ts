@@ -70,11 +70,35 @@ describe('TripRow', () => {
     expect(element().textContent).toContain('(+6)');
   });
 
-  it('marks the recommended trip with a signal', async () => {
+  // The green dot column was removed (it shifted the row); the highlight now comes from the
+  // list item, so only a screen-reader label marks the recommended trip.
+  it('announces the recommended trip without adding a column', async () => {
     await render({});
-    expect(element().querySelector('.signal')).toBeNull();
+    expect(element().textContent).not.toContain('Recommended');
+    const columns = (): string[] =>
+      Array.from(element().children)
+        .filter((child) => !child.classList.contains('sr-only'))
+        .map((child) => `${child.tagName}.${child.className}`);
+    const normal = columns();
     await render({}, { recommended: true });
-    expect(element().querySelector('.signal')).not.toBeNull();
+    expect(element().textContent).toContain('Recommended');
+    expect(columns()).toEqual(normal);
+    expect(element().querySelector('.signal')).toBeNull();
+  });
+
+  it('uses mono only for numbers', async () => {
+    await render({ transfers: 1 });
+    const mono = Array.from(element().querySelectorAll('.sp-mono')).map((el) => el.textContent);
+    expect(mono).toEqual(['2736', '620', '08:30', '30', '1']);
+    expect(element().querySelector('.journey')?.classList.contains('sp-mono')).toBe(false);
+  });
+
+  it('keeps each journey value on one line', async () => {
+    await render({ transfers: 1 });
+    const values = Array.from(element().querySelectorAll('.value')).map((el) =>
+      el.textContent?.replace(/\s+/g, ' ').trim(),
+    );
+    expect(values).toEqual(['arrives 08:30', '30 min', '1 transfer']);
   });
 
   it('shows cancelled trips as cancelled without details', async () => {

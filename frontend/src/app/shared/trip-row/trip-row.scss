@@ -1,43 +1,63 @@
+// Every row uses the same columns, recommended or not, so times, trains and platforms line up:
+// time + delay | train | platform | crowding, with the details on a line below.
 :host {
-  display: flex;
-  align-items: baseline;
-  gap: var(--sp-space-1);
-  min-width: 0;
-}
-
-.signal {
-  flex: none;
-  align-self: center;
-  width: var(--sp-space-2);
-  height: var(--sp-space-2);
-  border-radius: var(--sp-radius-pill);
-  background: var(--sp-signal-green);
-  box-shadow: var(--sp-elevation-1);
-}
-
-.detail {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: 6.5rem minmax(0, 1fr) 3rem 2.5rem;
   align-items: center;
   column-gap: var(--sp-space-1);
   row-gap: var(--sp-space-half);
   min-width: 0;
 }
 
+.cancelled-label {
+  grid-column: 2 / -1;
+  color: var(--sp-signal-red);
+  font-weight: var(--sp-weight-bold);
+}
+
 .train {
+  min-width: 0;
   font-weight: var(--sp-weight-medium);
+  white-space: nowrap;
+}
+
+.platform {
+  justify-content: center;
+}
+
+.crowding {
+  justify-content: flex-end;
+}
+
+.details {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: var(--sp-space-2);
+  row-gap: var(--sp-space-half);
+  min-width: 0;
 }
 
 .journey {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: var(--sp-space-1);
   font-size: var(--sp-text-sm);
+}
+
+.value {
+  white-space: nowrap;
+}
+
+.value + .value::before {
+  content: '·';
+  margin-right: var(--sp-space-1);
 }
 
 .arrival-delay {
   color: var(--sp-signal-red);
   font-weight: var(--sp-weight-bold);
-}
-
-.cancelled-label {
-  color: var(--sp-signal-red);
-  font-weight: var(--sp-weight-bold);
+  white-space: nowrap;
 }

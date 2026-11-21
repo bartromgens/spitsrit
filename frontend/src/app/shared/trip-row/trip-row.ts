@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component, input } from '@angular/core';
+import { Component, computed, input } from '@angular/core';
 import { Trip } from '../../api/models';
 import { Crowding } from '../crowding/crowding';
 import { DepartureTime } from '../departure-time/departure-time';
@@ -19,4 +19,11 @@ export class TripRow {
   readonly recommended = input(false);
   /** Whether to show the arrival delay next to the arrival time. */
   readonly arrivalDelay = input(false);
+
+  // "IC 2736" is shown as a word in the UI font and a number in mono.
+  private readonly trainParts = computed(
+    () => /^(.*?)\s*(\d+)$/.exec(this.trip().train) ?? [this.trip().train, this.trip().train, ''],
+  );
+  protected readonly trainName = computed(() => this.trainParts()[1]);
+  protected readonly trainNumber = computed(() => this.trainParts()[2]);
 }
