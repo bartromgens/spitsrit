@@ -11,6 +11,7 @@ export type { LoginRequest } from './models/login-request';
 export type { PaginatedCommuteList } from './models/paginated-commute-list';
 export type { PatchedCommuteRequest } from './models/patched-commute-request';
 export type { RegisterRequest } from './models/register-request';
+export type { Span } from './models/span';
 export type { Station } from './models/station';
 export type { TrainPart } from './models/train-part';
 export type { Trip } from './models/trip';

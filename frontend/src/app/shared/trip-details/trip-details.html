@@ -80,16 +80,80 @@
         role="img"
         [attr.aria-label]="imagesLabel()"
       >
-        @for (url of images(); track $index) {
-          <img [src]="url" alt="" loading="lazy" (error)="hideImage($event)" />
+        @for (image of images(); track $index) {
+          <img
+            [src]="image.url"
+            [class.other]="image.other"
+            alt=""
+            loading="lazy"
+            (error)="hideImage($event)"
+          />
         }
       </div>
+    }
+    @if (coaches().length > 0) {
+      <div
+        class="coaches"
+        data-testid="coach-crowding"
+        role="list"
+        aria-label="Crowding per carriage"
+      >
+        @for (coach of coaches(); track $index) {
+          <span
+            role="listitem"
+            [class]="'coach ' + coach.level"
+            [style.left.%]="coach.left"
+            [style.width.%]="coach.width"
+            [attr.title]="coach.label"
+            [attr.aria-label]="'Carriage ' + ($index + 1) + ': ' + coach.label"
+          ></span>
+        }
+      </div>
+    }
+    @if (platform().length > 0) {
+      <div class="platform" data-testid="platform-features" aria-hidden="true">
+        @for (feature of platform(); track $index) {
+          <span
+            class="feature"
+            [style.left.%]="feature.left"
+            [style.width.%]="feature.width"
+            [attr.title]="feature.label"
+          ></span>
+        }
+      </div>
+    }
+    @if (platformLabels().length > 0) {
+      <p class="hint" data-testid="platform-labels">
+        On the platform: {{ platformLabels().join(', ') }}
+      </p>
+    }
+    @for (station of t.split_stations; track station) {
+      <p class="notice" data-testid="train-split">
+        This train splits at {{ station }}.
+        @if (t.board_destination) {
+          Board the part to <strong>{{ t.board_destination }}</strong
+          >.
+        } @else {
+          Check which part goes to your stop.
+        }
+      </p>
+    }
+    @for (station of t.combine_stations; track station) {
+      <p class="hint" data-testid="train-combine">Another train joins this one at {{ station }}.</p>
     }
     @if (t.train_parts.length > 0) {
       <ol class="units" data-testid="train-units">
         @for (part of t.train_parts; track $index) {
           <li>
             <span class="unit-number sp-mono">{{ part.stock_identifier || '?' }}</span>
+            @if (destinationsDiffer()) {
+              <span class="unit-destination" [class.muted]="otherPart(part)">
+                to {{ part.destination || 'unknown' }}
+                @if (part.destination && part.destination === t.board_destination) {
+                  <strong class="your-part">your part</strong>
+                }
+              </span>
+            }
             <span class="facilities">
               @for (code of part.facilities; track code) {
                 <span class="facility">{{ facility(code) }}</span>
@@ -121,6 +185,13 @@
           }
           <span class="leg-meta">
             <app-crowding [forecast]="leg.crowd_forecast" />
+            @if (leg.bicycle_spots !== null) {
+              <span data-testid="bicycle-spots"
+                ><span class="sp-mono">{{ leg.bicycle_spots }}</span> bicycle place{{
+                  leg.bicycle_spots === 1 ? '' : 's'
+                }}</span
+              >
+            }
             @if (leg.punctuality !== null) {
               <span
                 ><span class="sp-mono">{{ leg.punctuality | number: '1.0-0' }}%</span> on time</span
