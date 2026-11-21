@@ -59,7 +59,7 @@
     }
     @if (data(); as d) {
       <p class="advice" data-testid="advice">{{ advice() }}</p>
-      <div class="sp-track" aria-hidden="true"></div>
+      <app-train-route-toggle />
       <ul class="sp-trips">
         @for (trip of d.trips; track trip.uid) {
           <li [class.best]="trip.uid === d.recommended_uid" [class.cancelled]="trip.cancelled">

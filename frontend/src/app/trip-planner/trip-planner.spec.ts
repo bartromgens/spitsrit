@@ -28,6 +28,8 @@ const trip: Trip = {
   train_type: 'VIRM',
   shorter_stock: null,
   shorter_stock_warning: null,
+  train_origin: 'Nijmegen',
+  train_destination: 'Den Haag C.',
 };
 
 /** The protected members the template uses, reachable from the test. */
@@ -43,6 +45,7 @@ describe('TripPlanner', () => {
   let http: HttpTestingController;
 
   beforeEach(() => {
+    localStorage.clear();
     TestBed.configureTestingModule({ imports: [TripPlanner], providers: testProviders });
     fixture = TestBed.createComponent(TripPlanner);
     planner = fixture.componentInstance as unknown as Internals;
@@ -68,8 +71,12 @@ describe('TripPlanner', () => {
       .flush({ fetched_at: '', trips: [trip], recommended_uid: 'a', wait_minutes: 0 });
     await planned;
     await settle(fixture);
-    expect(text()).toContain('IC 2736');
-    expect(text()).toContain('~620 seats');
+    expect(text()).toContain('Intercity');
+    expect(text()).not.toContain('2736');
+    expect(text()).toContain('Show train route');
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('[aria-label="620 seats"]'),
+    ).not.toBeNull();
     expect(text()).toContain('platform 5');
     expect(text()).toContain('1 transfer');
     expect((fixture.nativeElement as HTMLElement).querySelector('li.best')).not.toBeNull();

@@ -5,8 +5,16 @@
 }
 
 .seats {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-space-half);
   font-size: var(--sp-text-sm);
   white-space: nowrap;
+}
+
+.icon {
+  width: 1.1em;
+  height: 1.1em;
 }
 
 .type {

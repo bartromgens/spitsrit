@@ -28,6 +28,7 @@
       <p class="error" role="alert">{{ error() }}</p>
     }
     @if (result(); as r) {
+      <app-train-route-toggle />
       <ul class="sp-trips" data-testid="trip-results">
         @for (trip of r.trips; track trip.uid) {
           <li [class.best]="trip.uid === r.recommended_uid" [class.cancelled]="trip.cancelled">

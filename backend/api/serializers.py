@@ -91,6 +91,8 @@ class TripSerializer(serializers.Serializer[Any]):
     train_type = serializers.CharField(allow_null=True)
     shorter_stock = serializers.CharField(allow_null=True)  # null, "BUSY" or "EXTRA_BUSY"
     shorter_stock_warning = serializers.CharField(allow_null=True)
+    train_origin = serializers.CharField(allow_null=True)
+    train_destination = serializers.CharField(allow_null=True)
 
 
 class CommuteTripsSerializer(serializers.Serializer[None]):

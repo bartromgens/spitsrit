@@ -17,6 +17,7 @@ import { MatInputModule } from '@angular/material/input';
 import { Api } from '../api/api';
 import { commutesPartialUpdate, commutesTripsRetrieve } from '../api/functions';
 import { Commute, CommuteTrips } from '../api/models';
+import { TrainRouteToggle } from '../shared/train-route-toggle/train-route-toggle';
 import { TripRow } from '../shared/trip-row/trip-row';
 
 const REFRESH_MS = 60_000;
@@ -30,6 +31,7 @@ const REFRESH_MS = 60_000;
     MatChipsModule,
     MatFormFieldModule,
     MatInputModule,
+    TrainRouteToggle,
     TripRow,
   ],
   selector: 'app-commute-board',

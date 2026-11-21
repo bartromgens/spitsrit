@@ -18,6 +18,8 @@ export interface Trip {
   shorter_stock_warning: string | null;
   status: string;
   train: string;
+  train_destination: string | null;
+  train_origin: string | null;
   train_type: string | null;
   transfers: number;
   uid: string;

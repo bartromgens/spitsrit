@@ -10,18 +10,18 @@
 @if (t.cancelled) {
   <span class="cancelled-label">Cancelled</span>
 } @else {
-  <span class="train">
-    {{ trainName() }}
-    @if (trainNumber()) {
-      <span class="sp-mono">{{ trainNumber() }}</span>
-    }
-  </span>
+  <span class="train">{{ trainType() }}</span>
   <app-platform-sign class="platform" [track]="t.departure_track" />
-  <app-crowding class="crowding" [forecast]="t.crowd_forecast" />
+  <span class="load">
+    <app-crowding [forecast]="t.crowd_forecast" />
+    <app-carriages [count]="t.carriages" />
+  </span>
+  @if (route(); as r) {
+    <span class="route" data-testid="train-route">{{ r.origin }} → {{ r.destination }}</span>
+  }
   <span class="details">
     <app-train-length
       [seats]="t.seats"
-      [carriages]="t.carriages"
       [trainType]="t.train_type"
       [shorterStock]="t.shorter_stock"
       [shorterStockWarning]="t.shorter_stock_warning"

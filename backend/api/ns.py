@@ -65,6 +65,8 @@ class Trip:
     train_type: str | None = None
     shorter_stock: str | None = None
     shorter_stock_warning: str | None = None
+    train_origin: str | None = None
+    train_destination: str | None = None
 
     @property
     def departure_delay_minutes(self) -> int:
@@ -168,6 +170,13 @@ def parse_boarding_stock(stops: list[Any], boarding_uic_code: str | None) -> Sto
     return _parse_stock(boarding.get("actualStock")) or _parse_stock(boarding.get("plannedStock"))
 
 
+def parse_train_origin(stops: list[Any]) -> str | None:
+    """Where the whole train starts: the name of the first stop of a `/v2/journey` response."""
+    first = stops[0] if stops else None
+    name = (first.get("stop") or {}).get("name") if isinstance(first, dict) else None
+    return str(name) if name else None
+
+
 def parse_trip(item: dict[str, Any]) -> Trip | None:
     legs = item.get("legs") or []
     if not legs:
@@ -179,6 +188,7 @@ def parse_trip(item: dict[str, Any]) -> Trip | None:
     if departure_planned is None or arrival_planned is None:
         return None
     shorter_stock, shorter_stock_warning = _shorter_stock(legs)
+    direction = (_train_leg(item) or {}).get("direction")
     product = first.get("product") or {}
     train = f"{product.get('shortCategoryName', '')} {product.get('number', '')}".strip()
     return Trip(
@@ -195,6 +205,7 @@ def parse_trip(item: dict[str, Any]) -> Trip | None:
         train=train,
         shorter_stock=shorter_stock,
         shorter_stock_warning=shorter_stock_warning,
+        train_destination=str(direction) if direction else None,
     )
 
 
@@ -253,24 +264,40 @@ def _journey_stops(key: str, params: dict[str, str]) -> list[Any]:
     return stops
 
 
-def _leg_stock(leg: dict[str, Any] | None) -> Stock | None:
-    """The size of the leg's train; unknown (`None`) when the journey can't be fetched."""
+@dataclass(frozen=True)
+class JourneyInfo:
+    stock: Stock | None
+    origin: str | None
+
+
+def _leg_journey(leg: dict[str, Any] | None) -> JourneyInfo | None:
+    """The size and first stop of the leg's train; unknown (`None`) when it can't be fetched."""
     request = _journey_request(leg) if leg else None
     if leg is None or request is None:
         return None
     key, params = request
     try:
         stops = _journey_stops(key, params)
-        return parse_boarding_stock(stops, (leg.get("origin") or {}).get("uicCode"))
+        return JourneyInfo(
+            stock=parse_boarding_stock(stops, (leg.get("origin") or {}).get("uicCode")),
+            origin=parse_train_origin(stops),
+        )
     except NsError, AttributeError, TypeError:
         logger.warning("Could not read the journey for %s", key, exc_info=True)
         return None
 
 
-def _with_stock(trip: Trip, stock: Stock | None) -> Trip:
-    if stock is None:
+def _with_journey(trip: Trip, info: JourneyInfo | None) -> Trip:
+    if info is None:
         return trip
-    return replace(trip, seats=stock.seats, carriages=stock.carriages, train_type=stock.train_type)
+    stock = info.stock
+    return replace(
+        trip,
+        seats=stock.seats if stock else None,
+        carriages=stock.carriages if stock else None,
+        train_type=stock.train_type if stock else None,
+        train_origin=info.origin,
+    )
 
 
 def _forward_context(payload: dict[str, Any]) -> str | None:
@@ -325,8 +352,8 @@ def fetch_trips(
     kept = kept[:MAX_TRIPS]
     # Only the first train leg of a trip is shown, so only its journey is fetched.
     with ThreadPoolExecutor(max_workers=MAX_TRIPS) as pool:
-        stocks = list(pool.map(_leg_stock, [_train_leg(item) for _, item in kept]))
-    return [_with_stock(trip, stock) for (trip, _), stock in zip(kept, stocks, strict=True)]
+        journeys = list(pool.map(_leg_journey, [_train_leg(item) for _, item in kept]))
+    return [_with_journey(trip, info) for (trip, _), info in zip(kept, journeys, strict=True)]
 
 
 @dataclass(frozen=True)

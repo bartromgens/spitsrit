@@ -282,6 +282,40 @@ def test_journey_is_cached(monkeypatch: pytest.MonkeyPatch) -> None:
     cache.clear()
 
 
+def test_parse_train_origin_from_the_real_journey_response() -> None:
+    fixture = Path(__file__).parent / "fixtures" / "ns_journey_3148.json"
+    stops = json.loads(fixture.read_text())["payload"]["stops"]
+    assert ns.parse_train_origin(stops) == "Nijmegen"
+    assert ns.parse_train_origin([]) is None
+    assert ns.parse_train_origin([{"stop": {}}]) is None
+
+
+def test_parse_trip_reads_the_train_destination_from_direction() -> None:
+    leg = {**TRIP_ITEM["legs"][0], "direction": "Den Haag Centraal"}
+    trip = ns.parse_trip({**TRIP_ITEM, "legs": [leg]})
+    assert trip is not None
+    assert trip.train_destination == "Den Haag Centraal"
+    trip = ns.parse_trip(TRIP_ITEM)
+    assert trip is not None
+    assert trip.train_destination is None
+
+
+def test_fetch_trips_reads_the_train_origin_from_the_journey(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    first = {"id": "A", "stop": {"name": "Nijmegen", "uicCode": "8400470"}}
+    trips_with_journey(monkeypatch, journey(first, stop("8400621", actualStock=stock(620))))
+    [trip] = ns.fetch_trips("UT", "ASD", NOW)
+    assert trip.train_origin == "Nijmegen"
+    assert trip.seats == 620
+
+
+def test_failed_journey_leaves_the_train_origin_unknown(monkeypatch: pytest.MonkeyPatch) -> None:
+    trips_with_journey(monkeypatch, ns.NsError("boom"))
+    [trip] = ns.fetch_trips("UT", "ASD", NOW)
+    assert trip.train_origin is None
+
+
 def test_parse_trip_without_legs_or_times_is_dropped() -> None:
     assert ns.parse_trip({"legs": []}) is None
     assert ns.parse_trip({"legs": [{"origin": {}, "destination": {}}]}) is None

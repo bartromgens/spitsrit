@@ -15,4 +15,8 @@ Check these alongside `reisinformatie-openapi.json`.
   parameter. The spec shows the field on each trip; we read it from the response object, then from
   the last trip. Verify against a real response.
 
+- **Train route.** The train's destination is the leg's `direction` in the trips response. Its
+  first stop is the first entry of `stops` in the `/api/v2/journey` response (`stop.name`, with
+  `status: "ORIGIN"`); no extra call is needed beyond the one made for the train size.
+
 A real journey response is in `backend/tests/fixtures/ns_journey_3148.json`.
