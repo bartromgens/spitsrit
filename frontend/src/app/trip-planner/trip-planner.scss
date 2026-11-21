@@ -1,9 +1,80 @@
+@use '../../styles/layout';
+
+// The planner card on its own; with a trip open, its details sit in a second column beside it.
 :host {
-  display: block;
+  display: grid;
+  grid-template-columns: minmax(0, var(--sp-form-width));
+  align-items: start;
+  gap: var(--sp-space-2);
+}
+
+:host(.with-details) {
+  grid-template-columns: minmax(0, var(--sp-form-width)) minmax(0, var(--sp-details-width));
 }
 
 form {
   display: flex;
   flex-direction: column;
   gap: var(--sp-space-1);
+}
+
+// The whole row opens the trip's details; the button only adds a focus ring and a hover tint.
+.trip-button {
+  all: unset;
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: var(--sp-border-width-strong) solid var(--sp-link);
+    outline-offset: var(--sp-space-half);
+    border-radius: var(--sp-radius-xs);
+  }
+}
+
+li:not(.best):has(.trip-button:hover) {
+  background: var(--mat-sys-surface-container-low);
+}
+
+// The open trip keeps its own background (green when recommended) and gets a blue frame.
+li.selected {
+  box-shadow: inset 0 0 0 var(--sp-border-width-strong) var(--sp-blue);
+}
+
+.details {
+  position: sticky;
+  top: var(--sp-space-2);
+  max-height: calc(100vh - 2 * var(--sp-space-2));
+  overflow-y: auto;
+  padding: var(--sp-space-2);
+  border: var(--sp-border-width) solid var(--mat-sys-outline-variant);
+  border-radius: var(--mat-card-outlined-container-shape, var(--sp-radius-md));
+  background: var(--mat-sys-surface-container-lowest);
+}
+
+// Too narrow for two columns: the planner keeps its column and the details cover the screen.
+@media (max-width: 52rem) {
+  :host(.with-details) {
+    grid-template-columns: minmax(0, var(--sp-form-width));
+  }
+
+  .details {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    max-height: none;
+    padding: var(--sp-space-2) calc(var(--sp-space-2) + env(safe-area-inset-right, 0px))
+      calc(var(--sp-space-2) + env(safe-area-inset-bottom, 0px))
+      calc(var(--sp-space-2) + env(safe-area-inset-left, 0px));
+    border: 0;
+    border-radius: 0;
+  }
+}
+
+@include layout.mobile {
+  :host,
+  :host(.with-details) {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }

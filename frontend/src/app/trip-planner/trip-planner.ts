@@ -12,7 +12,8 @@ import { MatInputModule } from '@angular/material/input';
 import { debounceTime, distinctUntilChanged, of, switchMap } from 'rxjs';
 import { Api } from '../api/api';
 import { stationsList, tripsRetrieve } from '../api/functions';
-import { CommuteTrips, Station } from '../api/models';
+import { CommuteTrips, Station, Trip } from '../api/models';
+import { TripDetails } from '../shared/trip-details/trip-details';
 import { TripListSkeleton } from '../shared/trip-list-skeleton/trip-list-skeleton';
 import { TripRow } from '../shared/trip-row/trip-row';
 
@@ -37,12 +38,14 @@ function isStation(value: unknown): value is Station {
     MatCardModule,
     MatFormFieldModule,
     MatInputModule,
+    TripDetails,
     TripListSkeleton,
     TripRow,
   ],
   selector: 'app-trip-planner',
   styleUrl: './trip-planner.scss',
   templateUrl: './trip-planner.html',
+  host: { '[class.with-details]': 'selected() !== null' },
 })
 export class TripPlanner {
   protected readonly originOptions = signal<Station[]>([]);
@@ -51,6 +54,8 @@ export class TripPlanner {
   protected readonly error = signal('');
   /** Whether a plan request is in flight; placeholder rows hold the results' place meanwhile. */
   protected readonly loading = signal(false);
+  /** The trip whose details are open: beside the results on wide screens, over them on phones. */
+  protected readonly selected = signal<Trip | null>(null);
 
   protected readonly form = inject(NonNullableFormBuilder).group({
     origin: ['', Validators.required],
@@ -72,6 +77,15 @@ export class TripPlanner {
     this.form.controls[side].setValue(station.name, { emitEvent: false });
   }
 
+  /** Opens the details of a trip, or closes them when its row is clicked again. */
+  protected select(trip: Trip): void {
+    this.selected.update((current) => (current?.uid === trip.uid ? null : trip));
+  }
+
+  protected close(): void {
+    this.selected.set(null);
+  }
+
   protected async plan(): Promise<void> {
     const { origin, destination } = this.form.getRawValue();
     const from = this.picked.origin;
@@ -86,6 +100,7 @@ export class TripPlanner {
     }
     this.loading.set(true);
     this.error.set('');
+    this.selected.set(null);
     try {
       this.result.set(await this.api.invoke(tripsRetrieve, { from: from.code, to: to.code }));
       this.remember(from, to);
@@ -122,6 +137,7 @@ export class TripPlanner {
 
   private fail(message: string): void {
     this.result.set(null);
+    this.selected.set(null);
     this.error.set(message);
   }
 

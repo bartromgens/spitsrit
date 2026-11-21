@@ -470,6 +470,147 @@ components:
       - recommended_uid
       - trips
       - wait_minutes
+    Leg:
+      type: object
+      properties:
+        travel_type:
+          type: string
+        name:
+          type: string
+        category:
+          type: string
+          nullable: true
+        operator:
+          type: string
+          nullable: true
+        direction:
+          type: string
+          nullable: true
+        origin:
+          type: string
+        departure_planned:
+          type: string
+          format: date-time
+          nullable: true
+        departure_actual:
+          type: string
+          format: date-time
+          nullable: true
+        departure_track:
+          type: string
+          nullable: true
+        departure_track_changed:
+          type: boolean
+        destination:
+          type: string
+        arrival_planned:
+          type: string
+          format: date-time
+          nullable: true
+        arrival_actual:
+          type: string
+          format: date-time
+          nullable: true
+        arrival_track:
+          type: string
+          nullable: true
+        arrival_track_changed:
+          type: boolean
+        exit_side:
+          type: string
+          nullable: true
+        cancelled:
+          type: boolean
+        crowd_forecast:
+          type: string
+        punctuality:
+          type: number
+          format: double
+          nullable: true
+        stops:
+          type: array
+          items:
+            $ref: '#/components/schemas/LegStop'
+        notes:
+          type: array
+          items:
+            type: string
+        messages:
+          type: array
+          items:
+            type: string
+        transfer_messages:
+          type: array
+          items:
+            type: string
+        shorter_stock_warning:
+          type: string
+          nullable: true
+      required:
+      - arrival_actual
+      - arrival_planned
+      - arrival_track
+      - arrival_track_changed
+      - cancelled
+      - category
+      - crowd_forecast
+      - departure_actual
+      - departure_planned
+      - departure_track
+      - departure_track_changed
+      - destination
+      - direction
+      - exit_side
+      - messages
+      - name
+      - notes
+      - operator
+      - origin
+      - punctuality
+      - shorter_stock_warning
+      - stops
+      - transfer_messages
+      - travel_type
+    LegStop:
+      type: object
+      properties:
+        name:
+          type: string
+        arrival_planned:
+          type: string
+          format: date-time
+          nullable: true
+        arrival_actual:
+          type: string
+          format: date-time
+          nullable: true
+        departure_planned:
+          type: string
+          format: date-time
+          nullable: true
+        departure_actual:
+          type: string
+          format: date-time
+          nullable: true
+        track:
+          type: string
+          nullable: true
+        track_changed:
+          type: boolean
+        passing:
+          type: boolean
+        cancelled:
+          type: boolean
+      required:
+      - arrival_actual
+      - arrival_planned
+      - cancelled
+      - departure_actual
+      - departure_planned
+      - name
+      - passing
+      - track
+      - track_changed
     LoginRequest:
       type: object
       properties:
@@ -568,6 +709,23 @@ components:
       required:
       - code
       - name
+    TrainPart:
+      type: object
+      properties:
+        stock_identifier:
+          type: string
+        facilities:
+          type: array
+          items:
+            type: string
+        image_url:
+          type: string
+          format: uri
+          nullable: true
+      required:
+      - facilities
+      - image_url
+      - stock_identifier
     Trip:
       type: object
       properties:
@@ -624,6 +782,22 @@ components:
         train_destination:
           type: string
           nullable: true
+        train_parts:
+          type: array
+          items:
+            $ref: '#/components/schemas/TrainPart'
+        punctuality:
+          type: number
+          format: double
+          nullable: true
+        messages:
+          type: array
+          items:
+            type: string
+        legs:
+          type: array
+          items:
+            $ref: '#/components/schemas/Leg'
       required:
       - arrival_actual
       - arrival_delay_minutes
@@ -636,6 +810,9 @@ components:
       - departure_planned
       - departure_track
       - duration_minutes
+      - legs
+      - messages
+      - punctuality
       - seats
       - shorter_stock
       - shorter_stock_warning
@@ -643,6 +820,7 @@ components:
       - train
       - train_destination
       - train_origin
+      - train_parts
       - train_type
       - transfers
       - uid

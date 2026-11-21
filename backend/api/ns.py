@@ -63,6 +63,61 @@ class Station:
 
 
 @dataclass(frozen=True)
+class TrainPart:
+    """One unit of a train: its NS stock number and facilities (`WIFI`, `TOILET`, `STILTE`...)."""
+
+    stock_identifier: str
+    facilities: tuple[str, ...] = ()
+    # NS's side view of the unit (`image.uri`), only when it is an https URL.
+    image_url: str | None = None
+
+
+@dataclass(frozen=True)
+class LegStop:
+    """A stop on a leg, from the leg's `stops` in the trips response. Tracks fall back to planned."""
+
+    name: str
+    arrival_planned: datetime | None
+    arrival_actual: datetime | None
+    departure_planned: datetime | None
+    departure_actual: datetime | None
+    track: str | None
+    track_changed: bool
+    passing: bool
+    cancelled: bool
+
+
+@dataclass(frozen=True)
+class Leg:
+    """One part of a trip: a train ride, or a walk between two stations."""
+
+    travel_type: str
+    name: str
+    category: str | None
+    operator: str | None
+    direction: str | None
+    origin: str
+    departure_planned: datetime | None
+    departure_actual: datetime | None
+    departure_track: str | None
+    departure_track_changed: bool
+    destination: str
+    arrival_planned: datetime | None
+    arrival_actual: datetime | None
+    arrival_track: str | None
+    arrival_track_changed: bool
+    exit_side: str | None
+    cancelled: bool
+    crowd_forecast: str
+    punctuality: float | None
+    stops: tuple[LegStop, ...] = ()
+    notes: tuple[str, ...] = ()
+    messages: tuple[str, ...] = ()
+    transfer_messages: tuple[str, ...] = ()
+    shorter_stock_warning: str | None = None
+
+
+@dataclass(frozen=True)
 class Trip:
     uid: str
     departure_planned: datetime
@@ -82,6 +137,10 @@ class Trip:
     shorter_stock_warning: str | None = None
     train_origin: str | None = None
     train_destination: str | None = None
+    train_parts: tuple[TrainPart, ...] = ()
+    punctuality: float | None = None
+    messages: tuple[str, ...] = ()
+    legs: tuple[Leg, ...] = ()
 
     @property
     def departure_delay_minutes(self) -> int:
@@ -155,10 +214,31 @@ class Stock:
     seats: int | None
     carriages: int | None
     train_type: str | None
+    # Two stocks are equal when they have the same size; the units are only shown as details.
+    parts: tuple[TrainPart, ...] = field(default=(), compare=False)
 
 
 def _positive_int(value: Any) -> int | None:
     return value if isinstance(value, int) and not isinstance(value, bool) and value > 0 else None
+
+
+def _image_url(image: Any) -> str | None:
+    uri = image.get("uri") if isinstance(image, dict) else None
+    return uri if isinstance(uri, str) and uri.startswith("https://") else None
+
+
+def _train_parts(parts: Any) -> tuple[TrainPart, ...]:
+    if not isinstance(parts, list):
+        return ()
+    return tuple(
+        TrainPart(
+            stock_identifier=str(part.get("stockIdentifier") or ""),
+            facilities=tuple(str(f) for f in part.get("facilities") or [] if f),
+            image_url=_image_url(part.get("image")),
+        )
+        for part in parts
+        if isinstance(part, dict)
+    )
 
 
 def _parse_stock(stock: Any) -> Stock | None:
@@ -168,6 +248,7 @@ def _parse_stock(stock: Any) -> Stock | None:
         seats=_positive_int(stock.get("numberOfSeats")),
         carriages=_positive_int(stock.get("numberOfParts")),
         train_type=str(stock["trainType"]) if stock.get("trainType") else None,
+        parts=_train_parts(stock.get("trainParts")),
     )
     return result if result.seats or result.carriages else None
 
@@ -200,6 +281,103 @@ def parse_train_origin(stops: list[Any]) -> str | None:
     return str(name) if name else None
 
 
+def _text(value: Any) -> str | None:
+    return str(value) if value else None
+
+
+def _number(value: Any) -> float | None:
+    return float(value) if isinstance(value, int | float) and not isinstance(value, bool) else None
+
+
+def _track(actual: Any, planned: Any) -> tuple[str | None, bool]:
+    """The track to use (actual over planned) and whether it differs from the planned one."""
+    track = _text(actual) or _text(planned)
+    return track, bool(actual and planned and actual != planned)
+
+
+def _messages(items: Any) -> tuple[str, ...]:
+    """Disruption and maintenance messages as text: their head, then their text."""
+    texts = []
+    for message in items if isinstance(items, list) else []:
+        if isinstance(message, dict):
+            text = " - ".join(str(message[k]) for k in ("head", "text") if message.get(k))
+            if text:
+                texts.append(text)
+    return tuple(dict.fromkeys(texts))
+
+
+def _notes(items: Any) -> tuple[str, ...]:
+    """Note values; product notes come as a list of lists, so nested lists are flattened."""
+    texts: list[str] = []
+    for note in items if isinstance(items, list) else []:
+        if isinstance(note, list):
+            texts.extend(_notes(note))
+        elif isinstance(note, dict) and note.get("value"):
+            texts.append(str(note["value"]))
+    return tuple(dict.fromkeys(texts))
+
+
+def _parse_leg_stop(stop: dict[str, Any]) -> LegStop:
+    track, changed = _track(
+        stop.get("actualDepartureTrack") or stop.get("actualArrivalTrack"),
+        stop.get("plannedDepartureTrack") or stop.get("plannedArrivalTrack"),
+    )
+    return LegStop(
+        name=str(stop.get("name") or ""),
+        arrival_planned=_time(stop.get("plannedArrivalDateTime")),
+        arrival_actual=_time(stop.get("actualArrivalDateTime")),
+        departure_planned=_time(stop.get("plannedDepartureDateTime")),
+        departure_actual=_time(stop.get("actualDepartureDateTime")),
+        track=track,
+        track_changed=changed,
+        passing=bool(stop.get("passing")),
+        cancelled=bool(stop.get("cancelled")),
+    )
+
+
+def parse_leg(leg: dict[str, Any]) -> Leg:
+    """Every detail of a leg of the trips response that riders can use."""
+    origin, destination = leg.get("origin") or {}, leg.get("destination") or {}
+    product = leg.get("product") or {}
+    departure_track, departure_changed = _track(
+        origin.get("actualTrack"), origin.get("plannedTrack")
+    )
+    arrival_track, arrival_changed = _track(
+        destination.get("actualTrack"), destination.get("plannedTrack")
+    )
+    name = f"{product.get('shortCategoryName', '')} {product.get('number', '')}".strip()
+    return Leg(
+        travel_type=str(leg.get("travelType") or "UNKNOWN"),
+        name=name or str(leg.get("name") or ""),
+        category=_text(product.get("longCategoryName")),
+        operator=_text(product.get("operatorName")),
+        direction=_text(leg.get("direction")),
+        origin=str(origin.get("name") or ""),
+        departure_planned=_time(origin.get("plannedDateTime")),
+        departure_actual=_time(origin.get("actualDateTime")),
+        departure_track=departure_track,
+        departure_track_changed=departure_changed,
+        destination=str(destination.get("name") or ""),
+        arrival_planned=_time(destination.get("plannedDateTime")),
+        arrival_actual=_time(destination.get("actualDateTime")),
+        arrival_track=arrival_track,
+        arrival_track_changed=arrival_changed,
+        exit_side=_text(destination.get("exitSide")),
+        cancelled=bool(leg.get("cancelled")),
+        crowd_forecast=str(leg.get("crowdForecast") or ""),
+        punctuality=_number(leg.get("punctuality")),
+        stops=tuple(_parse_leg_stop(s) for s in leg.get("stops") or [] if isinstance(s, dict)),
+        notes=_notes(leg.get("notes")) + _notes(product.get("notes")),
+        messages=_messages(leg.get("messages")),
+        transfer_messages=tuple(
+            str(m["message"])
+            for m in leg.get("transferMessages") or []
+            if isinstance(m, dict) and m.get("message")
+        ),
+        shorter_stock_warning=_text(leg.get("shorterStockWarning")),
+    )
+
+
 def parse_trip(item: dict[str, Any]) -> Trip | None:
     legs = item.get("legs") or []
     if not legs:
@@ -229,6 +407,9 @@ def parse_trip(item: dict[str, Any]) -> Trip | None:
         shorter_stock=shorter_stock,
         shorter_stock_warning=shorter_stock_warning,
         train_destination=str(direction) if direction else None,
+        punctuality=_number(item.get("punctuality")),
+        messages=_messages(item.get("messages")),
+        legs=tuple(parse_leg(leg) for leg in legs if isinstance(leg, dict)),
     )
 
 
@@ -320,6 +501,7 @@ def _with_journey(trip: Trip, info: JourneyInfo | None) -> Trip:
         seats=stock.seats if stock else None,
         carriages=stock.carriages if stock else None,
         train_type=stock.train_type if stock else None,
+        train_parts=stock.parts if stock else (),
         train_origin=info.origin,
     )
 

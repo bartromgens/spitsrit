@@ -220,6 +220,128 @@ def test_parse_boarding_stock_from_the_real_journey_response() -> None:
     assert ns.parse_boarding_stock(unmarked, "9999999") is None
 
 
+def test_parse_boarding_stock_reads_the_units_and_facilities() -> None:
+    fixture = Path(__file__).parent / "fixtures" / "ns_journey_3148.json"
+    stops = json.loads(fixture.read_text())["payload"]["stops"]
+    stock = ns.parse_boarding_stock(stops, "8400621")
+    assert stock is not None
+    assert stock.parts == (
+        ns.TrainPart(
+            "9469",
+            ("WIFI", "TOILET", "STILTE", "FIETS", "STROOM"),
+            "https://vt.ns-mlab.nl/v1/images/virmm1_4.png",
+        ),
+        ns.TrainPart(
+            "9596",
+            ("WIFI", "TOILET", "STILTE", "FIETS"),
+            "https://vt.ns-mlab.nl/v1/images/virm_4.png",
+        ),
+    )
+
+
+@pytest.mark.parametrize(
+    "image",
+    [None, {}, {"uri": ""}, {"uri": "http://vt.ns-mlab.nl/a.png"}, {"uri": "javascript:x"}, "x"],
+)
+def test_train_part_without_a_usable_image(image: Any) -> None:
+    [part] = ns._train_parts([{"stockIdentifier": "1", "facilities": [], "image": image}])
+    assert part.image_url is None
+
+
+def test_fetch_trips_passes_the_boarding_units_on(monkeypatch: pytest.MonkeyPatch) -> None:
+    boarding = {**stock(620), "trainParts": [{"stockIdentifier": "9401", "facilities": ["WIFI"]}]}
+    trips_with_journey(monkeypatch, journey(stop("8400621", actualStock=boarding)))
+    [trip] = ns.fetch_trips("UT", "ASD", NOW)
+    assert trip.train_parts == (ns.TrainPart("9401", ("WIFI",)),)
+
+
+DETAILED_LEG: dict[str, Any] = {
+    "travelType": "PUBLIC_TRANSIT",
+    "direction": "Den Haag Centraal",
+    "cancelled": False,
+    "crowdForecast": "HIGH",
+    "punctuality": 87.5,
+    "origin": {
+        "name": "Utrecht Centraal",
+        "plannedDateTime": "2026-11-20T08:00:00+0100",
+        "actualDateTime": "2026-11-20T08:02:00+0100",
+        "plannedTrack": "5",
+        "actualTrack": "7",
+    },
+    "destination": {
+        "name": "Gouda",
+        "plannedDateTime": "2026-11-20T08:18:00+0100",
+        "plannedTrack": "3",
+        "actualTrack": "3",
+        "exitSide": "RIGHT",
+    },
+    "product": {
+        "shortCategoryName": "IC",
+        "number": "2136",
+        "longCategoryName": "Intercity",
+        "operatorName": "NS",
+        "notes": [[{"value": "Stiltecoupé"}, {"value": "Toegankelijk"}]],
+    },
+    "stops": [
+        {
+            "name": "Utrecht Centraal",
+            "plannedDepartureDateTime": "2026-11-20T08:00:00+0100",
+            "actualDepartureDateTime": "2026-11-20T08:02:00+0100",
+            "plannedDepartureTrack": "5",
+            "actualDepartureTrack": "7",
+        },
+        {"name": "Woerden", "passing": True},
+        {
+            "name": "Gouda",
+            "plannedArrivalDateTime": "2026-11-20T08:18:00+0100",
+            "plannedArrivalTrack": "3",
+        },
+    ],
+    "notes": [{"value": "Reserveren niet nodig"}],
+    "messages": [{"head": "Werkzaamheden", "text": "Minder treinen"}, {"text": ""}],
+    "transferMessages": [{"message": "Overstap op hetzelfde perron"}],
+    "shorterStockWarning": "Kortere trein",
+}
+
+
+def test_parse_trip_reads_every_leg_in_detail() -> None:
+    item = {**TRIP_ITEM, "punctuality": 90, "messages": [{"head": "Storing"}]}
+    walk = {
+        "travelType": "WALK",
+        "name": "Lopen",
+        "destination": {"plannedDateTime": "2026-11-20T08:25:00+0100"},
+    }
+    trip = ns.parse_trip({**item, "legs": [DETAILED_LEG, walk]})
+    assert trip is not None
+    assert trip.punctuality == 90.0
+    assert trip.messages == ("Storing",)
+    leg, walk_leg = trip.legs
+    assert (leg.name, leg.category, leg.operator) == ("IC 2136", "Intercity", "NS")
+    assert (leg.direction, leg.origin, leg.destination) == (
+        "Den Haag Centraal",
+        "Utrecht Centraal",
+        "Gouda",
+    )
+    assert (leg.departure_track, leg.departure_track_changed) == ("7", True)
+    assert (leg.arrival_track, leg.arrival_track_changed) == ("3", False)
+    assert leg.arrival_actual is None
+    assert leg.exit_side == "RIGHT"
+    assert (leg.crowd_forecast, leg.punctuality) == ("HIGH", 87.5)
+    assert leg.notes == ("Reserveren niet nodig", "Stiltecoupé", "Toegankelijk")
+    assert leg.messages == ("Werkzaamheden - Minder treinen",)
+    assert leg.transfer_messages == ("Overstap op hetzelfde perron",)
+    assert leg.shorter_stock_warning == "Kortere trein"
+    first, passed, last = leg.stops
+    assert (first.track, first.track_changed, first.departure_actual) == (
+        "7",
+        True,
+        datetime.fromisoformat("2026-11-20T08:02:00+01:00"),
+    )
+    assert passed.passing and passed.track is None
+    assert (last.track, last.departure_planned) == ("3", None)
+    assert (walk_leg.travel_type, walk_leg.name, walk_leg.stops) == ("WALK", "Lopen", ())
+
+
 def test_parse_boarding_stock_prefers_actual_over_planned_stock() -> None:
     stops = [stop("8400621", actualStock=stock(700, 8), plannedStock=stock(400, 4))]
     assert ns.parse_boarding_stock(stops, "8400621") == ns.Stock(700, 8, "VIRM")
