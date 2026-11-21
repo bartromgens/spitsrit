@@ -1,0 +1,38 @@
+:host {
+  display: block;
+  font-size: var(--sp-text-sm);
+}
+
+.summary {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-space-1);
+  margin: 0;
+}
+
+// One rental point per row: its name, and the count or "closed" right-aligned, indented to
+// line up with the text after the bike icon.
+.points {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: var(--sp-space-2);
+  row-gap: var(--sp-space-half);
+  max-width: 20rem;
+  margin: var(--sp-space-1) 0 0;
+  padding: 0 0 0 calc(1.5rem + var(--sp-space-1));
+  list-style: none;
+
+  li {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+  }
+
+  .status {
+    text-align: right;
+  }
+
+  .closed {
+    color: var(--mat-sys-on-surface-variant);
+  }
+}

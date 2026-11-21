@@ -31,5 +31,7 @@ export type { ConfigRetrieve$Params as ConfigRetrieve$Params } from './fn/config
 export { configRetrieve as configRetrieve } from './fn/config/config-retrieve';
 export type { StationsList$Params as StationsList$Params } from './fn/stations/stations-list';
 export { stationsList as stationsList } from './fn/stations/stations-list';
+export type { StationsOvFietsRetrieve$Params as StationsOvFietsRetrieve$Params } from './fn/stations/stations-ov-fiets-retrieve';
+export { stationsOvFietsRetrieve as stationsOvFietsRetrieve } from './fn/stations/stations-ov-fiets-retrieve';
 export type { TripsRetrieve$Params as TripsRetrieve$Params } from './fn/trips/trips-retrieve';
 export { tripsRetrieve as tripsRetrieve } from './fn/trips/trips-retrieve';

@@ -1,5 +1,7 @@
+import { HttpTestingController } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Leg, Trip } from '../../api/models';
+import { settle, testProviders } from '../../testing';
 import { TripDetails } from './trip-details';
 
 const ride: Leg = {
@@ -127,13 +129,29 @@ describe('TripDetails', () => {
   }
 
   beforeEach(async () => {
-    TestBed.configureTestingModule({ imports: [TripDetails] });
+    TestBed.configureTestingModule({ imports: [TripDetails], providers: testProviders });
     fixture = TestBed.createComponent(TripDetails);
     element = fixture.nativeElement as HTMLElement;
     await render(trip);
   });
 
   const text = (): string => element.textContent?.replace(/\s+/g, ' ') ?? '';
+
+  it('shows the OV-fiets count at the destination when it is known', async () => {
+    expect(element.querySelector('app-ov-fiets-count')).toBeNull();
+    fixture.componentRef.setInput('destination', { code: 'GD', name: 'Gouda' });
+    await fixture.whenStable();
+    TestBed.inject(HttpTestingController)
+      .expectOne('/api/stations/GD/ov-fiets/')
+      .flush({
+        station_code: 'GD',
+        available: 12,
+        locations: [{ name: 'Gouda', available: 12, open: 'Yes' }],
+      });
+    await settle(fixture);
+    expect(text()).toContain('At Gouda');
+    expect(text()).toContain('12 OV-fietsen at Gouda');
+  });
 
   it('summarises the trip with its disruptions', () => {
     expect(text()).toContain('28 min');

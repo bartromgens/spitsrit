@@ -8,21 +8,13 @@ import {
   output,
   viewChild,
 } from '@angular/core';
-import { Leg, LegStop, Span, Trip, TrainPart } from '../../api/models';
+import { Leg, LegStop, Span, Station, Trip, TrainPart } from '../../api/models';
 import { Crowding } from '../crowding/crowding';
 import { DepartureTime } from '../departure-time/departure-time';
+import { FacilityIcon } from '../facility-icon/facility-icon';
+import { OvFietsCount } from '../ov-fiets-count/ov-fiets-count';
 import { PlatformSign } from '../platform-sign/platform-sign';
 import { TrainLength } from '../train-length/train-length';
-
-// NS facility codes on a train unit, in plain words. Unknown codes are shown as they come.
-const FACILITIES: Record<string, string> = {
-  WIFI: 'Wi-Fi',
-  TOILET: 'Toilet',
-  STILTE: 'Quiet zone',
-  FIETS: 'Bicycles',
-  STROOM: 'Power sockets',
-  TOEGANKELIJK: 'Step-free',
-};
 
 const EXIT_SIDES: Record<string, string> = { LEFT: 'left', RIGHT: 'right' };
 
@@ -109,7 +101,16 @@ function stopView(stop: LegStop, index: number, count: number): StopView {
  * wide screens and as a full-screen overlay on phones; the parent decides where.
  */
 @Component({
-  imports: [DatePipe, DecimalPipe, Crowding, DepartureTime, PlatformSign, TrainLength],
+  imports: [
+    DatePipe,
+    DecimalPipe,
+    Crowding,
+    DepartureTime,
+    FacilityIcon,
+    OvFietsCount,
+    PlatformSign,
+    TrainLength,
+  ],
   selector: 'app-trip-details',
   styleUrl: './trip-details.scss',
   templateUrl: './trip-details.html',
@@ -117,6 +118,8 @@ function stopView(stop: LegStop, index: number, count: number): StopView {
 })
 export class TripDetails {
   readonly trip = input.required<Trip>();
+  /** Where the trip ends, to show its OV-fiets count; none when not known. */
+  readonly destination = input<Station | null>(null);
   /** The rider closed the details. */
   readonly closed = output();
 
@@ -191,9 +194,5 @@ export class TripDetails {
   /** An image that fails to load leaves no broken-image icon or gap in the strip. */
   protected hideImage(event: Event): void {
     (event.target as HTMLElement).hidden = true;
-  }
-
-  protected facility(code: string): string {
-    return FACILITIES[code] ?? code.toLowerCase();
   }
 }

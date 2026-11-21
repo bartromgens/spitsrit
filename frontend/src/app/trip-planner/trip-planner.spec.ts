@@ -91,6 +91,29 @@ describe('TripPlanner', () => {
     expect((fixture.nativeElement as HTMLElement).querySelector('li.best')).not.toBeNull();
   });
 
+  it('shows the OV-fiets count at the destination in the trip details', async () => {
+    choose(utrecht, amsterdam);
+    const planned = planner.plan();
+    http
+      .expectOne('/api/trips/?from=UT&to=ASD')
+      .flush({ fetched_at: '', trips: [trip], recommended_uid: 'a', wait_minutes: 0 });
+    await planned;
+    await settle(fixture);
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector('app-ov-fiets-count')).toBeNull();
+    element.querySelector<HTMLButtonElement>('[data-testid="trip-row-button"]')!.click();
+    await settle(fixture);
+    http.expectOne('/api/stations/ASD/ov-fiets/').flush({
+      station_code: 'ASD',
+      available: 20,
+      locations: [{ name: 'Amsterdam Centraal IJzijde', available: 20, open: 'Yes' }],
+    });
+    await settle(fixture);
+    expect(element.querySelector('[data-testid="trip-details"]')?.textContent).toContain(
+      '20 OV-fietsen at Amsterdam Centraal',
+    );
+  });
+
   it('opens the details of a clicked trip beside the results and closes them again', async () => {
     choose(utrecht, amsterdam);
     const planned = planner.plan();

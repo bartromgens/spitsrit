@@ -131,8 +131,7 @@
       <p class="notice" data-testid="train-split">
         Part of this train stays behind at {{ t.split_stations.join(', ') }}.
         @if (t.board_destination) {
-          Board the part to <strong>{{ t.board_destination }}</strong
-          >.
+          Board the part to <strong>{{ t.board_destination }}</strong>.
         }
       </p>
     }
@@ -151,7 +150,7 @@
             }
             <span class="facilities">
               @for (code of part.facilities; track code) {
-                <span class="facility">{{ facility(code) }}</span>
+                <app-facility-icon [code]="code" />
               } @empty {
                 <span class="muted">no facilities listed</span>
               }
@@ -291,3 +290,10 @@
     </li>
   }
 </ol>
+
+@if (destination(); as to) {
+  <section class="arrival" aria-labelledby="trip-details-arrival">
+    <h3 id="trip-details-arrival">At {{ to.name }}</h3>
+    <app-ov-fiets-count [stationCode]="to.code" [stationName]="to.name" />
+  </section>
+}

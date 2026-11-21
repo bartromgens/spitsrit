@@ -8,6 +8,8 @@ export type { CommuteTrips } from './models/commute-trips';
 export type { Leg } from './models/leg';
 export type { LegStop } from './models/leg-stop';
 export type { LoginRequest } from './models/login-request';
+export type { OvFiets } from './models/ov-fiets';
+export type { OvFietsLocation } from './models/ov-fiets-location';
 export type { PaginatedCommuteList } from './models/paginated-commute-list';
 export type { PatchedCommuteRequest } from './models/patched-commute-request';
 export type { RegisterRequest } from './models/register-request';

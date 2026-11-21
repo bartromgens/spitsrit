@@ -63,6 +63,6 @@
     aria-labelledby="trip-details-title"
     data-testid="trip-details"
   >
-    <app-trip-details [trip]="trip" (closed)="close()" />
+    <app-trip-details [trip]="trip" [destination]="destination()" (closed)="close()" />
   </aside>
 }
