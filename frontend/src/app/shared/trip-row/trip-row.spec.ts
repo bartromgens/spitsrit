@@ -18,7 +18,7 @@ const trip: Trip = {
   crowd_forecast: 'HIGH',
   train: 'IC 2736',
   seats: 620,
-  units: 4,
+  carriages: 8,
   train_type: 'VIRM',
   shorter_stock: null,
   shorter_stock_warning: null,
@@ -89,7 +89,7 @@ describe('TripRow', () => {
   it('uses mono only for numbers', async () => {
     await render({ transfers: 1 });
     const mono = Array.from(element().querySelectorAll('.sp-mono')).map((el) => el.textContent);
-    expect(mono).toEqual(['2736', '620', '08:30', '30', '1']);
+    expect(mono).toEqual(['2736', '620', '8', '08:30', '30', '1']);
     expect(element().querySelector('.journey')?.classList.contains('sp-mono')).toBe(false);
   });
 

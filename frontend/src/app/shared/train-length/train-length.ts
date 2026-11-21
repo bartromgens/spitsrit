@@ -12,6 +12,7 @@ import { Component, input } from '@angular/core';
 })
 export class TrainLength {
   readonly seats = input<number | null | undefined>(null);
+  readonly carriages = input<number | null | undefined>(null);
   readonly trainType = input<string | null | undefined>(null);
   readonly shorterStock = input<string | null | undefined>(null);
   readonly shorterStockWarning = input<string | null | undefined>(null);

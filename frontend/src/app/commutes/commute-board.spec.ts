@@ -31,7 +31,7 @@ function trip(overrides: Partial<Trip>): Trip {
     crowd_forecast: 'LOW',
     train: 'IC 1234',
     seats: 620,
-    units: 4,
+    carriages: 8,
     train_type: 'VIRM',
     shorter_stock: null,
     shorter_stock_warning: null,
