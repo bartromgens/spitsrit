@@ -34,6 +34,10 @@ const trip: Trip = {
   punctuality: null,
   messages: [],
   legs: [],
+  coach_crowding: [],
+  platform_features: [],
+  split_stations: [],
+  board_destination: null,
 };
 
 /** The protected members the template uses, reachable from the test. */
