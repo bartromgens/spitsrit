@@ -8,6 +8,13 @@ body {
   color: var(--mat-sys-on-surface);
   font: var(--mat-sys-body-medium);
   font-family: var(--sp-font-ui);
+  // Content cards are white (the lowest surface) on the tinted page.
+  --mat-card-outlined-container-color: var(--mat-sys-surface-container-lowest);
+
+  // Without visible cards on a phone, the page itself is the content: give it the cards' white.
+  @include layout.mobile {
+    background-color: var(--mat-sys-surface-container-lowest);
+  }
 }
 
 html {
@@ -70,14 +77,13 @@ a:not([class*='mat-']) {
   margin: var(--sp-space-2) 0 0;
   padding: 0;
 
+  // Square rows with thin dividers, whose content lines up with the card's own text, since the
+  // list reaches the card's edges (see .sp-full-bleed).
   li {
-    padding: var(--sp-space-1);
+    padding: var(--sp-space-1) var(--sp-row-inset);
+    padding-left: calc(var(--sp-row-inset) - var(--sp-accent-width));
     border-left: var(--sp-accent-width) solid transparent;
-    border-radius: var(--sp-radius-md);
-  }
-
-  li + li {
-    margin-top: var(--sp-space-half);
+    border-bottom: var(--sp-border-width) solid var(--mat-sys-outline-variant);
   }
 
   li.best {
@@ -89,19 +95,12 @@ a:not([class*='mat-']) {
     opacity: 0.75;
   }
 
-  // Edge to edge: no gaps or rounded boxes, thin dividers, and the row content keeps an inner
-  // padding plus the safe-area inset so it never touches the screen edge.
+  // Edge to edge on the screen: the row content keeps an inner padding plus the safe-area inset
+  // so it never touches the screen edge.
   @include layout.mobile {
     li {
-      padding-block: var(--sp-space-1);
       padding-inline: calc(var(--sp-row-inset) + env(safe-area-inset-left, 0px))
         calc(var(--sp-row-inset) + env(safe-area-inset-right, 0px));
-      border-radius: 0;
-      border-bottom: var(--sp-border-width) solid var(--mat-sys-outline-variant);
-    }
-
-    li + li {
-      margin-top: 0;
     }
   }
 }
@@ -126,8 +125,12 @@ a:not([class*='mat-']) {
   }
 }
 
-// A results list that spans the full screen width by cancelling the page margin around it.
+// A results list that spans its container edge to edge: the card on wider screens, by cancelling
+// Material's card content padding (16px), and the full screen width on mobile, by cancelling the
+// page margin (the card has no padding there).
 .sp-full-bleed {
+  margin-inline: calc(-1 * var(--sp-space-2));
+
   @include layout.mobile {
     margin-inline: calc(-1 * var(--sp-page-margin-mobile));
   }
