@@ -1,0 +1,8 @@
+@if (length()) {
+  <span class="cars" aria-hidden="true">
+    @for (car of cars(); track car) {
+      <span class="car"></span>
+    }
+  </span>
+  <span class="count">{{ length() }} treinstellen</span>
+}

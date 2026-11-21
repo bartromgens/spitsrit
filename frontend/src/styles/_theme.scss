@@ -1,0 +1,24 @@
+// The Angular Material theme, built from the Spitsrit palettes and type tokens.
+@use 'sass:string';
+@use '@angular/material' as mat;
+@use 'palettes';
+
+html {
+  @include mat.theme(
+    (
+      color: (
+        primary: palettes.$primary,
+        tertiary: palettes.$tertiary,
+        theme-type: color-scheme,
+      ),
+      typography: (
+        plain-family: string.unquote("'Space Grotesk', sans-serif"),
+        brand-family: string.unquote("'Space Grotesk', sans-serif"),
+        bold-weight: 700,
+        medium-weight: 500,
+        regular-weight: 400,
+      ),
+      density: 0,
+    )
+  );
+}

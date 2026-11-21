@@ -1,4 +1,3 @@
-import { DatePipe } from '@angular/common';
 import {
   Component,
   DestroyRef,
@@ -18,19 +17,20 @@ import { MatInputModule } from '@angular/material/input';
 import { Api } from '../api/api';
 import { commutesPartialUpdate, commutesTripsRetrieve } from '../api/functions';
 import { Commute, CommuteTrips } from '../api/models';
+import { TripRow } from '../shared/trip-row/trip-row';
 
 const REFRESH_MS = 60_000;
 
 /** Live upcoming trips for one commute, with the trip to take highlighted. */
 @Component({
   imports: [
-    DatePipe,
     ReactiveFormsModule,
     MatButtonModule,
     MatCardModule,
     MatChipsModule,
     MatFormFieldModule,
     MatInputModule,
+    TripRow,
   ],
   selector: 'app-commute-board',
   styleUrl: './commute-board.scss',

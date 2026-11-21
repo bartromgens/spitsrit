@@ -1,5 +1,5 @@
 mat-card {
-  max-width: 400px;
+  max-width: var(--sp-form-width);
 }
 
 form {
@@ -8,9 +8,5 @@ form {
 }
 
 .google {
-  margin-top: 16px;
-}
-
-.error {
-  color: var(--mat-sys-error);
+  margin-top: var(--sp-space-2);
 }

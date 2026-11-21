@@ -1,0 +1,64 @@
+// Spitsrit design tokens as CSS custom properties. Components only use these (or --mat-sys-*),
+// never colour literals, font families or hard-coded font sizes.
+//
+// Colours use light-dark() so they follow `color-scheme: light dark` (the system setting).
+:root {
+  color-scheme: light dark;
+
+  // Colour roles
+  --sp-brand: #ffd21f; // Dutch train yellow
+  --sp-on-brand: #0a2054;
+  --sp-blue: light-dark(#1b3a8a, #b2c8ff);
+  --sp-signal-green: light-dark(#0f7a38, #4ade80);
+  --sp-signal-green-surface: light-dark(#dcf5e4, #123524);
+  --sp-signal-red: light-dark(#b3261e, #ff8f85);
+  --sp-sign: #1b3a8a; // platform sign
+  --sp-on-sign: #ffffff;
+  --sp-pip-on: light-dark(#0a2054, #ffd21f);
+  --sp-pip-off: light-dark(#c3c8d6, #4a5163);
+  --sp-track-color: light-dark(#8a93a8, #5b6580);
+
+  // Type
+  --sp-font-ui: 'Space Grotesk', sans-serif;
+  --sp-font-mono: 'JetBrains Mono', monospace;
+  --sp-text-xs: 0.75rem;
+  --sp-text-sm: 0.875rem;
+  --sp-text-md: 1rem;
+  --sp-text-lg: 1.25rem;
+  --sp-text-xl: 1.5rem;
+  --sp-text-2xl: 2rem;
+  --sp-weight-regular: 400;
+  --sp-weight-medium: 500;
+  --sp-weight-bold: 700;
+
+  // Spacing
+  --sp-space-half: 0.25rem;
+  --sp-space-1: 0.5rem;
+  --sp-space-2: 1rem;
+  --sp-space-3: 1.5rem;
+  --sp-space-4: 2rem;
+  --sp-page-width: 45rem;
+  --sp-form-width: 25rem;
+
+  // Shape
+  --sp-radius-xs: 0.125rem;
+  --sp-radius-sm: 0.25rem;
+  --sp-radius-md: 0.5rem;
+  --sp-radius-lg: 0.75rem;
+  --sp-radius-pill: 62.5rem;
+  --sp-border-width: 1px;
+  --sp-border-width-strong: 2px;
+  --sp-accent-width: 0.3rem;
+
+  // Elevation
+  --sp-elevation-1: 0 1px 2px light-dark(rgb(0 0 0 / 15%), rgb(0 0 0 / 60%));
+  --sp-elevation-2: 0 2px 8px light-dark(rgb(0 0 0 / 20%), rgb(0 0 0 / 70%));
+
+  // Make Material components speak the same language.
+  --mat-sys-corner-medium: var(--sp-radius-md);
+  --mat-sys-corner-large: var(--sp-radius-lg);
+
+  // Yellow reads as the brand colour on buttons in both colour schemes.
+  --mat-button-filled-container-color: var(--sp-brand);
+  --mat-button-filled-label-text-color: var(--sp-on-brand);
+}

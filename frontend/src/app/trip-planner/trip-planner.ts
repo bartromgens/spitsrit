@@ -1,4 +1,3 @@
-import { DatePipe } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -14,6 +13,7 @@ import { debounceTime, distinctUntilChanged, of, switchMap } from 'rxjs';
 import { Api } from '../api/api';
 import { stationsList, tripsRetrieve } from '../api/functions';
 import { CommuteTrips, Station } from '../api/models';
+import { TripRow } from '../shared/trip-row/trip-row';
 
 const SEARCH_DEBOUNCE_MS = 250;
 const MIN_QUERY_LENGTH = 2;
@@ -23,13 +23,13 @@ type Side = 'origin' | 'destination';
 /** Proof of concept: pick two stations and show the NS trip advice for them. */
 @Component({
   imports: [
-    DatePipe,
     ReactiveFormsModule,
     MatAutocompleteModule,
     MatButtonModule,
     MatCardModule,
     MatFormFieldModule,
     MatInputModule,
+    TripRow,
   ],
   selector: 'app-trip-planner',
   styleUrl: './trip-planner.scss',

@@ -38,32 +38,15 @@
     }
     @if (data(); as d) {
       <p class="advice" data-testid="advice">{{ advice() }}</p>
-      <ul class="trips">
+      <div class="sp-track" aria-hidden="true"></div>
+      <ul class="sp-trips">
         @for (trip of d.trips; track trip.uid) {
           <li [class.best]="trip.uid === d.recommended_uid" [class.cancelled]="trip.cancelled">
-            <span class="time">{{ trip.departure_actual | date: 'HH:mm' }}</span>
-            @if (trip.departure_delay_minutes > 0) {
-              <span class="delay">+{{ trip.departure_delay_minutes }}</span>
-            }
-            <span class="detail">
-              @if (trip.cancelled) {
-                Cancelled
-              } @else {
-                {{ trip.train }}
-                @if (trip.train_length) {
-                  · {{ trip.train_length }} treinstellen
-                }
-                · platform {{ trip.departure_track || '?' }} · arrives
-                {{ trip.arrival_actual | date: 'HH:mm' }}
-                @if (trip.arrival_delay_minutes > 0) {
-                  (+{{ trip.arrival_delay_minutes }})
-                }
-                · {{ trip.duration_minutes }} min
-                @if (trip.transfers > 0) {
-                  · {{ trip.transfers }} transfer{{ trip.transfers === 1 ? '' : 's' }}
-                }
-              }
-            </span>
+            <app-trip-row
+              [trip]="trip"
+              [recommended]="trip.uid === d.recommended_uid"
+              [arrivalDelay]="true"
+            />
           </li>
         } @empty {
           <li>No upcoming trips.</li>

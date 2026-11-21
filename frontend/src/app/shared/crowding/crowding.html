@@ -1,0 +1,7 @@
+@if (level() > 0) {
+  <span class="pips" role="img" [attr.aria-label]="'Crowding: ' + label()">
+    @for (pip of pips; track pip) {
+      <span class="pip" [class.filled]="pip <= level()"></span>
+    }
+  </span>
+}

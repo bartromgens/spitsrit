@@ -1,0 +1,94 @@
+// Global base styles and the few global helper classes shared by components.
+body {
+  margin: 0;
+  height: 100%;
+  background-color: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
+  font: var(--mat-sys-body-medium);
+  font-family: var(--sp-font-ui);
+}
+
+html {
+  height: 100%;
+}
+
+h1 {
+  margin: 0 0 var(--sp-space-2);
+  font-size: var(--sp-text-xl);
+  font-weight: var(--sp-weight-bold);
+}
+
+a {
+  color: var(--sp-blue);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+// A rail with sleepers, used sparingly as a divider or section accent.
+.sp-track {
+  height: var(--sp-space-1);
+  background-image:
+    linear-gradient(var(--sp-track-color), var(--sp-track-color)),
+    linear-gradient(var(--sp-track-color), var(--sp-track-color)),
+    repeating-linear-gradient(
+      90deg,
+      var(--sp-track-color) 0 var(--sp-border-width-strong),
+      transparent var(--sp-border-width-strong) var(--sp-space-2)
+    );
+  background-position:
+    0 0.15rem,
+    0 calc(100% - 0.15rem),
+    0 0;
+  background-size:
+    100% var(--sp-border-width),
+    100% var(--sp-border-width),
+    100% 100%;
+  background-repeat: no-repeat, no-repeat, repeat;
+}
+
+// Errors are signal red.
+.error {
+  color: var(--sp-signal-red);
+  font-weight: var(--sp-weight-medium);
+}
+
+// A list of trips: rows with the recommended one lit like a green signal.
+.sp-trips {
+  list-style: none;
+  margin: var(--sp-space-2) 0 0;
+  padding: 0;
+
+  li {
+    padding: var(--sp-space-1);
+    border-left: var(--sp-accent-width) solid transparent;
+    border-radius: var(--sp-radius-md);
+  }
+
+  li + li {
+    margin-top: var(--sp-space-half);
+  }
+
+  li.best {
+    border-left-color: var(--sp-signal-green);
+    background: var(--sp-signal-green-surface);
+  }
+
+  li.cancelled {
+    opacity: 0.75;
+  }
+}
+
+// Mono, tabular figures so columns of times line up like a departure board.
+.sp-mono {
+  font-family: var(--sp-font-mono);
+  font-variant-numeric: tabular-nums;
+}

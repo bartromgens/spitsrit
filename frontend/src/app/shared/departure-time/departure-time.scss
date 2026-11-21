@@ -1,0 +1,18 @@
+:host {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--sp-space-1);
+  font-family: var(--sp-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.time {
+  font-size: var(--sp-text-lg);
+  font-weight: var(--sp-weight-bold);
+}
+
+.delay {
+  color: var(--sp-signal-red);
+  font-size: var(--sp-text-sm);
+  font-weight: var(--sp-weight-bold);
+}

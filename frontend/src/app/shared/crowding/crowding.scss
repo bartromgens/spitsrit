@@ -1,0 +1,21 @@
+:host {
+  display: inline-flex;
+}
+
+.pips {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: var(--sp-space-half);
+}
+
+// A person: a rounded body that fills in as the train gets busier.
+.pip {
+  width: 0.5em;
+  height: 0.9em;
+  border-radius: var(--sp-radius-pill) var(--sp-radius-pill) var(--sp-radius-xs) var(--sp-radius-xs);
+  background: var(--sp-pip-off);
+
+  &.filled {
+    background: var(--sp-pip-on);
+  }
+}

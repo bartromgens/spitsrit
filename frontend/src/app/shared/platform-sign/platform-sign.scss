@@ -1,0 +1,21 @@
+:host {
+  display: inline-flex;
+}
+
+.sign {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.75em;
+  height: 1.75em;
+  padding: 0 var(--sp-space-1);
+  box-sizing: border-box;
+  border: var(--sp-border-width-strong) solid var(--sp-on-sign);
+  border-radius: var(--sp-radius-sm);
+  background: var(--sp-sign);
+  color: var(--sp-on-sign);
+  font-family: var(--sp-font-mono);
+  font-size: var(--sp-text-sm);
+  font-weight: var(--sp-weight-bold);
+  font-variant-numeric: tabular-nums;
+}
