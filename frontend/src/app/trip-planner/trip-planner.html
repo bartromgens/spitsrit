@@ -52,6 +52,9 @@
           <li>No upcoming trips.</li>
         }
       </ul>
+      @if (destination(); as to) {
+        <app-ov-fiets-count [stationCode]="to.code" [stationName]="to.name" />
+      }
     }
   </mat-card-content>
 </mat-card>
