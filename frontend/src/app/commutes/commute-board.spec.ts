@@ -82,7 +82,7 @@ describe('CommuteBoard', () => {
     );
     expect(text()).toContain('Utrecht Centraal → Amsterdam Centraal');
     expect(text()).toContain('Leave now');
-    expect(text()).toContain('Intercity');
+    expect(text()).toContain('IC');
     expect(text()).not.toContain('2736');
     expect(text()).toContain('platform 5');
     const element = fixture.nativeElement as HTMLElement;
@@ -90,12 +90,10 @@ describe('CommuteBoard', () => {
     expect(element.querySelector('[aria-label="8 carriages"]')).not.toBeNull();
   });
 
-  it('shows the train route only after switching the toggle on', async () => {
+  it('always shows the train route, without a toggle', async () => {
     await flush(trips({ trips: [trip({})], recommended_uid: 'a', wait_minutes: 0 }));
     const element = fixture.nativeElement as HTMLElement;
-    expect(element.querySelector('[data-testid="train-route"]')).toBeNull();
-    element.querySelector<HTMLElement>('[data-testid="train-route-toggle"] button')?.click();
-    await settle(fixture);
+    expect(text()).not.toContain('Show train route');
     expect(element.querySelector('[data-testid="train-route"]')?.textContent).toContain(
       'Nijmegen → Den Haag C.',
     );
@@ -240,13 +238,25 @@ describe('CommuteBoard', () => {
     filtered.detectChanges();
     const root = filtered.nativeElement as HTMLElement;
     const chips = root.querySelectorAll<HTMLElement>('[data-testid="filter-chip"]');
-    expect(Array.from(chips).map((c) => c.textContent?.trim())).toEqual(['≤ 1 transfer']);
+    expect(Array.from(chips).map((c) => c.textContent?.trim())).toEqual(['Max 1 transfer']);
     expect(root.querySelector('input')).toBeNull();
-    root.querySelector<HTMLButtonElement>('[data-testid="filter-chip"] button')!.click();
+    root.querySelector<HTMLButtonElement>('button[data-testid="filter-chip"]')!.click();
     filtered.detectChanges();
     expect(root.querySelectorAll('input').length).toBe(2);
     http.match('/api/commutes/7/trips/').forEach((r) => r.flush(trips({})));
     await settle(filtered);
+  });
+
+  it('puts the filters icon button in the card header', async () => {
+    await flush(trips({}));
+    const button = el().querySelector<HTMLButtonElement>(
+      'mat-card-header [data-testid="filters-toggle"]',
+    )!;
+    expect(button.getAttribute('aria-label')).toBe('Filters');
+    expect(button.textContent?.trim()).toBe('');
+    expect(button.getAttribute('aria-expanded')).toBe('false');
+    await toggle();
+    expect(button.getAttribute('aria-expanded')).toBe('true');
   });
 
   it('expands and collapses with the Filters button', async () => {
@@ -255,6 +265,25 @@ describe('CommuteBoard', () => {
     expect(el().querySelectorAll('input').length).toBe(2);
     await toggle();
     expect(el().querySelector('input')).toBeNull();
+  });
+
+  it('words the chips plainly, with "Direct only" for no transfers', async () => {
+    const filtered = TestBed.createComponent(CommuteBoard);
+    filtered.componentRef.setInput('commute', {
+      ...commute,
+      max_duration_minutes: 55,
+      max_transfers: 0,
+    });
+    filtered.detectChanges();
+    const chips = (filtered.nativeElement as HTMLElement).querySelectorAll(
+      '[data-testid="filter-chip"]',
+    );
+    expect(Array.from(chips).map((c) => c.textContent?.trim())).toEqual([
+      'Max 55 min',
+      'Direct only',
+    ]);
+    http.match('/api/commutes/7/trips/').forEach((r) => r.flush(trips({})));
+    await settle(filtered);
   });
 
   it('updates the chips after saving', async () => {
@@ -268,7 +297,7 @@ describe('CommuteBoard', () => {
     await new Promise((resolve) => setTimeout(resolve));
     await flush(trips({}));
     await toggle();
-    expect(chipTexts()).toEqual(['≤ 50 min']);
+    expect(chipTexts()).toEqual(['Max 50 min']);
   });
 
   it('expands on a filter error', async () => {

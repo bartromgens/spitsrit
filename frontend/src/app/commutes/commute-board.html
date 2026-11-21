@@ -4,27 +4,43 @@
     <mat-card-subtitle>
       {{ commute().origin_name }} → {{ commute().destination_name }}
     </mat-card-subtitle>
+    <button
+      matIconButton
+      class="filters-button"
+      type="button"
+      aria-label="Filters"
+      data-testid="filters-toggle"
+      [attr.aria-expanded]="filtersOpen()"
+      (click)="filtersOpen.set(!filtersOpen())"
+    >
+      <svg class="filters-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path
+          d="M3 6h18M6 12h12M10 18h4"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+        />
+      </svg>
+    </button>
   </mat-card-header>
   <mat-card-content>
-    <div class="filter-bar">
-      <button
-        matButton="tonal"
-        data-testid="filters-toggle"
-        [attr.aria-expanded]="filtersOpen()"
-        (click)="filtersOpen.set(!filtersOpen())"
-      >
-        Filters
-      </button>
-      @if (!filtersOpen()) {
-        <mat-chip-set aria-label="Active filters">
-          @for (chip of chips(); track chip) {
-            <mat-chip data-testid="filter-chip">
-              <button matChipAction (click)="filtersOpen.set(true)">{{ chip }}</button>
-            </mat-chip>
-          }
-        </mat-chip-set>
-      }
-    </div>
+    @if (!filtersOpen() && chips().length > 0) {
+      <ul class="filter-chips" aria-label="Active filters">
+        @for (chip of chips(); track chip) {
+          <li>
+            <button
+              type="button"
+              class="filter-chip"
+              data-testid="filter-chip"
+              (click)="filtersOpen.set(true)"
+            >
+              {{ chip }}
+            </button>
+          </li>
+        }
+      </ul>
+    }
     @if (filtersOpen()) {
       <div class="filters">
         <mat-form-field subscriptSizing="dynamic">
@@ -59,7 +75,6 @@
     }
     @if (data(); as d) {
       <p class="advice" data-testid="advice">{{ advice() }}</p>
-      <app-train-route-toggle />
       <ul class="sp-trips sp-full-bleed">
         @for (trip of d.trips; track trip.uid) {
           <li [class.best]="trip.uid === d.recommended_uid" [class.cancelled]="trip.cancelled">

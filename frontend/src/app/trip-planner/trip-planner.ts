@@ -13,7 +13,6 @@ import { debounceTime, distinctUntilChanged, of, switchMap } from 'rxjs';
 import { Api } from '../api/api';
 import { stationsList, tripsRetrieve } from '../api/functions';
 import { CommuteTrips, Station } from '../api/models';
-import { TrainRouteToggle } from '../shared/train-route-toggle/train-route-toggle';
 import { TripRow } from '../shared/trip-row/trip-row';
 
 const SEARCH_DEBOUNCE_MS = 250;
@@ -30,7 +29,6 @@ type Side = 'origin' | 'destination';
     MatCardModule,
     MatFormFieldModule,
     MatInputModule,
-    TrainRouteToggle,
     TripRow,
   ],
   selector: 'app-trip-planner',
