@@ -22,4 +22,29 @@ describe('App', () => {
     const element = fixture.nativeElement as HTMLElement;
     expect(element.querySelector('mat-toolbar')?.textContent).toContain('bart');
   });
+
+  it('shows the navigation links in the toolbar after the brand', async () => {
+    const fixture = TestBed.createComponent(App);
+    await fixture.whenStable();
+    const element = fixture.nativeElement as HTMLElement;
+    const toolbar = element.querySelector('mat-toolbar');
+    const links = Array.from(toolbar?.querySelectorAll('nav a') ?? []).map((a) => a.textContent);
+    expect(links).toEqual(['Home', 'Commutes']);
+    expect(element.querySelector('mat-sidenav')).toBeNull();
+    const brand = toolbar?.querySelector('.brand') as Element;
+    const nav = toolbar?.querySelector('nav') as Element;
+    expect(brand.compareDocumentPosition(nav) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('opens the mobile menu from the hamburger button', async () => {
+    const fixture = TestBed.createComponent(App);
+    await fixture.whenStable();
+    const element = fixture.nativeElement as HTMLElement;
+    (element.querySelector('.menu-toggle') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    const items = Array.from(document.querySelectorAll('a[mat-menu-item]')).map((a) =>
+      a.textContent?.trim(),
+    );
+    expect(items).toEqual(['Home', 'Commutes']);
+  });
 });
