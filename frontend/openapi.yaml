@@ -603,8 +603,20 @@ components:
           type: string
         train:
           type: string
-        train_length:
+        seats:
           type: integer
+          nullable: true
+        units:
+          type: integer
+          nullable: true
+        train_type:
+          type: string
+          nullable: true
+        shorter_stock:
+          type: string
+          nullable: true
+        shorter_stock_warning:
+          type: string
           nullable: true
       required:
       - arrival_actual
@@ -617,11 +629,15 @@ components:
       - departure_planned
       - departure_track
       - duration_minutes
+      - seats
+      - shorter_stock
+      - shorter_stock_warning
       - status
       - train
-      - train_length
+      - train_type
       - transfers
       - uid
+      - units
     User:
       type: object
       properties:

@@ -9,7 +9,12 @@
     <span class="cancelled-label">Cancelled</span>
   } @else {
     <span class="train">{{ t.train }}</span>
-    <app-train-length [length]="t.train_length" />
+    <app-train-length
+      [seats]="t.seats"
+      [trainType]="t.train_type"
+      [shorterStock]="t.shorter_stock"
+      [shorterStockWarning]="t.shorter_stock_warning"
+    />
     <app-platform-sign [track]="t.departure_track" />
     <app-crowding [forecast]="t.crowd_forecast" />
     <span class="journey sp-mono">

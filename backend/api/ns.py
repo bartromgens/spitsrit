@@ -7,10 +7,12 @@ functions here; nothing else depends on it.
 """
 
 import json
+import logging
 import urllib.error
 import urllib.parse
 import urllib.request
-from dataclasses import dataclass
+from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass, replace
 from datetime import datetime
 from typing import Any
 
@@ -23,6 +25,10 @@ STATIONS_CACHE_KEY = "ns:stations"
 STATIONS_CACHE_SECONDS = 24 * 60 * 60
 TIMEOUT_SECONDS = 10
 MAX_TRIPS = 6
+JOURNEY_CACHE_SECONDS = 2 * 60
+SHORTER_STOCK_CLASSIFICATIONS = ("BUSY", "EXTRA_BUSY")
+
+logger = logging.getLogger(__name__)
 
 
 class NsError(Exception):
@@ -52,7 +58,11 @@ class Trip:
     cancelled: bool
     crowd_forecast: str
     train: str
-    train_length: int | None = None
+    seats: int | None = None
+    units: int | None = None
+    train_type: str | None = None
+    shorter_stock: str | None = None
+    shorter_stock_warning: str | None = None
 
     @property
     def departure_delay_minutes(self) -> int:
@@ -95,10 +105,64 @@ def parse_stations(payload: Any) -> list[Station]:
     return stations
 
 
-def _train_length(leg: dict[str, Any]) -> int | None:
-    """Number of train units (treinstellen) of the leg's train, if NS reports it."""
-    parts = (leg.get("stock") or {}).get("numberOfParts")
-    return parts if isinstance(parts, int) and parts > 0 else None
+def _train_leg(item: dict[str, Any]) -> dict[str, Any] | None:
+    """The first leg that is a public-transit ride: the one whose train size we show."""
+    for leg in item.get("legs") or []:
+        if leg.get("travelType") == "PUBLIC_TRANSIT":
+            return dict(leg)
+    return None
+
+
+def _shorter_stock(legs: list[dict[str, Any]]) -> tuple[str | None, str | None]:
+    """The first shorter-than-usual classification of any leg, with NS's warning text."""
+    for leg in legs:
+        classification = leg.get("shorterStockClassification")
+        if classification in SHORTER_STOCK_CLASSIFICATIONS:
+            warning = leg.get("shorterStockWarning")
+            return classification, str(warning) if warning else None
+    return None, None
+
+
+@dataclass(frozen=True)
+class Stock:
+    seats: int | None
+    units: int | None
+    train_type: str | None
+
+
+def _positive_int(value: Any) -> int | None:
+    return value if isinstance(value, int) and not isinstance(value, bool) and value > 0 else None
+
+
+def _parse_stock(stock: Any) -> Stock | None:
+    if not isinstance(stock, dict):
+        return None
+    result = Stock(
+        seats=_positive_int(stock.get("numberOfSeats")),
+        units=_positive_int(stock.get("numberOfParts")),
+        train_type=str(stock["trainType"]) if stock.get("trainType") else None,
+    )
+    return result if result.seats or result.units else None
+
+
+def parse_boarding_stock(stops: list[Any], boarding_uic_code: str | None) -> Stock | None:
+    """The stock at the stop where the leg boards, from the `stops` of a `/v2/journey` response.
+
+    The boarding stop is the one matching the leg's origin; failing that, the stop NS
+    marks `kind == "DEPARTURE"`. `actualStock` wins over `plannedStock`.
+    """
+    journey_stops = [s for s in stops if isinstance(s, dict)]
+    boarding = next(
+        (
+            s
+            for s in journey_stops
+            if boarding_uic_code and (s.get("stop") or {}).get("UICCode") == boarding_uic_code
+        ),
+        None,
+    ) or next((s for s in journey_stops if s.get("kind") == "DEPARTURE"), None)
+    if boarding is None:
+        return None
+    return _parse_stock(boarding.get("actualStock")) or _parse_stock(boarding.get("plannedStock"))
 
 
 def parse_trip(item: dict[str, Any]) -> Trip | None:
@@ -111,6 +175,7 @@ def parse_trip(item: dict[str, Any]) -> Trip | None:
     arrival_planned = _time(destination.get("plannedDateTime"))
     if departure_planned is None or arrival_planned is None:
         return None
+    shorter_stock, shorter_stock_warning = _shorter_stock(legs)
     product = first.get("product") or {}
     train = f"{product.get('shortCategoryName', '')} {product.get('number', '')}".strip()
     return Trip(
@@ -125,7 +190,8 @@ def parse_trip(item: dict[str, Any]) -> Trip | None:
         cancelled=any(leg.get("cancelled") for leg in legs) or item.get("status") == "CANCELLED",
         crowd_forecast=str(item.get("crowdForecast") or ""),
         train=train,
-        train_length=_train_length(first),
+        shorter_stock=shorter_stock,
+        shorter_stock_warning=shorter_stock_warning,
     )
 
 
@@ -152,6 +218,51 @@ def search_stations(query: str, limit: int = 15) -> list[Station]:
     return (exact + starts + contains)[:limit]
 
 
+def _journey_request(leg: dict[str, Any]) -> tuple[str, dict[str, str]] | None:
+    """Cache key and query for the leg's journey: by `journeyDetailRef`, else by train number."""
+    ref = leg.get("journeyDetailRef")
+    if ref:
+        return f"ns:journey:{ref}", {"id": str(ref)}
+    number = (leg.get("product") or {}).get("number")
+    departure = (leg.get("origin") or {}).get("plannedDateTime")
+    if number and departure:
+        return f"ns:journey:train:{number}:{departure}", {
+            "train": str(number),
+            "dateTime": str(departure),
+        }
+    return None
+
+
+def _journey_stops(key: str, params: dict[str, str]) -> list[Any]:
+    """The stops of a journey, cached briefly so repeated lookups don't multiply NS calls."""
+    cached: list[Any] | None = cache.get(key)
+    if cached is not None:
+        return cached
+    stops = (_get("v2/journey", params).get("payload") or {}).get("stops") or []
+    cache.set(key, stops, JOURNEY_CACHE_SECONDS)
+    return stops
+
+
+def _leg_stock(leg: dict[str, Any] | None) -> Stock | None:
+    """The size of the leg's train; unknown (`None`) when the journey can't be fetched."""
+    request = _journey_request(leg) if leg else None
+    if leg is None or request is None:
+        return None
+    key, params = request
+    try:
+        stops = _journey_stops(key, params)
+        return parse_boarding_stock(stops, (leg.get("origin") or {}).get("uicCode"))
+    except NsError, AttributeError, TypeError:
+        logger.warning("Could not read the journey for %s", key, exc_info=True)
+        return None
+
+
+def _with_stock(trip: Trip, stock: Stock | None) -> Trip:
+    if stock is None:
+        return trip
+    return replace(trip, seats=stock.seats, units=stock.units, train_type=stock.train_type)
+
+
 def fetch_trips(origin_code: str, destination_code: str, when: datetime) -> list[Trip]:
     payload = _get(
         "v3/trips",
@@ -161,8 +272,12 @@ def fetch_trips(origin_code: str, destination_code: str, when: datetime) -> list
             "dateTime": when.isoformat(),
         },
     )
-    trips = (parse_trip(item) for item in payload.get("trips", []))
-    return [trip for trip in trips if trip is not None][:MAX_TRIPS]
+    parsed = [(parse_trip(item), item) for item in payload.get("trips", [])]
+    kept = [(trip, item) for trip, item in parsed if trip is not None][:MAX_TRIPS]
+    # Only the first train leg of a trip is shown, so only its journey is fetched.
+    with ThreadPoolExecutor(max_workers=MAX_TRIPS) as pool:
+        stocks = list(pool.map(_leg_stock, [_train_leg(item) for _, item in kept]))
+    return [_with_stock(trip, stock) for (trip, _), stock in zip(kept, stocks, strict=True)]
 
 
 @dataclass(frozen=True)

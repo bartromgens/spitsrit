@@ -1,8 +1,16 @@
-@if (length()) {
-  <span class="cars" aria-hidden="true">
-    @for (car of cars(); track car) {
-      <span class="car"></span>
-    }
-  </span>
-  <span class="count">{{ length() }} treinstellen</span>
+@if (seats()) {
+  <span class="seats">~{{ seats() }} seats</span>
+  @if (trainType()) {
+    <span class="type">{{ trainType() }}</span>
+  }
+}
+@if (shorterStock()) {
+  <span
+    class="shorter"
+    [class.extra-busy]="shorterStock() === 'EXTRA_BUSY'"
+    [attr.title]="shorterStockWarning() || 'Shorter train than usual'"
+    [attr.aria-label]="shorterStockWarning() || 'Shorter train than usual'"
+    role="img"
+    >Shorter</span
+  >
 }

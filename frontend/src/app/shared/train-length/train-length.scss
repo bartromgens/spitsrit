@@ -1,24 +1,31 @@
 :host {
   display: inline-flex;
-  align-items: center;
+  align-items: baseline;
   gap: var(--sp-space-1);
 }
 
-.cars {
-  display: inline-flex;
-  gap: var(--sp-space-half);
-}
-
-.car {
-  width: 0.5em;
-  height: 0.75em;
-  border-radius: var(--sp-radius-xs);
-  background: var(--sp-brand);
-  outline: var(--sp-border-width) solid var(--sp-on-brand);
-}
-
-.count {
+.seats {
   font-family: var(--sp-font-mono);
   font-size: var(--sp-text-sm);
   font-variant-numeric: tabular-nums;
+}
+
+.type {
+  font-size: var(--sp-text-xs);
+  opacity: 0.75;
+}
+
+.shorter {
+  padding: 0 var(--sp-space-1);
+  border: var(--sp-border-width) solid var(--sp-signal-amber);
+  border-radius: var(--sp-radius-pill);
+  background: var(--sp-signal-amber-surface);
+  color: var(--sp-signal-amber);
+  font-size: var(--sp-text-xs);
+  font-weight: var(--sp-weight-medium);
+}
+
+.extra-busy {
+  border-width: var(--sp-border-width-strong);
+  font-weight: var(--sp-weight-bold);
 }

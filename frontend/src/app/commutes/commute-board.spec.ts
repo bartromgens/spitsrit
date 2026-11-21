@@ -30,7 +30,11 @@ function trip(overrides: Partial<Trip>): Trip {
     cancelled: false,
     crowd_forecast: 'LOW',
     train: 'IC 1234',
-    train_length: 8,
+    seats: 620,
+    units: 4,
+    train_type: 'VIRM',
+    shorter_stock: null,
+    shorter_stock_warning: null,
     ...overrides,
   };
 }
@@ -66,7 +70,7 @@ describe('CommuteBoard', () => {
     expect(text()).toContain('Utrecht Centraal → Amsterdam Centraal');
     expect(text()).toContain('Leave now');
     expect(text()).toContain('IC 2736');
-    expect(text()).toContain('8 treinstellen');
+    expect(text()).toContain('~620 seats');
     expect(text()).toContain('platform 5');
   });
 

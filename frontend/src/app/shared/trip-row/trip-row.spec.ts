@@ -17,7 +17,11 @@ const trip: Trip = {
   cancelled: false,
   crowd_forecast: 'HIGH',
   train: 'IC 2736',
-  train_length: 8,
+  seats: 620,
+  units: 4,
+  train_type: 'VIRM',
+  shorter_stock: null,
+  shorter_stock_warning: null,
 };
 
 describe('TripRow', () => {
@@ -36,13 +40,20 @@ describe('TripRow', () => {
     fixture = TestBed.createComponent(TripRow);
   });
 
-  it('shows the train, its length, platform sign and crowding', async () => {
+  it('shows the train, its seats, platform sign and crowding', async () => {
     await render({});
     expect(element().textContent).toContain('IC 2736');
-    expect(element().textContent).toContain('8 treinstellen');
+    expect(element().textContent).toContain('~620 seats');
+    expect(element().querySelector('.shorter')).toBeNull();
     expect(element().querySelector('.sign')?.textContent).toBe('5');
     expect(element().querySelectorAll('.pip.filled')).toHaveLength(3);
     expect(element().textContent).toContain('30 min');
+  });
+
+  it('hides the size when unknown and flags a shorter train', async () => {
+    await render({ seats: null, shorter_stock: 'BUSY', shorter_stock_warning: 'Kortere trein' });
+    expect(element().textContent).not.toContain('seats');
+    expect(element().querySelector('.shorter')?.getAttribute('title')).toBe('Kortere trein');
   });
 
   it('shows a departure delay only when the train is late', async () => {

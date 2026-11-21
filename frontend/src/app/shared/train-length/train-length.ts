@@ -1,17 +1,18 @@
-import { Component, computed, input } from '@angular/core';
+import { Component, input } from '@angular/core';
 
-const MAX_CARS = 12;
-
-/** The train length as a row of little cars, with the number of units next to it. */
+/**
+ * The train size as an approximate seat count with the train type in small text, and a
+ * warning badge when NS says the train is shorter than usual. Hides itself when the size
+ * is unknown, unless there is a shorter-train warning.
+ */
 @Component({
   selector: 'app-train-length',
   styleUrl: './train-length.scss',
   templateUrl: './train-length.html',
 })
 export class TrainLength {
-  readonly length = input<number | null | undefined>(null);
-
-  protected readonly cars = computed(() =>
-    Array.from({ length: Math.min(this.length() ?? 0, MAX_CARS) }, (_, i) => i),
-  );
+  readonly seats = input<number | null | undefined>(null);
+  readonly trainType = input<string | null | undefined>(null);
+  readonly shorterStock = input<string | null | undefined>(null);
+  readonly shorterStockWarning = input<string | null | undefined>(null);
 }
