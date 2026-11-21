@@ -1,4 +1,4 @@
-<time class="time">{{ time() | date: 'HH:mm' }}</time>
+<time class="time" [attr.datetime]="time()">{{ time() | date: 'HH:mm' }}</time>
 @if (delayMinutes() > 0) {
   <span class="delay"><span class="sr-only">delay </span>+{{ delayMinutes() }}</span>
 }

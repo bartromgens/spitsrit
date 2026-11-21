@@ -8,6 +8,11 @@ const TOKENS = readFileSync('src/styles/_tokens.scss', 'utf8');
 const FORBIDDEN: [string, RegExp][] = [
   ['hex colour', /#[0-9a-fA-F]{3,8}\b/],
   ['rgb/hsl/oklch colour', /\b(rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\(/],
+  // Only `transparent`, `currentColor` and `inherit` are allowed as keywords.
+  [
+    'named colour',
+    /\b(black|white|gr[ae]y|silver|red|green|blue|yellow|orange|purple|pink|brown|navy|teal|cyan|magenta|lime|maroon|olive|aqua|gold|crimson|indigo|violet)\b(?!-)\s*[;,)!]?\s*$/i,
+  ],
   ['font family', /font-family\s*:\s*(?!\s|var\()/],
   ['font shorthand', /(?<![-\w])font\s*:\s*(?!\s|var\()/],
   ['hard-coded font size', /font-size\s*:\s*(?!\s|var\()/],
