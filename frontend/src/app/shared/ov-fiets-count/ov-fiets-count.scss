@@ -1,0 +1,28 @@
+:host {
+  display: block;
+  margin-top: var(--sp-space-2);
+  font-size: var(--sp-text-sm);
+}
+
+.summary {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-space-1);
+  margin: 0;
+}
+
+// The rental points on one wrapping line, separated by a dot.
+.points {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: var(--sp-space-1);
+  margin: var(--sp-space-half) 0 0;
+  padding: 0;
+  list-style: none;
+  color: var(--mat-sys-on-surface-variant);
+
+  li + li::before {
+    content: '·';
+    margin-right: var(--sp-space-1);
+  }
+}

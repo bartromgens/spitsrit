@@ -71,6 +71,18 @@ class StationSerializer(serializers.Serializer[Any]):
     name = serializers.CharField()
 
 
+class OvFietsLocationSerializer(serializers.Serializer[Any]):
+    name = serializers.CharField()
+    available = serializers.IntegerField(allow_null=True)
+    open = serializers.CharField()  # "Yes", "No" or "Unknown"
+
+
+class OvFietsSerializer(serializers.Serializer[Any]):
+    station_code = serializers.CharField()
+    available = serializers.IntegerField(allow_null=True)
+    locations = OvFietsLocationSerializer(many=True)
+
+
 class TrainPartSerializer(serializers.Serializer[Any]):
     stock_identifier = serializers.CharField()
     facilities = serializers.ListField(child=serializers.CharField())

@@ -306,6 +306,33 @@ paths:
           description: No response body
         '503':
           description: No response body
+  /api/stations/{code}/ov-fiets/:
+    get:
+      operationId: stations_ov_fiets_retrieve
+      description: OV-fiets bikes available now at a station, per rental point and
+        in total.
+      parameters:
+      - in: path
+        name: code
+        schema:
+          type: string
+        required: true
+      tags:
+      - stations
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OvFiets'
+          description: ''
+        '502':
+          description: No response body
+        '503':
+          description: No response body
   /api/trips/:
     get:
       operationId: trips_retrieve
@@ -624,6 +651,36 @@ components:
       required:
       - email
       - password
+    OvFiets:
+      type: object
+      properties:
+        station_code:
+          type: string
+        available:
+          type: integer
+          nullable: true
+        locations:
+          type: array
+          items:
+            $ref: '#/components/schemas/OvFietsLocation'
+      required:
+      - available
+      - locations
+      - station_code
+    OvFietsLocation:
+      type: object
+      properties:
+        name:
+          type: string
+        available:
+          type: integer
+          nullable: true
+        open:
+          type: string
+      required:
+      - available
+      - name
+      - open
     PaginatedCommuteList:
       type: object
       required:

@@ -18,13 +18,14 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
 
-from api import google, ns
+from api import google, ns, places
 from api.models import Commute, GoogleAccount
 from api.serializers import (
     ClientConfigSerializer,
     CommuteSerializer,
     CommuteTripsSerializer,
     LoginSerializer,
+    OvFietsSerializer,
     RegisterSerializer,
     StationSerializer,
     TripSerializer,
@@ -106,6 +107,18 @@ def stations(request: Request) -> Response:
     except ns.NsError as error:
         return ns_error_response(error)
     return Response(StationSerializer(found, many=True).data)
+
+
+@extend_schema(responses={200: OvFietsSerializer, 502: None, 503: None})
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def ov_fiets(request: Request, code: str) -> Response:
+    """OV-fiets bikes available now at a station, per rental point and in total."""
+    try:
+        found = places.fetch_ov_fiets(code)
+    except ns.NsError as error:
+        return ns_error_response(error)
+    return Response(OvFietsSerializer(found).data)
 
 
 @extend_schema(

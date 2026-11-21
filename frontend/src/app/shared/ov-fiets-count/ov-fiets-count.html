@@ -1,0 +1,13 @@
+@if (summary()) {
+  <p class="summary" data-testid="ov-fiets-count">
+    <app-facility-icon code="FIETS" />
+    <span>{{ summary() }}</span>
+  </p>
+  @if (points().length > 0) {
+    <ul class="points">
+      @for (point of points(); track $index) {
+        <li>{{ point.name }}: {{ point.status }}</li>
+      }
+    </ul>
+  }
+}

@@ -13,6 +13,7 @@ import { debounceTime, distinctUntilChanged, of, switchMap } from 'rxjs';
 import { Api } from '../api/api';
 import { stationsList, tripsRetrieve } from '../api/functions';
 import { CommuteTrips, Station, Trip } from '../api/models';
+import { OvFietsCount } from '../shared/ov-fiets-count/ov-fiets-count';
 import { TripDetails } from '../shared/trip-details/trip-details';
 import { TripListSkeleton } from '../shared/trip-list-skeleton/trip-list-skeleton';
 import { TripRow } from '../shared/trip-row/trip-row';
@@ -38,6 +39,7 @@ function isStation(value: unknown): value is Station {
     MatCardModule,
     MatFormFieldModule,
     MatInputModule,
+    OvFietsCount,
     TripDetails,
     TripListSkeleton,
     TripRow,
@@ -56,6 +58,8 @@ export class TripPlanner {
   protected readonly loading = signal(false);
   /** The trip whose details are open: beside the results on wide screens, over them on phones. */
   protected readonly selected = signal<Trip | null>(null);
+  /** The destination of the shown trips, whose OV-fiets count is shown below them. */
+  protected readonly destination = signal<Station | null>(null);
 
   protected readonly form = inject(NonNullableFormBuilder).group({
     origin: ['', Validators.required],
@@ -103,6 +107,7 @@ export class TripPlanner {
     this.selected.set(null);
     try {
       this.result.set(await this.api.invoke(tripsRetrieve, { from: from.code, to: to.code }));
+      this.destination.set(to);
       this.remember(from, to);
     } catch {
       this.fail('Train times are unavailable right now.');
@@ -137,6 +142,7 @@ export class TripPlanner {
 
   private fail(message: string): void {
     this.result.set(null);
+    this.destination.set(null);
     this.selected.set(null);
     this.error.set(message);
   }
