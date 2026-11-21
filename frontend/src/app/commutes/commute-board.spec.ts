@@ -35,6 +35,8 @@ function trip(overrides: Partial<Trip>): Trip {
     train_type: 'VIRM',
     shorter_stock: null,
     shorter_stock_warning: null,
+    train_origin: 'Nijmegen',
+    train_destination: 'Den Haag C.',
     ...overrides,
   };
 }
@@ -48,6 +50,7 @@ describe('CommuteBoard', () => {
   let http: HttpTestingController;
 
   beforeEach(() => {
+    localStorage.clear();
     TestBed.configureTestingModule({ imports: [CommuteBoard], providers: testProviders });
     fixture = TestBed.createComponent(CommuteBoard);
     fixture.componentRef.setInput('commute', commute);
@@ -69,9 +72,23 @@ describe('CommuteBoard', () => {
     );
     expect(text()).toContain('Utrecht Centraal → Amsterdam Centraal');
     expect(text()).toContain('Leave now');
-    expect(text()).toContain('IC 2736');
-    expect(text()).toContain('~620 seats');
+    expect(text()).toContain('Intercity');
+    expect(text()).not.toContain('2736');
     expect(text()).toContain('platform 5');
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector('[aria-label="620 seats"]')).not.toBeNull();
+    expect(element.querySelector('[aria-label="8 carriages"]')).not.toBeNull();
+  });
+
+  it('shows the train route only after switching the toggle on', async () => {
+    await flush(trips({ trips: [trip({})], recommended_uid: 'a', wait_minutes: 0 }));
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector('[data-testid="train-route"]')).toBeNull();
+    element.querySelector<HTMLElement>('[data-testid="train-route-toggle"] button')?.click();
+    await settle(fixture);
+    expect(element.querySelector('[data-testid="train-route"]')?.textContent).toContain(
+      'Nijmegen → Den Haag C.',
+    );
   });
 
   it('tells you to wait and highlights the recommended trip', async () => {
@@ -176,7 +193,9 @@ describe('CommuteBoard', () => {
     await flush(trips({}));
     const removed: Commute[] = [];
     fixture.componentInstance.removed.subscribe((c) => removed.push(c));
-    const buttons = (fixture.nativeElement as HTMLElement).querySelectorAll('button');
+    const buttons = (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>(
+      'mat-card-actions button',
+    );
     buttons[0].click();
     await flush(trips({ trips: [trip({})], recommended_uid: 'a', wait_minutes: 3 }));
     expect(text()).toContain('Wait 3 min');

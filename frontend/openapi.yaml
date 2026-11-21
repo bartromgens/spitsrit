@@ -618,6 +618,12 @@ components:
         shorter_stock_warning:
           type: string
           nullable: true
+        train_origin:
+          type: string
+          nullable: true
+        train_destination:
+          type: string
+          nullable: true
       required:
       - arrival_actual
       - arrival_delay_minutes
@@ -635,6 +641,8 @@ components:
       - shorter_stock_warning
       - status
       - train
+      - train_destination
+      - train_origin
       - train_type
       - transfers
       - uid

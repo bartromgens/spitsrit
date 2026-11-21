@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Trip } from '../../api/models';
+import { TrainRouteSetting } from '../train-route-setting';
 import { TripRow } from './trip-row';
 
 const trip: Trip = {
@@ -22,6 +23,8 @@ const trip: Trip = {
   train_type: 'VIRM',
   shorter_stock: null,
   shorter_stock_warning: null,
+  train_origin: 'Nijmegen',
+  train_destination: 'Den Haag C.',
 };
 
 describe('TripRow', () => {
@@ -36,14 +39,16 @@ describe('TripRow', () => {
   };
 
   beforeEach(async () => {
+    localStorage.clear();
     await TestBed.configureTestingModule({ imports: [TripRow] }).compileComponents();
     fixture = TestBed.createComponent(TripRow);
   });
+  afterEach(() => localStorage.clear());
 
-  it('shows the train, its seats, platform sign and crowding', async () => {
+  it('shows the train type, its seats, platform sign and crowding', async () => {
     await render({});
-    expect(element().textContent).toContain('IC 2736');
-    expect(element().textContent).toContain('~620 seats');
+    expect(element().querySelector('.train')?.textContent).toBe('Intercity');
+    expect(element().querySelector('.seats')?.getAttribute('aria-label')).toBe('620 seats');
     expect(element().querySelector('.shorter')).toBeNull();
     expect(element().querySelector('.sign')?.textContent).toBe('5');
     expect(element().querySelectorAll('.pip.filled')).toHaveLength(3);
@@ -52,7 +57,7 @@ describe('TripRow', () => {
 
   it('hides the size when unknown and flags a shorter train', async () => {
     await render({ seats: null, shorter_stock: 'BUSY', shorter_stock_warning: 'Kortere trein' });
-    expect(element().textContent).not.toContain('seats');
+    expect(element().querySelector('.seats')).toBeNull();
     expect(element().querySelector('.shorter')?.getAttribute('title')).toBe('Kortere trein');
   });
 
@@ -89,7 +94,7 @@ describe('TripRow', () => {
   it('uses mono only for numbers', async () => {
     await render({ transfers: 1 });
     const mono = Array.from(element().querySelectorAll('.sp-mono')).map((el) => el.textContent);
-    expect(mono).toEqual(['2736', '620', '8', '08:30', '30', '1']);
+    expect(mono).toEqual(['8', '620', '08:30', '30', '1']);
     expect(element().querySelector('.journey')?.classList.contains('sp-mono')).toBe(false);
   });
 
@@ -104,7 +109,50 @@ describe('TripRow', () => {
   it('shows cancelled trips as cancelled without details', async () => {
     await render({ cancelled: true });
     expect(element().textContent).toContain('Cancelled');
-    expect(element().textContent).not.toContain('IC 2736');
+    expect(element().textContent).not.toContain('Intercity');
+  });
+
+  it('shows the train type but never the train number', async () => {
+    await render({});
+    expect(element().textContent).not.toContain('2736');
+    await render({ train: 'SPR 5' });
+    expect(element().querySelector('.train')?.textContent).toBe('Sprinter');
+    await render({ train: 'ICE 12' });
+    expect(element().querySelector('.train')?.textContent).toBe('ICE');
+  });
+
+  it('shows the carriages as a labelled icon next to the crowding, as reported', async () => {
+    await render({ carriages: 4 });
+    const load = element().querySelector('.load');
+    expect(load?.querySelector('app-crowding')).not.toBeNull();
+    expect(load?.querySelector('app-carriages svg')).not.toBeNull();
+    expect(load?.querySelector('app-carriages .count')?.textContent).toBe('4');
+    expect(load?.querySelector('[aria-label="4 carriages"]')).not.toBeNull();
+    expect(element().textContent).not.toContain('carriages');
+  });
+
+  it('hides the carriages and the seats when unknown', async () => {
+    await render({ carriages: null, seats: null });
+    expect(element().querySelector('app-carriages svg')).toBeNull();
+    expect(element().querySelector('.seats')).toBeNull();
+  });
+
+  it('shows the seats with an icon and the train type', async () => {
+    await render({});
+    expect(element().querySelector('.seats svg')).not.toBeNull();
+    expect(element().querySelector('.type')?.textContent).toBe('VIRM');
+  });
+
+  it('shows the train route only when the toggle is on and the route is known', async () => {
+    await render({});
+    expect(element().querySelector('.route')).toBeNull();
+    TestBed.inject(TrainRouteSetting).set(true);
+    await render({});
+    expect(element().querySelector('.route')?.textContent).toBe('Nijmegen → Den Haag C.');
+    await render({ train_origin: null });
+    expect(element().querySelector('.route')).toBeNull();
+    await render({ train_origin: 'Nijmegen', train_destination: null });
+    expect(element().querySelector('.route')).toBeNull();
   });
 
   it('pluralises transfers', async () => {

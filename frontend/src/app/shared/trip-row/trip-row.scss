@@ -1,8 +1,9 @@
 // Every row uses the same columns, recommended or not, so times, trains and platforms line up:
-// time + delay | train | platform | crowding, with the details on a line below.
+// time + delay | train type | platform | crowding + carriages, with the optional train route
+// and the details on lines below.
 :host {
   display: grid;
-  grid-template-columns: 6.5rem minmax(0, 1fr) 3rem 2.5rem;
+  grid-template-columns: 6.5rem minmax(0, 1fr) 3rem 5.5rem;
   align-items: center;
   column-gap: var(--sp-space-1);
   row-gap: var(--sp-space-half);
@@ -17,7 +18,7 @@
 
 .train {
   min-width: 0;
-  font-weight: var(--sp-weight-medium);
+  font-size: var(--sp-text-sm);
   white-space: nowrap;
 }
 
@@ -25,8 +26,19 @@
   justify-content: center;
 }
 
-.crowding {
+// Crowding pips with the carriage count right beside them.
+.load {
+  display: flex;
+  align-items: center;
   justify-content: flex-end;
+  column-gap: var(--sp-space-1);
+}
+
+.route {
+  grid-column: 1 / -1;
+  font-size: var(--sp-text-xs);
+  opacity: 0.75;
+  overflow-wrap: anywhere;
 }
 
 .details {

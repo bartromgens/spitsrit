@@ -16,18 +16,13 @@ describe('TrainLength', () => {
     fixture = TestBed.createComponent(TrainLength);
   });
 
-  it('shows the seats and the train type', async () => {
+  it('shows a seat icon with the number, labelled, and the train type', async () => {
     await render({ seats: 620, trainType: 'VIRM' });
-    expect(element().textContent).toContain('~620 seats');
+    const seats = element().querySelector('.seats');
+    expect(seats?.getAttribute('aria-label')).toBe('620 seats');
+    expect(seats?.querySelector('svg')).not.toBeNull();
+    expect(seats?.querySelector('.sp-mono')?.textContent).toBe('620');
     expect(element().querySelector('.type')?.textContent).toBe('VIRM');
-    expect(element().textContent).not.toContain('treinstellen');
-  });
-
-  it('shows the carriages with the seats, and omits them when unknown', async () => {
-    await render({ seats: 740, carriages: 8, trainType: 'VIRM' });
-    expect(element().textContent).toContain('~740 seats');
-    expect(element().textContent).toContain('· 8 carriages');
-    await render({ carriages: null });
     expect(element().textContent).not.toContain('carriages');
   });
 

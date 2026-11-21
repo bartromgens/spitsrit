@@ -50,28 +50,6 @@ a:not([class*='mat-']) {
   white-space: nowrap;
 }
 
-// A rail with sleepers, used sparingly as a divider or section accent.
-.sp-track {
-  height: var(--sp-space-1);
-  background-image:
-    linear-gradient(var(--sp-track-color), var(--sp-track-color)),
-    linear-gradient(var(--sp-track-color), var(--sp-track-color)),
-    repeating-linear-gradient(
-      90deg,
-      var(--sp-track-color) 0 var(--sp-border-width-strong),
-      transparent var(--sp-border-width-strong) var(--sp-space-2)
-    );
-  background-position:
-    0 0.15rem,
-    0 calc(100% - 0.15rem),
-    0 0;
-  background-size:
-    100% var(--sp-border-width),
-    100% var(--sp-border-width),
-    100% 100%;
-  background-repeat: no-repeat, no-repeat, repeat;
-}
-
 // Errors are signal red.
 .error {
   color: var(--sp-signal-red);

@@ -12,4 +12,8 @@ Check these alongside `reisinformatie-openapi.json`.
 - **`v3/trips` returns an object.** The response is an object with a `trips` array, although the
   spec says an array.
 
+- **Train route.** The train's destination is the leg's `direction` in the trips response. Its
+  first stop is the first entry of `stops` in the `/api/v2/journey` response (`stop.name`, with
+  `status: "ORIGIN"`); no extra call is needed beyond the one made for the train size.
+
 A real journey response is in `backend/tests/fixtures/ns_journey_3148.json`.
