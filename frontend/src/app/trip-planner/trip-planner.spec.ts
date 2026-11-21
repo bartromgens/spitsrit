@@ -82,6 +82,22 @@ describe('TripPlanner', () => {
     expect((fixture.nativeElement as HTMLElement).querySelector('li.best')).not.toBeNull();
   });
 
+  it('lays the results out edge to edge on mobile', async () => {
+    choose(utrecht, amsterdam);
+    const planned = planner.plan();
+    http.expectOne('/api/trips/?from=UT&to=ASD').flush({
+      fetched_at: '',
+      trips: [],
+      recommended_uid: null,
+      wait_minutes: null,
+    });
+    await planned;
+    await settle(fixture);
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector('ul.sp-trips')?.classList).toContain('sp-full-bleed');
+    expect(element.querySelector('mat-card')?.classList).toContain('sp-card');
+  });
+
   it('says when there are no trips', async () => {
     choose(utrecht, amsterdam);
     const planned = planner.plan();

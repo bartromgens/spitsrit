@@ -1,3 +1,5 @@
+@use 'layout';
+
 // Global base styles and the few global helper classes shared by components.
 body {
   margin: 0;
@@ -79,6 +81,44 @@ a:not([class*='mat-']) {
 
   li.cancelled {
     opacity: 0.75;
+  }
+
+  // Edge to edge: no gaps or rounded boxes, thin dividers, and the row content keeps an inner
+  // padding plus the safe-area inset so it never touches the screen edge.
+  @include layout.mobile {
+    li {
+      padding-block: var(--sp-space-1);
+      padding-inline: calc(var(--sp-row-inset) + env(safe-area-inset-left, 0px))
+        calc(var(--sp-row-inset) + env(safe-area-inset-right, 0px));
+      border-radius: 0;
+      border-bottom: var(--sp-border-width) solid var(--mat-sys-outline-variant);
+    }
+
+    li + li {
+      margin-top: 0;
+    }
+  }
+}
+
+// The card around the results disappears on mobile so the page margin is the only gutter.
+.sp-card {
+  @include layout.mobile {
+    --mat-card-outlined-outline-width: 0;
+    --mat-card-outlined-container-shape: 0;
+    background: transparent;
+
+    .mat-mdc-card-header,
+    .mat-mdc-card-content,
+    .mat-mdc-card-actions {
+      padding-inline: 0;
+    }
+  }
+}
+
+// A results list that spans the full screen width by cancelling the page margin around it.
+.sp-full-bleed {
+  @include layout.mobile {
+    margin-inline: calc(-1 * var(--sp-page-margin-mobile));
   }
 }
 
