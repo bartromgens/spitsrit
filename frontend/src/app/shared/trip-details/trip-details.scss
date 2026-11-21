@@ -94,23 +94,16 @@ h3 {
   margin: 0;
 }
 
-// The units side by side at a readable height; a long train scrolls sideways, as in the NS app.
+// The units side by side, scaled down together so the whole train fits the panel's width.
+// Each image shrinks in proportion to its own width, so they all keep the same height.
 .train-images {
   display: flex;
   margin-top: var(--sp-space-1);
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  scrollbar-width: thin;
 
   img {
-    flex: none;
-    width: auto;
-    height: 3rem;
-  }
-
-  &:focus-visible {
-    outline: var(--sp-border-width-strong) solid var(--sp-link);
-    border-radius: var(--sp-radius-xs);
+    flex: 0 1 auto;
+    min-width: 0;
+    height: auto;
   }
 }
 

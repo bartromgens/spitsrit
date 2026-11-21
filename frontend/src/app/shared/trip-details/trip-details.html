@@ -78,11 +78,10 @@
         class="train-images"
         data-testid="train-images"
         role="img"
-        tabindex="0"
         [attr.aria-label]="imagesLabel()"
       >
         @for (url of images(); track $index) {
-          <img [src]="url" alt="" height="48" loading="lazy" (error)="hideImage($event)" />
+          <img [src]="url" alt="" loading="lazy" (error)="hideImage($event)" />
         }
       </div>
     }
