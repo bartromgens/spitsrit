@@ -49,7 +49,9 @@ def trips_response(
 ) -> Response:
     now = timezone.now()
     try:
-        trips = ns.fetch_trips(origin_code, destination_code, now)
+        trips = ns.fetch_trips(
+            origin_code, destination_code, now, max_duration_minutes, max_transfers
+        )
     except ns.NsError as error:
         return ns_error_response(error)
     trips = [

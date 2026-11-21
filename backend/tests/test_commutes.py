@@ -78,7 +78,9 @@ def test_trips_returns_trips_and_advice(
     commute = CommuteFactory.create(user=user)
     seen: list[tuple[str, str]] = []
 
-    def fake_fetch(origin: str, destination: str, when: object) -> list[ns.Trip]:
+    def fake_fetch(
+        origin: str, destination: str, when: object, *filters: int | None
+    ) -> list[ns.Trip]:
         seen.append((origin, destination))
         base = timezone.now()
         return [
@@ -152,7 +154,9 @@ def test_plan_trip_returns_trips_and_advice(
 ) -> None:
     seen: list[tuple[str, str]] = []
 
-    def fake_fetch(origin: str, destination: str, when: object) -> list[ns.Trip]:
+    def fake_fetch(
+        origin: str, destination: str, when: object, *filters: int | None
+    ) -> list[ns.Trip]:
         seen.append((origin, destination))
         return [make_trip("only", 5, base=timezone.now())]
 
