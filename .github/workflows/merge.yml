@@ -2,6 +2,11 @@
 # Runs on commit status changes; merges only when the merge-gate App approved.
 # Variable: MERGE_GATE_CLIENT_ID. Secret: MERGE_GATE_PRIVATE_KEY.
 name: merge
+# `merge: ai-review success on <branch>`. The branch comes from the status event's
+# `branches` list; the full SHA is the fallback, as expressions cannot shorten it.
+run-name: >-
+  merge: ${{ github.event.context }} ${{ github.event.state }}
+  on ${{ github.event.branches[0].name || github.event.sha }}
 
 on:
   status:
@@ -14,7 +19,7 @@ concurrency:
 
 jobs:
   merge:
-    uses: bartromgens/gantry/.github/workflows/merge.yml@49b6f40ffc1a8b4d1dc225ba3b968e940669cc8a # main
+    uses: bartromgens/gantry/.github/workflows/merge.yml@17a82b295817b855958ecf01135ef7af6d2f228d # main
     permissions:
       id-token: write
     with:
