@@ -1,0 +1,20 @@
+// A small square tile like a station pictogram; unknown codes fall back to a text tile.
+:host {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  border: var(--sp-border-width) solid var(--mat-sys-outline-variant);
+  border-radius: var(--sp-radius-sm);
+}
+
+.icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.text {
+  padding: 0 var(--sp-space-1);
+  font-size: var(--sp-text-xs);
+}

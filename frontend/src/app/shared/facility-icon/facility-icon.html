@@ -1,0 +1,8 @@
+@if (facility(); as f) {
+  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <path [attr.d]="f.path" fill="currentColor" />
+  </svg>
+  <span class="sr-only">{{ label() }}</span>
+} @else {
+  <span class="text">{{ label() }}</span>
+}
