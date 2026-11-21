@@ -1,0 +1,11 @@
+:host {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-space-half);
+  vertical-align: middle;
+}
+
+.closed {
+  color: var(--mat-sys-on-surface-variant);
+  font-size: var(--sp-text-xs);
+}

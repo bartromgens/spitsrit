@@ -10,6 +10,7 @@ router.register("commutes", views.CommuteViewSet, basename="commute")
 urlpatterns = [
     path("stations/", views.stations, name="stations"),
     path("stations/<slug:code>/ov-fiets/", views.ov_fiets, name="station-ov-fiets"),
+    path("stations/<slug:code>/toilets/", views.station_toilets, name="station-toilets"),
     path("trips/", views.plan_trip, name="plan-trip"),
     path("", include(router.urls)),
     path("config/", views.client_config, name="client-config"),

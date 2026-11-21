@@ -1,0 +1,6 @@
+@if (state(); as s) {
+  <app-facility-icon code="TOILET" data-testid="station-toilet" />
+  @if (s === 'closed') {
+    <span class="closed">closed</span>
+  }
+}

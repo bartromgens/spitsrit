@@ -131,6 +131,9 @@ class Leg:
     messages: tuple[str, ...] = ()
     transfer_messages: tuple[str, ...] = ()
     shorter_stock_warning: str | None = None
+    # NS station codes (`stationCode`) of where the leg starts and ends, when it is a station.
+    origin_code: str | None = None
+    destination_code: str | None = None
     bicycle_spots: int | None = None
 
 
@@ -512,6 +515,8 @@ def parse_leg(leg: dict[str, Any]) -> Leg:
             if isinstance(m, dict) and m.get("message")
         ),
         shorter_stock_warning=_text(leg.get("shorterStockWarning")),
+        origin_code=_text(origin.get("stationCode")),
+        destination_code=_text(destination.get("stationCode")),
         bicycle_spots=_count(leg.get("bicycleSpotCount")),
     )
 

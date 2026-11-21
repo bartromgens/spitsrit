@@ -659,6 +659,22 @@ def test_get_sends_key_header_and_parses_json(monkeypatch: pytest.MonkeyPatch) -
     assert "fromStation=UT" in captured[0].full_url
 
 
+def test_parse_leg_reads_station_codes() -> None:
+    leg = ns.parse_leg(
+        {
+            **DETAILED_LEG,
+            "origin": {**DETAILED_LEG["origin"], "stationCode": "UT"},
+            "destination": {**DETAILED_LEG["destination"], "stationCode": "GD"},
+        }
+    )
+    assert (leg.origin_code, leg.destination_code) == ("UT", "GD")
+
+
+def test_parse_leg_without_station_codes() -> None:
+    leg = ns.parse_leg(DETAILED_LEG)
+    assert (leg.origin_code, leg.destination_code) == (None, None)
+
+
 def test_parse_leg_reads_bicycle_spots() -> None:
     assert ns.parse_leg({**DETAILED_LEG, "bicycleSpotCount": 6}).bicycle_spots == 6
     assert ns.parse_leg({**DETAILED_LEG, "bicycleSpotCount": 0}).bicycle_spots == 0

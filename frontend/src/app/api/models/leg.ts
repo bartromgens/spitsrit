@@ -16,6 +16,7 @@ export interface Leg {
   departure_track: string | null;
   departure_track_changed: boolean;
   destination: string;
+  destination_code: string | null;
   direction: string | null;
   exit_side: string | null;
   messages: Array<string>;
@@ -23,6 +24,7 @@ export interface Leg {
   notes: Array<string>;
   operator: string | null;
   origin: string;
+  origin_code: string | null;
   punctuality: number | null;
   shorter_stock_warning: string | null;
   stops: Array<LegStop>;

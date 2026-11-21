@@ -1,0 +1,298 @@
+{
+ "links": {},
+ "payload": [
+  {
+   "type": "stationfacility",
+   "name": "Lift",
+   "stationFacilityType": "ASSISTANCE",
+   "nearbyMeMarkerIconName": "elevator",
+   "identifiers": [
+    "lift"
+   ],
+   "categories": [
+    "Services",
+    "station-service",
+    "stationfacility",
+    "station-assistance"
+   ],
+   "locations": [
+    {
+     "distance": 60.793286328142365,
+     "name": "Lift Spoor 14/15",
+     "stationCode": "UT",
+     "lat": 52.0892688444664,
+     "lng": 5.109740568729723,
+     "open": "Yes",
+     "link": {
+      "uri": "https://places.ns-mlab.nl/api/v2/places/stationfacility/NL:CHB:LiftEquipment:8400621_009"
+     },
+     "description": "Lift Spoor 14/15",
+     "extra": {},
+     "infoImages": [],
+     "apps": [],
+     "sites": [],
+     "extraInfo": [],
+     "nearbyMeLocationId": {
+      "value": "NL:CHB:LiftEquipment:8400621_009",
+      "type": "stationfacility"
+     },
+     "nextOpeningTime": "Beschikbaar"
+    }
+   ],
+   "listLogoImage": {
+    "uri": "https://places.ns-mlab.nl/api/v2/places/stationfacility/resource/img-2.0-Lift_logo_20170615-151930.png"
+   },
+   "primaryColor": "000000",
+   "open": "Yes",
+   "keywords": [],
+   "stationBound": true,
+   "headerImage": {
+    "uri": "https://places.ns-mlab.nl/api/v2/places/stationfacility/resource/img-2.0-Lift_Header_20180802-111438.JPG"
+   },
+   "advertImages": [],
+   "infoImages": [],
+   "nextOpeningTime": ""
+  },
+  {
+   "type": "stationfacility",
+   "name": "SANIFAIR Toilet",
+   "stationFacilityType": "SERVICE",
+   "nearbyMeMarkerIconName": "toilet",
+   "identifiers": [],
+   "categories": [
+    "Services",
+    "station-service"
+   ],
+   "locations": [
+    {
+     "distance": 68.35340291251057,
+     "name": "UT - SANIFAIR Toilet - Stationshal",
+     "stationCode": "UT",
+     "lat": 52.088843,
+     "lng": 5.109202,
+     "open": "Yes",
+     "link": {
+      "uri": "https://places.ns-mlab.nl/api/v2/places/stationfacility/SANIFAIR%20Toilet-18"
+     },
+     "thumbnail": {
+      "uri": "/api/v1/location/thumbnail/52.088843,5.109202"
+     },
+     "description": "Stationshal",
+     "openingHours": [
+      {
+       "dayOfWeek": 1,
+       "startTime": "07:00",
+       "endTime": "24:00",
+       "closesNextDay": false
+      },
+      {
+       "dayOfWeek": 2,
+       "startTime": "07:00",
+       "endTime": "24:00",
+       "closesNextDay": false
+      },
+      {
+       "dayOfWeek": 3,
+       "startTime": "07:00",
+       "endTime": "24:00",
+       "closesNextDay": false
+      },
+      {
+       "dayOfWeek": 4,
+       "startTime": "07:00",
+       "endTime": "24:00",
+       "closesNextDay": true
+      },
+      {
+       "dayOfWeek": 5,
+       "startTime": "00:00",
+       "endTime": "24:00",
+       "closesNextDay": true
+      },
+      {
+       "dayOfWeek": 6,
+       "startTime": "00:00",
+       "endTime": "24:00",
+       "closesNextDay": true
+      },
+      {
+       "dayOfWeek": 7,
+       "startTime": "00:00",
+       "endTime": "24:00",
+       "closesNextDay": false
+      }
+     ],
+     "extra": {},
+     "infoImages": [
+      {
+       "name": "locationInfo_SANIFAIR Toilet-18_Memo",
+       "link": {
+        "uri": "https://places.ns-mlab.nl/api/v2/places/stationfacility/resource/img-2.0-SANIFAIRToilet_Header_20240325-102013.jpg"
+       },
+       "title": "Memo",
+       "body": "Buiten openingstijden is er altijd een mindervalide/nachttoilet toegankelijk."
+      }
+     ],
+     "apps": [],
+     "sites": [],
+     "extraInfo": [],
+     "nearbyMeLocationId": {
+      "value": "SANIFAIR Toilet-18",
+      "type": "stationfacility"
+     },
+     "nextOpeningTime": "Open - tot 24:00 uur",
+     "sapId": "3000/UT0000/"
+    }
+   ],
+   "listLogoImage": {
+    "uri": "https://places.ns-mlab.nl/api/v2/places/stationfacility/resource/img-2.0-BemenstetoilettenSanifair_logo_20160602-141045.png"
+   },
+   "primaryColor": "000000",
+   "open": "Yes",
+   "openingHours": [
+    {
+     "dayOfWeek": 1,
+     "startTime": "07:00",
+     "endTime": "00:00",
+     "closesNextDay": false
+    },
+    {
+     "dayOfWeek": 2,
+     "startTime": "07:00",
+     "endTime": "00:00",
+     "closesNextDay": false
+    },
+    {
+     "dayOfWeek": 3,
+     "startTime": "07:00",
+     "endTime": "00:00",
+     "closesNextDay": false
+    },
+    {
+     "dayOfWeek": 4,
+     "startTime": "07:00",
+     "endTime": "00:00",
+     "closesNextDay": true
+    },
+    {
+     "dayOfWeek": 5,
+     "startTime": "00:00",
+     "endTime": "00:00",
+     "closesNextDay": true
+    },
+    {
+     "dayOfWeek": 6,
+     "startTime": "00:00",
+     "endTime": "00:00",
+     "closesNextDay": true
+    },
+    {
+     "dayOfWeek": 7,
+     "startTime": "00:00",
+     "endTime": "00:00",
+     "closesNextDay": false
+    }
+   ],
+   "keywords": [
+    "toilet",
+    "wc"
+   ],
+   "stationBound": false,
+   "headerImage": {
+    "uri": "https://places.ns-mlab.nl/api/v2/places/stationfacility/resource/img-2.0-SANIFAIRToilet_Header_20240325-102013.jpg"
+   },
+   "advertImages": [],
+   "infoImages": [
+    {
+     "name": "info_2",
+     "link": {
+      "uri": "https://places.ns-mlab.nl/api/v2/places/stationfacility/resource/img-2.0-ToilettenBemenstSanifair_info_2_20170102-154604.png"
+     },
+     "title": "Inwisselpartners",
+     "subtitle": "Spaar met uw waardebon!",
+     "body": "Voor uw bezoek aan ons krijgt u een waardebon die u bij een van onze partners kunt inwisselen. Wissel de waardebon in en krijg €0,50 korting op uw aankoop. Kijk voor alle inwisselpartners op het station op onze website.",
+     "buttonText": "Bekijk partners",
+     "buttonLink": "https://www.sanifair.nl/stations/inwisselpartners.html?etcc_cmp=NSNL&etcc_med=NSNL_App"
+    },
+    {
+     "name": "info_3",
+     "link": {
+      "uri": "https://places.ns-mlab.nl/api/v2/places/stationfacility/resource/img-2.0-ToilettenBemenstSanifair_info_3_20170102-154751.png"
+     },
+     "title": "De SANIFAIR tevredenheidsgarantie",
+     "subtitle": "Uw serviceverzoek",
+     "body": "<P>Wij willen dat u zich prettig voelt bij ons. SANIFAIR doet daarom geen enkel compromis wat betreft hygiëne, inrichting en servicekwaliteit. Was u toch een keer niet tevreden? Wij horen graag uw feedback. Neem gewoon via het serviceformulier contact met ons op.</P>\r\n<P><A href=\"https://www.sanifair.nl/stations/klantenservice.html\">https://www.sanifair.nl/stations/klantenservice.html</A></P>\r\n<P>&nbsp;</P>",
+     "buttonText": "Neem contact met ons op",
+     "buttonLink": "https://www.sanifair.nl/stations/klantenservice.html?etcc_cmp=NSNL&etcc_med=NSNL_App "
+    },
+    {
+     "name": "info_4",
+     "link": {
+      "uri": "https://places.ns-mlab.nl/api/v2/places/stationfacility/resource/img-2.0-ToilettenBemenstSanifair_info_4_20170109-150339.jpg"
+     },
+     "title": "Het verfrissend andere toilet",
+     "subtitle": "Ontdek SANIFAIR",
+     "body": "<P>Ontdek de schone wereld van SANIFAIR! U vindt onze hoogwaardige toiletfaciliteiten in openbare ruimtes – dé keuze voor hygiëne en comfort. SANIFAIR staat voor netheid en hygiëne van het hoogste niveau. Dit garanderen niet alleen onze opgeleide SANIFAIR servicemedewerkers, maar ook de moderne techniek van SANIFAIR. Zo wordt de waterbesparende toiletspoeling contactloos geactiveerd, en ook bij waterkranen, handdoekautomaten en dispensers voor desinfectiemiddel is een korte handbeweging voor een sensor voldoende om het apparaat in werking te stellen. </P>\r\n<P>Dat is onze SANIFAIR hygiënebelofte. </P>",
+     "buttonText": "Lees hier meer",
+     "buttonLink": "https://www.sanifair.nl/?etcc_cmp=NSNL&etcc_med=NSNL_App"
+    }
+   ],
+   "nextOpeningTime": "Open - tot 00:00 uur"
+  },
+  {
+   "type": "stationfacility",
+   "name": "Watertappunt",
+   "stationFacilityType": "SERVICE",
+   "nearbyMeMarkerIconName": "water-tap",
+   "identifiers": [],
+   "categories": [
+    "Services",
+    "station-service",
+    "stationfacility",
+    "station-service"
+   ],
+   "locations": [
+    {
+     "distance": 153.93038045002385,
+     "name": "Jaarbeurszijde",
+     "stationCode": "UT",
+     "lat": 52.088909,
+     "lng": 5.107954,
+     "open": "Unknown",
+     "link": {
+      "uri": "https://places.ns-mlab.nl/api/v2/places/stationfacility/Watertappunt-28"
+     },
+     "thumbnail": {
+      "uri": "/api/v1/location/thumbnail/52.088909,5.107954"
+     },
+     "description": "Jaarbeursplein",
+     "extra": {},
+     "infoImages": [],
+     "apps": [],
+     "sites": [],
+     "extraInfo": [],
+     "nearbyMeLocationId": {
+      "value": "Watertappunt-28",
+      "type": "stationfacility"
+     },
+     "nextOpeningTime": "Openingstijden onbekend",
+     "sapId": "6000/UT0000/"
+    }
+   ],
+   "listLogoImage": {
+    "uri": "https://places.ns-mlab.nl/api/v2/places/stationfacility/resource/img-2.0-Watertappunt_logo_20181128-143422.JPG"
+   },
+   "primaryColor": "000000",
+   "open": "Unknown",
+   "keywords": [],
+   "stationBound": true,
+   "headerImage": {
+    "uri": "https://places.ns-mlab.nl/api/v2/places/stationfacility/resource/img-2.0-Watertappunt_Header_20181122-141840.jpg"
+   },
+   "advertImages": [],
+   "infoImages": [],
+   "nextOpeningTime": ""
+  }
+ ],
+ "meta": {}
+}

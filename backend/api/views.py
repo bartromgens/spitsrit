@@ -28,6 +28,7 @@ from api.serializers import (
     OvFietsSerializer,
     RegisterSerializer,
     StationSerializer,
+    StationToiletsSerializer,
     TripSerializer,
     UserSerializer,
 )
@@ -119,6 +120,18 @@ def ov_fiets(request: Request, code: str) -> Response:
     except ns.NsError as error:
         return ns_error_response(error)
     return Response(OvFietsSerializer(found).data)
+
+
+@extend_schema(responses={200: StationToiletsSerializer, 502: None, 503: None})
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def station_toilets(request: Request, code: str) -> Response:
+    """The public toilets at a station, and whether each is open now."""
+    try:
+        found = places.fetch_toilets(code)
+    except ns.NsError as error:
+        return ns_error_response(error)
+    return Response(StationToiletsSerializer(found).data)
 
 
 @extend_schema(

@@ -333,6 +333,32 @@ paths:
           description: No response body
         '503':
           description: No response body
+  /api/stations/{code}/toilets/:
+    get:
+      operationId: stations_toilets_retrieve
+      description: The public toilets at a station, and whether each is open now.
+      parameters:
+      - in: path
+        name: code
+        schema:
+          type: string
+        required: true
+      tags:
+      - stations
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StationToilets'
+          description: ''
+        '502':
+          description: No response body
+        '503':
+          description: No response body
   /api/trips/:
     get:
       operationId: trips_retrieve
@@ -573,6 +599,12 @@ components:
         shorter_stock_warning:
           type: string
           nullable: true
+        origin_code:
+          type: string
+          nullable: true
+        destination_code:
+          type: string
+          nullable: true
         bicycle_spots:
           type: integer
           nullable: true
@@ -590,6 +622,7 @@ components:
       - departure_track
       - departure_track_changed
       - destination
+      - destination_code
       - direction
       - exit_side
       - messages
@@ -597,6 +630,7 @@ components:
       - notes
       - operator
       - origin
+      - origin_code
       - punctuality
       - shorter_stock_warning
       - stops
@@ -786,6 +820,28 @@ components:
       required:
       - code
       - name
+    StationToilets:
+      type: object
+      properties:
+        station_code:
+          type: string
+        toilets:
+          type: array
+          items:
+            $ref: '#/components/schemas/Toilet'
+      required:
+      - station_code
+      - toilets
+    Toilet:
+      type: object
+      properties:
+        name:
+          type: string
+        open:
+          type: string
+      required:
+      - name
+      - open
     TrainPart:
       type: object
       properties:
