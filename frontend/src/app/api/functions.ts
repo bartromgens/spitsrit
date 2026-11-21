@@ -33,5 +33,7 @@ export type { StationsList$Params as StationsList$Params } from './fn/stations/s
 export { stationsList as stationsList } from './fn/stations/stations-list';
 export type { StationsOvFietsRetrieve$Params as StationsOvFietsRetrieve$Params } from './fn/stations/stations-ov-fiets-retrieve';
 export { stationsOvFietsRetrieve as stationsOvFietsRetrieve } from './fn/stations/stations-ov-fiets-retrieve';
+export type { StationsToiletsRetrieve$Params as StationsToiletsRetrieve$Params } from './fn/stations/stations-toilets-retrieve';
+export { stationsToiletsRetrieve as stationsToiletsRetrieve } from './fn/stations/stations-toilets-retrieve';
 export type { TripsRetrieve$Params as TripsRetrieve$Params } from './fn/trips/trips-retrieve';
 export { tripsRetrieve as tripsRetrieve } from './fn/trips/trips-retrieve';

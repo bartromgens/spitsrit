@@ -14,6 +14,8 @@ export type { PaginatedCommuteList } from './models/paginated-commute-list';
 export type { PatchedCommuteRequest } from './models/patched-commute-request';
 export type { RegisterRequest } from './models/register-request';
 export type { Station } from './models/station';
+export type { StationToilets } from './models/station-toilets';
+export type { Toilet } from './models/toilet';
 export type { TrainPart } from './models/train-part';
 export type { Trip } from './models/trip';
 export type { User } from './models/user';

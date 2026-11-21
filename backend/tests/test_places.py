@@ -134,3 +134,84 @@ def test_ov_fiets_endpoint_ns_down(client_api: APIClient, monkeypatch: pytest.Mo
 
     monkeypatch.setattr(places, "fetch_ov_fiets", fail)
     assert client_api.get("/api/stations/ASD/ov-fiets/").status_code == 502
+
+
+FACILITIES_FIXTURE = Path(__file__).parent / "fixtures" / "ns_places_facilities_ut.json"
+
+
+def facility(icon: Any, *locations: Any, name: str = "Toilet") -> dict[str, Any]:
+    return {"name": name, "nearbyMeMarkerIconName": icon, "locations": list(locations)}
+
+
+def test_parse_toilets_reads_a_real_response() -> None:
+    # Trimmed from a real UT response: a lift, the toilet and a water tap.
+    parsed = places.parse_toilets(json.loads(FACILITIES_FIXTURE.read_text()))
+    assert parsed == (places.Toilet("Stationshal", "Yes"),)
+
+
+def test_toilets_are_found_by_icon_not_by_name() -> None:
+    parsed = places.parse_toilets(
+        {
+            "payload": [
+                facility("toilet", {"open": "No"}, name="SANIFAIR Toilet"),
+                facility("info", {"open": "Yes"}, name="Toilet information"),
+                facility("toilet", {"description": "Perron 1"}, "x", name="Toilet"),
+            ]
+        }
+    )
+    assert parsed == (
+        places.Toilet("SANIFAIR Toilet", "No"),
+        places.Toilet("Perron 1", "Unknown"),
+    )
+
+
+@pytest.mark.parametrize(
+    "body",
+    [None, {}, {"payload": None}, {"payload": ["x"]}, {"payload": [facility("toilet")]}],
+)
+def test_malformed_or_empty_facilities_have_no_toilets(body: Any) -> None:
+    assert places.parse_toilets(body) == ()
+
+
+def test_fetch_toilets_asks_for_station_facilities_and_caches(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    cache.clear()
+    calls: list[tuple[str, dict[str, str] | None]] = []
+
+    def fake_get(path: str, params: dict[str, str] | None = None) -> Any:
+        calls.append((path, params))
+        return {"payload": [facility("toilet", {"open": "Yes"})]}
+
+    monkeypatch.setattr(places, "_get", fake_get)
+    first = places.fetch_toilets("bkl")
+    assert places.fetch_toilets("BKL") == first
+    assert first == places.StationToilets("BKL", (places.Toilet("Toilet", "Yes"),))
+    assert calls == [
+        ("v2/places", {"station_code": "BKL", "type": "stationfacility", "limit": "200"})
+    ]
+
+
+def test_toilets_endpoint_is_public(client_api: APIClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    found = places.StationToilets("UT", (places.Toilet("Stationshal", "Yes"),))
+    monkeypatch.setattr(places, "fetch_toilets", lambda code: found)
+    response = client_api.get("/api/stations/UT/toilets/")
+    assert response.status_code == 200
+    assert response.json() == {
+        "station_code": "UT",
+        "toilets": [{"name": "Stationshal", "open": "Yes"}],
+    }
+
+
+@override_settings(NS_API_KEY="")  # a local settings_local.py may set a real key
+def test_toilets_endpoint_without_key(client_api: APIClient) -> None:
+    cache.clear()
+    assert client_api.get("/api/stations/UT/toilets/").status_code == 503
+
+
+def test_toilets_endpoint_ns_down(client_api: APIClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    def fail(code: str) -> places.StationToilets:
+        raise ns.NsError("down")
+
+    monkeypatch.setattr(places, "fetch_toilets", fail)
+    assert client_api.get("/api/stations/UT/toilets/").status_code == 502

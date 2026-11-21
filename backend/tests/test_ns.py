@@ -657,3 +657,19 @@ def test_get_sends_key_header_and_parses_json(monkeypatch: pytest.MonkeyPatch) -
     assert ns.fetch_trips("UT", "ASD", NOW) == []
     assert captured[0].get_header("Ocp-apim-subscription-key") == "secret-key"
     assert "fromStation=UT" in captured[0].full_url
+
+
+def test_parse_leg_reads_station_codes() -> None:
+    leg = ns.parse_leg(
+        {
+            **DETAILED_LEG,
+            "origin": {**DETAILED_LEG["origin"], "stationCode": "UT"},
+            "destination": {**DETAILED_LEG["destination"], "stationCode": "GD"},
+        }
+    )
+    assert (leg.origin_code, leg.destination_code) == ("UT", "GD")
+
+
+def test_parse_leg_without_station_codes() -> None:
+    leg = ns.parse_leg(DETAILED_LEG)
+    assert (leg.origin_code, leg.destination_code) == (None, None)

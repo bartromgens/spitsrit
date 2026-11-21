@@ -83,6 +83,16 @@ class OvFietsSerializer(serializers.Serializer[Any]):
     locations = OvFietsLocationSerializer(many=True)
 
 
+class ToiletSerializer(serializers.Serializer[Any]):
+    name = serializers.CharField()
+    open = serializers.CharField()  # "Yes", "No" or "Unknown"
+
+
+class StationToiletsSerializer(serializers.Serializer[Any]):
+    station_code = serializers.CharField()
+    toilets = ToiletSerializer(many=True)
+
+
 class TrainPartSerializer(serializers.Serializer[Any]):
     stock_identifier = serializers.CharField()
     facilities = serializers.ListField(child=serializers.CharField())
@@ -126,6 +136,8 @@ class LegSerializer(serializers.Serializer[Any]):
     messages = serializers.ListField(child=serializers.CharField())
     transfer_messages = serializers.ListField(child=serializers.CharField())
     shorter_stock_warning = serializers.CharField(allow_null=True)
+    origin_code = serializers.CharField(allow_null=True)
+    destination_code = serializers.CharField(allow_null=True)
 
 
 class TripSerializer(serializers.Serializer[Any]):

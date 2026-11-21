@@ -1,5 +1,7 @@
+import { HttpTestingController } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Leg, Trip } from '../../api/models';
+import { settle, testProviders } from '../../testing';
 import { TripDetails } from './trip-details';
 
 const ride: Leg = {
@@ -61,6 +63,8 @@ const ride: Leg = {
   messages: ['Werkzaamheden - Minder treinen'],
   transfer_messages: ['Overstap op hetzelfde perron'],
   shorter_stock_warning: null,
+  origin_code: 'UT',
+  destination_code: 'GD',
 };
 
 const walk: Leg = {
@@ -74,6 +78,8 @@ const walk: Leg = {
   notes: [],
   messages: [],
   transfer_messages: [],
+  origin_code: 'GD',
+  destination_code: null,
 };
 
 const trip: Trip = {
@@ -121,13 +127,28 @@ describe('TripDetails', () => {
   }
 
   beforeEach(async () => {
-    TestBed.configureTestingModule({ imports: [TripDetails] });
+    TestBed.configureTestingModule({ imports: [TripDetails], providers: testProviders });
     fixture = TestBed.createComponent(TripDetails);
     element = fixture.nativeElement as HTMLElement;
     await render(trip);
   });
 
   const text = (): string => element.textContent?.replace(/\s+/g, ' ') ?? '';
+
+  it('shows a toilet icon at the stations where you board or get off, if they have one', async () => {
+    const http = TestBed.inject(HttpTestingController);
+    http
+      .expectOne('/api/stations/UT/toilets/')
+      .flush({ station_code: 'UT', toilets: [{ name: 'Stationshal', open: 'Yes' }] });
+    http.expectOne('/api/stations/GD/toilets/').flush({ station_code: 'GD', toilets: [] });
+    http.expectNone((request) => request.url.includes('/toilets/'));
+    await settle(fixture);
+    const stops = Array.from(element.querySelectorAll('.stop'));
+    const withToilet = stops.filter((stop) => stop.querySelector('[data-testid="station-toilet"]'));
+    expect(withToilet.map((stop) => stop.querySelector('.stop-label')?.textContent)).toEqual([
+      'Utrecht Centraal',
+    ]);
+  });
 
   it('summarises the trip with its disruptions', () => {
     expect(text()).toContain('28 min');

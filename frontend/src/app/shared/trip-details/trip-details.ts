@@ -13,6 +13,7 @@ import { Crowding } from '../crowding/crowding';
 import { DepartureTime } from '../departure-time/departure-time';
 import { FacilityIcon } from '../facility-icon/facility-icon';
 import { PlatformSign } from '../platform-sign/platform-sign';
+import { StationToilet } from '../station-toilet/station-toilet';
 import { TrainLength } from '../train-length/train-length';
 
 const EXIT_SIDES: Record<string, string> = { LEFT: 'left', RIGHT: 'right' };
@@ -28,6 +29,8 @@ interface StopView {
   cancelled: boolean;
   /** The first or last stop of the leg: where you board or get off. */
   endpoint: boolean;
+  /** The NS station code where you board or get off, to look up its toilets; else null. */
+  stationCode: string | null;
 }
 
 interface LegView {
@@ -44,9 +47,9 @@ function minutesLate(planned: string | null, actual: string | null): number {
   return Math.max(0, Math.round((Date.parse(actual) - Date.parse(planned)) / 60_000));
 }
 
-function stopView(stop: LegStop, index: number, count: number): StopView {
+function stopView(stop: LegStop, index: number, leg: Leg): StopView {
   // Show the departure time, except at the last stop where only arrival matters.
-  const last = index === count - 1;
+  const last = index === leg.stops.length - 1;
   const planned = last
     ? (stop.arrival_planned ?? stop.departure_planned)
     : (stop.departure_planned ?? stop.arrival_planned);
@@ -62,6 +65,7 @@ function stopView(stop: LegStop, index: number, count: number): StopView {
     passing: stop.passing,
     cancelled: stop.cancelled,
     endpoint: index === 0 || last,
+    stationCode: index === 0 ? leg.origin_code : last ? leg.destination_code : null,
   };
 }
 
@@ -78,6 +82,7 @@ function stopView(stop: LegStop, index: number, count: number): StopView {
     DepartureTime,
     FacilityIcon,
     PlatformSign,
+    StationToilet,
     TrainLength,
   ],
   selector: 'app-trip-details',
@@ -97,7 +102,7 @@ export class TripDetails {
       departureDelay: minutesLate(leg.departure_planned, leg.departure_actual),
       arrivalDelay: minutesLate(leg.arrival_planned, leg.arrival_actual),
       exitSide: EXIT_SIDES[leg.exit_side ?? ''] ?? '',
-      stops: leg.stops.map((stop, i) => stopView(stop, i, leg.stops.length)),
+      stops: leg.stops.map((stop, i) => stopView(stop, i, leg)),
     })),
   );
 
