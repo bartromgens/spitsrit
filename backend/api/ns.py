@@ -341,7 +341,11 @@ def _spans(items: Any, kind_key: str) -> tuple[Span, ...]:
 def parse_boarding_layout(
     stops: list[Any], boarding_uic_code: str | None
 ) -> tuple[tuple[Span, ...], tuple[Span, ...]]:
-    """Crowding per carriage and the platform features at the boarding stop."""
+    """Crowding per carriage and the platform features at the boarding stop.
+
+    Real responses have sent both as empty arrays so far (see docs/ns-api/NOTES.md); this is
+    kept so the details show them once NS fills them. The layout of the spans is unverified.
+    """
     boarding = _boarding_stop(stops, boarding_uic_code)
     if boarding is None:
         return (), ()
