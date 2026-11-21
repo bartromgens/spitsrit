@@ -1,7 +1,9 @@
 import io
+import json
 import urllib.error
 import urllib.request
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -142,7 +144,7 @@ def test_parse_trip_passes_shorter_stock_flags_through() -> None:
 
 
 def stop(uic: str, kind: str | None = None, **stock: Any) -> dict[str, Any]:
-    return {"id": uic, "stop": {"UICCode": uic}, **({"kind": kind} if kind else {}), **stock}
+    return {"id": uic, "stop": {"uicCode": uic}, **({"kind": kind} if kind else {}), **stock}
 
 
 def stock(seats: int, parts: int = 3, train_type: str = "VIRM") -> dict[str, Any]:
@@ -179,21 +181,54 @@ def trips_with_journey(
 
 
 def test_fetch_trips_reads_size_from_the_boarding_stop(monkeypatch: pytest.MonkeyPatch) -> None:
-    # The train starts at 8400000; the leg boards at 8400621, where it has more units.
+    # The train starts at 8400000; the leg boards at 8400621, where it has more carriages.
+    # `kind` is absent, so the stop is found by its `uicCode`; actualStock beats plannedStock.
     payload = journey(
-        stop("8400000", "DEPARTURE", plannedStock=stock(300, 2, "SLT")),
+        stop("8400000", plannedStock=stock(300, 2, "SLT")),
         stop("8400621", actualStock=stock(620, 4, "VIRM"), plannedStock=stock(400, 3, "DDZ")),
     )
-    calls = trips_with_journey(monkeypatch, payload)
+    trips_with_journey(monkeypatch, payload)
     [trip] = ns.fetch_trips("UT", "ASD", NOW)
-    assert (trip.seats, trip.units, trip.train_type) == (620, 4, "VIRM")
-    assert ("v2/journey", {"id": "1|231691|0|784|20112026"}) in calls
+    assert (trip.seats, trip.carriages, trip.train_type) == (620, 4, "VIRM")
+
+
+def test_fetch_trips_sends_the_departure_uic_code_by_journey_id(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls = trips_with_journey(monkeypatch, journey(stop("8400621", actualStock=stock(620))))
+    ns.fetch_trips("UT", "ASD", NOW)
+    assert ("v2/journey", {"id": "1|231691|0|784|20112026", "departureUicCode": "8400621"}) in calls
+
+
+def test_the_departure_stop_wins_over_a_matching_uic_code(monkeypatch: pytest.MonkeyPatch) -> None:
+    payload = journey(
+        stop("8400621", actualStock=stock(100)), stop("2", "DEPARTURE", actualStock=stock(250))
+    )
+    trips_with_journey(monkeypatch, payload)
+    assert ns.fetch_trips("UT", "ASD", NOW)[0].seats == 250
+
+
+def test_parse_boarding_stock_from_the_real_journey_response() -> None:
+    fixture = Path(__file__).parent / "fixtures" / "ns_journey_3148.json"
+    stops = json.loads(fixture.read_text())["payload"]["stops"]
+    # Utrecht Centraal: 740 seats, not the 810 of the final stop; 8 carriages in 2 units.
+    assert ns.parse_boarding_stock(stops, "8400621") == ns.Stock(740, 8, "VIRM")
+    # Without `kind`, the stop is found by uicCode alone.
+    unmarked = [{k: v for k, v in s.items() if k != "kind"} for s in stops]
+    assert ns.parse_boarding_stock(unmarked, "8400621") == ns.Stock(740, 8, "VIRM")
+    assert ns.parse_boarding_stock(unmarked, "8400282") == ns.Stock(810, 8, "VIRM")
+    assert ns.parse_boarding_stock(unmarked, "9999999") is None
+
+
+def test_parse_boarding_stock_prefers_actual_over_planned_stock() -> None:
+    stops = [stop("8400621", actualStock=stock(700, 8), plannedStock=stock(400, 4))]
+    assert ns.parse_boarding_stock(stops, "8400621") == ns.Stock(700, 8, "VIRM")
 
 
 def test_fetch_trips_falls_back_to_planned_stock(monkeypatch: pytest.MonkeyPatch) -> None:
     trips_with_journey(monkeypatch, journey(stop("8400621", plannedStock=stock(400, 3, "DDZ"))))
     [trip] = ns.fetch_trips("UT", "ASD", NOW)
-    assert (trip.seats, trip.units, trip.train_type) == (400, 3, "DDZ")
+    assert (trip.seats, trip.carriages, trip.train_type) == (400, 3, "DDZ")
 
 
 def test_fetch_trips_uses_the_departure_stop_when_uic_does_not_match(
@@ -216,7 +251,11 @@ def test_fetch_trips_falls_back_to_train_number(monkeypatch: pytest.MonkeyPatch)
     assert trip.seats == 500
     assert (
         "v2/journey",
-        {"train": "2736", "dateTime": "2026-11-20T08:00:00+0100"},
+        {
+            "train": "2736",
+            "dateTime": "2026-11-20T08:00:00+0100",
+            "departureUicCode": "8400621",
+        },
     ) in calls
 
 
@@ -226,7 +265,7 @@ def test_failed_journey_leaves_size_unknown_but_returns_the_trip(
     trips_with_journey(monkeypatch, ns.NsError("boom"))
     [trip] = ns.fetch_trips("UT", "ASD", NOW)
     assert trip.uid == "abc"
-    assert (trip.seats, trip.units, trip.train_type) == (None, None, None)
+    assert (trip.seats, trip.carriages, trip.train_type) == (None, None, None)
 
 
 def test_malformed_journey_leaves_size_unknown(monkeypatch: pytest.MonkeyPatch) -> None:

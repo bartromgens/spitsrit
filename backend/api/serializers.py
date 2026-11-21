@@ -87,7 +87,7 @@ class TripSerializer(serializers.Serializer[Any]):
     crowd_forecast = serializers.CharField()
     train = serializers.CharField()
     seats = serializers.IntegerField(allow_null=True)
-    units = serializers.IntegerField(allow_null=True)
+    carriages = serializers.IntegerField(allow_null=True)
     train_type = serializers.CharField(allow_null=True)
     shorter_stock = serializers.CharField(allow_null=True)  # null, "BUSY" or "EXTRA_BUSY"
     shorter_stock_warning = serializers.CharField(allow_null=True)

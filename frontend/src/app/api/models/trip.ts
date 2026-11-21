@@ -6,6 +6,7 @@ export interface Trip {
   arrival_delay_minutes: number;
   arrival_planned: string;
   cancelled: boolean;
+  carriages: number | null;
   crowd_forecast: string;
   departure_actual: string;
   departure_delay_minutes: number;
@@ -20,5 +21,4 @@ export interface Trip {
   train_type: string | null;
   transfers: number;
   uid: string;
-  units: number | null;
 }

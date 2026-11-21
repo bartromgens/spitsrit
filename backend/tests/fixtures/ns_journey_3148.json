@@ -1,0 +1,102 @@
+{
+ "payload": {
+  "notes": [],
+  "productNumbers": ["3148"],
+  "stops": [
+   {
+    "id": "NM_0",
+    "stop": {"name": "Nijmegen", "lng": 5.85222244262695, "lat": 51.8436126708984, "countryCode": "NL", "uicCode": "8400470"},
+    "previousStopId": [],
+    "nextStopId": ["NML_0"],
+    "destination": "Den Haag C.",
+    "status": "ORIGIN",
+    "actualStock": {
+     "trainType": "VIRM",
+     "numberOfSeats": 740,
+     "numberOfParts": 8,
+     "trainParts": [
+      {"stockIdentifier": "9596", "facilities": ["WIFI", "TOILET", "STILTE", "FIETS"], "image": {"uri": "https://vt.ns-mlab.nl/v1/images/virm_4.png"}},
+      {"stockIdentifier": "9469", "facilities": ["WIFI", "TOILET", "STILTE", "FIETS", "STROOM"], "image": {"uri": "https://vt.ns-mlab.nl/v1/images/virmm1_4.png"}}
+     ],
+     "hasSignificantChange": false
+    },
+    "plannedStock": {
+     "trainType": "VIRM",
+     "numberOfSeats": 740,
+     "numberOfParts": 8,
+     "trainParts": [
+      {"stockIdentifier": "9596", "facilities": ["WIFI", "TOILET", "STILTE", "FIETS"], "image": {"uri": "https://vt.ns-mlab.nl/v1/images/virm_4.png"}},
+      {"stockIdentifier": "9469", "facilities": ["WIFI", "TOILET", "STILTE", "FIETS", "STROOM"], "image": {"uri": "https://vt.ns-mlab.nl/v1/images/virmm1_4.png"}}
+     ],
+     "hasSignificantChange": false
+    }
+   },
+   {
+    "id": "UT_0",
+    "stop": {"name": "Utrecht Centraal", "lng": 5.11027765274048, "lat": 52.0888900756836, "countryCode": "NL", "uicCode": "8400621"},
+    "previousStopId": ["UTVR_0"],
+    "nextStopId": ["UTZL_0"],
+    "destination": "Den Haag C.",
+    "status": "STOP",
+    "kind": "DEPARTURE",
+    "actualStock": {
+     "trainType": "VIRM",
+     "numberOfSeats": 740,
+     "numberOfParts": 8,
+     "trainParts": [
+      {"stockIdentifier": "9469", "facilities": ["WIFI", "TOILET", "STILTE", "FIETS", "STROOM"], "image": {"uri": "https://vt.ns-mlab.nl/v1/images/virmm1_4.png"}},
+      {"stockIdentifier": "9596", "facilities": ["WIFI", "TOILET", "STILTE", "FIETS"], "image": {"uri": "https://vt.ns-mlab.nl/v1/images/virm_4.png"}}
+     ],
+     "hasSignificantChange": false
+    },
+    "plannedStock": {
+     "trainType": "VIRM",
+     "numberOfSeats": 740,
+     "numberOfParts": 8,
+     "trainParts": [
+      {"stockIdentifier": "9469", "facilities": ["WIFI", "TOILET", "STILTE", "FIETS", "STROOM"], "image": {"uri": "https://vt.ns-mlab.nl/v1/images/virmm1_4.png"}},
+      {"stockIdentifier": "9596", "facilities": ["WIFI", "TOILET", "STILTE", "FIETS"], "image": {"uri": "https://vt.ns-mlab.nl/v1/images/virm_4.png"}}
+     ],
+     "hasSignificantChange": false
+    }
+   },
+   {
+    "id": "UTZL_0",
+    "stop": {"name": "Utrecht Zuilen", "lng": 5.09, "lat": 52.103055, "countryCode": "NL", "uicCode": "8400613"},
+    "previousStopId": ["UT_0"],
+    "nextStopId": ["MAS_0"],
+    "status": "PASSING"
+   },
+   {
+    "id": "GVC_0",
+    "stop": {"name": "Den Haag Centraal", "lng": 4.32499980926514, "lat": 52.0802764892578, "countryCode": "NL", "uicCode": "8400282"},
+    "previousStopId": ["LAA_0"],
+    "nextStopId": [],
+    "destination": "Den Haag C.",
+    "status": "DESTINATION",
+    "actualStock": {
+     "trainType": "VIRM",
+     "numberOfSeats": 810,
+     "numberOfParts": 8,
+     "trainParts": [
+      {"stockIdentifier": "0", "facilities": ["WIFI", "TOILET", "STILTE", "FIETS"], "image": {"uri": "https://vt.ns-mlab.nl/v1/images/virm_4.png"}},
+      {"stockIdentifier": "0", "facilities": ["WIFI", "TOILET", "STILTE", "FIETS"], "image": {"uri": "https://vt.ns-mlab.nl/v1/images/virm_4.png"}}
+     ],
+     "hasSignificantChange": false
+    },
+    "plannedStock": {
+     "trainType": "VIRM",
+     "numberOfSeats": 810,
+     "numberOfParts": 8,
+     "trainParts": [
+      {"stockIdentifier": "0", "facilities": ["WIFI", "TOILET", "STILTE", "FIETS"], "image": {"uri": "https://vt.ns-mlab.nl/v1/images/virm_4.png"}},
+      {"stockIdentifier": "0", "facilities": ["WIFI", "TOILET", "STILTE", "FIETS"], "image": {"uri": "https://vt.ns-mlab.nl/v1/images/virm_4.png"}}
+     ],
+     "hasSignificantChange": false
+    }
+   }
+  ],
+  "allowCrowdReporting": true,
+  "source": "PPV"
+ }
+}

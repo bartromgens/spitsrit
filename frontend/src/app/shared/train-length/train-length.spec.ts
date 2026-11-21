@@ -23,6 +23,14 @@ describe('TrainLength', () => {
     expect(element().textContent).not.toContain('treinstellen');
   });
 
+  it('shows the carriages with the seats, and omits them when unknown', async () => {
+    await render({ seats: 740, carriages: 8, trainType: 'VIRM' });
+    expect(element().textContent).toContain('~740 seats');
+    expect(element().textContent).toContain('· 8 carriages');
+    await render({ carriages: null });
+    expect(element().textContent).not.toContain('carriages');
+  });
+
   it('shows nothing when the size is unknown', async () => {
     await render({ seats: null, trainType: null });
     expect(element().textContent?.trim()).toBe('');

@@ -606,7 +606,7 @@ components:
         seats:
           type: integer
           nullable: true
-        units:
+        carriages:
           type: integer
           nullable: true
         train_type:
@@ -623,6 +623,7 @@ components:
       - arrival_delay_minutes
       - arrival_planned
       - cancelled
+      - carriages
       - crowd_forecast
       - departure_actual
       - departure_delay_minutes
@@ -637,7 +638,6 @@ components:
       - train_type
       - transfers
       - uid
-      - units
     User:
       type: object
       properties:

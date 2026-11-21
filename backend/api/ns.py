@@ -59,7 +59,7 @@ class Trip:
     crowd_forecast: str
     train: str
     seats: int | None = None
-    units: int | None = None
+    carriages: int | None = None
     train_type: str | None = None
     shorter_stock: str | None = None
     shorter_stock_warning: str | None = None
@@ -126,7 +126,7 @@ def _shorter_stock(legs: list[dict[str, Any]]) -> tuple[str | None, str | None]:
 @dataclass(frozen=True)
 class Stock:
     seats: int | None
-    units: int | None
+    carriages: int | None
     train_type: str | None
 
 
@@ -139,27 +139,28 @@ def _parse_stock(stock: Any) -> Stock | None:
         return None
     result = Stock(
         seats=_positive_int(stock.get("numberOfSeats")),
-        units=_positive_int(stock.get("numberOfParts")),
+        carriages=_positive_int(stock.get("numberOfParts")),
         train_type=str(stock["trainType"]) if stock.get("trainType") else None,
     )
-    return result if result.seats or result.units else None
+    return result if result.seats or result.carriages else None
 
 
 def parse_boarding_stock(stops: list[Any], boarding_uic_code: str | None) -> Stock | None:
     """The stock at the stop where the leg boards, from the `stops` of a `/v2/journey` response.
 
-    The boarding stop is the one matching the leg's origin; failing that, the stop NS
-    marks `kind == "DEPARTURE"`. `actualStock` wins over `plannedStock`.
+    The boarding stop is the one NS marks `kind == "DEPARTURE"` (only set when the request
+    passes `departureUicCode`); failing that, the one whose `uicCode` is the leg's origin.
+    `actualStock` wins over `plannedStock`.
     """
     journey_stops = [s for s in stops if isinstance(s, dict)]
-    boarding = next(
+    boarding = next((s for s in journey_stops if s.get("kind") == "DEPARTURE"), None) or next(
         (
             s
             for s in journey_stops
-            if boarding_uic_code and (s.get("stop") or {}).get("UICCode") == boarding_uic_code
+            if boarding_uic_code and (s.get("stop") or {}).get("uicCode") == boarding_uic_code
         ),
         None,
-    ) or next((s for s in journey_stops if s.get("kind") == "DEPARTURE"), None)
+    )
     if boarding is None:
         return None
     return _parse_stock(boarding.get("actualStock")) or _parse_stock(boarding.get("plannedStock"))
@@ -219,16 +220,23 @@ def search_stations(query: str, limit: int = 15) -> list[Station]:
 
 
 def _journey_request(leg: dict[str, Any]) -> tuple[str, dict[str, str]] | None:
-    """Cache key and query for the leg's journey: by `journeyDetailRef`, else by train number."""
+    """Cache key and query for the leg's journey: by `journeyDetailRef`, else by train number.
+
+    Always passes `departureUicCode`, which makes NS mark the boarding stop.
+    """
+    origin = leg.get("origin") or {}
+    boarding = origin.get("uicCode")
+    extra = {"departureUicCode": str(boarding)} if boarding else {}
     ref = leg.get("journeyDetailRef")
     if ref:
-        return f"ns:journey:{ref}", {"id": str(ref)}
+        return f"ns:journey:{ref}:{boarding}", {"id": str(ref), **extra}
     number = (leg.get("product") or {}).get("number")
-    departure = (leg.get("origin") or {}).get("plannedDateTime")
+    departure = origin.get("plannedDateTime")
     if number and departure:
-        return f"ns:journey:train:{number}:{departure}", {
+        return f"ns:journey:train:{number}:{departure}:{boarding}", {
             "train": str(number),
             "dateTime": str(departure),
+            **extra,
         }
     return None
 
@@ -260,7 +268,7 @@ def _leg_stock(leg: dict[str, Any] | None) -> Stock | None:
 def _with_stock(trip: Trip, stock: Stock | None) -> Trip:
     if stock is None:
         return trip
-    return replace(trip, seats=stock.seats, units=stock.units, train_type=stock.train_type)
+    return replace(trip, seats=stock.seats, carriages=stock.carriages, train_type=stock.train_type)
 
 
 def fetch_trips(origin_code: str, destination_code: str, when: datetime) -> list[Trip]:
