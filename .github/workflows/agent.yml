@@ -2,6 +2,11 @@
 # Starts when an allowlisted user labels an issue `agent`, or when the AI review
 # dispatches a rework round. Secret: CLAUDE_CODE_OAUTH_TOKEN (or ANTHROPIC_API_KEY).
 name: agent
+# Labelled issue: `agent: issue #12 <title>`. Rework dispatched by the review: `agent: rework PR #7`.
+run-name: >-
+  agent: ${{ github.event_name == 'workflow_dispatch'
+  && format('rework PR #{0}', inputs.pr)
+  || format('issue #{0} {1}', github.event.issue.number, github.event.issue.title) }}
 
 on:
   issues:
@@ -24,7 +29,7 @@ concurrency:
 
 jobs:
   agent:
-    uses: bartromgens/gantry/.github/workflows/agent.yml@49b6f40ffc1a8b4d1dc225ba3b968e940669cc8a # main
+    uses: bartromgens/gantry/.github/workflows/agent.yml@17a82b295817b855958ecf01135ef7af6d2f228d # main
     permissions:
       contents: read
       issues: write

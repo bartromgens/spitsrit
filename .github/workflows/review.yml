@@ -4,6 +4,15 @@
 # Variable: MERGE_GATE_CLIENT_ID. Secrets: CLAUDE_CODE_OAUTH_TOKEN (or ANTHROPIC_API_KEY),
 # MERGE_GATE_PRIVATE_KEY.
 name: review
+# After CI: `review: PR #7 <title>`, or `review: <branch> <title>` when the run carries no PR
+# (a fork). A push to the default branch is the repair sweep. Expressions cannot cut a
+# commit message to its first line or a SHA to seven characters, so the sweep is named by branch.
+run-name: >-
+  review: ${{ github.event_name == 'push'
+  && format('repair sweep after push to {0}', github.ref_name)
+  || github.event.workflow_run.pull_requests[0].number
+  && format('PR #{0} {1}', github.event.workflow_run.pull_requests[0].number, github.event.workflow_run.display_title)
+  || format('{0} {1}', github.event.workflow_run.head_branch, github.event.workflow_run.display_title) }}
 
 on:
   workflow_run:
@@ -20,7 +29,7 @@ concurrency:
 
 jobs:
   review:
-    uses: bartromgens/gantry/.github/workflows/review.yml@49b6f40ffc1a8b4d1dc225ba3b968e940669cc8a # main
+    uses: bartromgens/gantry/.github/workflows/review.yml@17a82b295817b855958ecf01135ef7af6d2f228d # main
     permissions:
       contents: read
       pull-requests: read

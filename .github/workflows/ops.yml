@@ -1,5 +1,6 @@
 # Thin caller: allowlisted operations live in gantry. Renovate bumps the gantry SHA.
 name: ops
+run-name: 'ops: ${{ inputs.action }}'
 
 on:
   workflow_dispatch:
@@ -13,7 +14,7 @@ permissions: {}
 
 jobs:
   ops:
-    uses: bartromgens/gantry/.github/workflows/ops.yml@49b6f40ffc1a8b4d1dc225ba3b968e940669cc8a # main
+    uses: bartromgens/gantry/.github/workflows/ops.yml@17a82b295817b855958ecf01135ef7af6d2f228d # main
     permissions:
       contents: read
     with:

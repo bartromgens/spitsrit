@@ -20,7 +20,7 @@ concurrency:
 
 jobs:
   build:
-    uses: bartromgens/gantry/.github/workflows/build.yml@49b6f40ffc1a8b4d1dc225ba3b968e940669cc8a # main
+    uses: bartromgens/gantry/.github/workflows/build.yml@17a82b295817b855958ecf01135ef7af6d2f228d # main
     permissions:
       contents: read
       packages: write
@@ -29,7 +29,7 @@ jobs:
 
   deploy:
     needs: build
-    uses: bartromgens/gantry/.github/workflows/deploy.yml@49b6f40ffc1a8b4d1dc225ba3b968e940669cc8a # main
+    uses: bartromgens/gantry/.github/workflows/deploy.yml@17a82b295817b855958ecf01135ef7af6d2f228d # main
     permissions:
       contents: read
       packages: read
