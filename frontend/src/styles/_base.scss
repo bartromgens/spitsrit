@@ -10,6 +10,14 @@ body {
   font-family: var(--sp-font-ui);
   // Content cards are white (the lowest surface) on the tinted page.
   --mat-card-outlined-container-color: var(--mat-sys-surface-container-lowest);
+  // Outlined form fields: rounded, a quiet outline at rest and blue when focused, since the
+  // yellow primary has too little contrast on white.
+  --mat-form-field-outlined-container-shape: var(--sp-radius-md);
+  --mat-form-field-outlined-outline-color: var(--mat-sys-outline-variant);
+  --mat-form-field-outlined-hover-outline-color: var(--mat-sys-outline);
+  --mat-form-field-outlined-focus-outline-color: var(--sp-blue);
+  --mat-form-field-outlined-focus-label-text-color: var(--sp-blue);
+  --mat-form-field-outlined-caret-color: var(--sp-blue);
 
   // Without visible cards on a phone, the page itself is the content: give it the cards' white.
   @include layout.mobile {
@@ -86,6 +94,10 @@ a:not([class*='mat-']) {
     border-bottom: var(--sp-border-width) solid var(--mat-sys-outline-variant);
   }
 
+  li:first-child {
+    border-top: var(--sp-border-width) solid var(--mat-sys-outline-variant);
+  }
+
   li.best {
     border-left-color: var(--sp-signal-green);
     background: var(--sp-signal-green-surface);
@@ -103,6 +115,11 @@ a:not([class*='mat-']) {
         calc(var(--sp-row-inset) + env(safe-area-inset-right, 0px));
     }
   }
+}
+
+// Room above a card's form for the first outlined field's floating label.
+.mat-mdc-card-content > form:first-child {
+  padding-top: var(--sp-space-1);
 }
 
 // The card around the results disappears on mobile so the page margin is the only gutter.

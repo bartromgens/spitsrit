@@ -17,8 +17,12 @@
   </nav>
   <span class="spacer"></span>
   @if (auth.user(); as user) {
-    <span class="user">{{ user.username }}</span>
-    <button matButton (click)="logout()">Log out</button>
+    <button matButton class="user" data-testid="user-menu" [matMenuTriggerFor]="userMenu">
+      {{ user.username }}
+      <svg class="chevron" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M7 10l5 5 5-5z" fill="currentColor" />
+      </svg>
+    </button>
   } @else {
     <a matButton routerLink="/register">Create account</a>
     <a matButton routerLink="/login">Log in</a>
@@ -27,6 +31,9 @@
 <mat-menu #mobileMenu="matMenu">
   <a mat-menu-item routerLink="/">Home</a>
   <a mat-menu-item routerLink="/commutes">Commutes</a>
+</mat-menu>
+<mat-menu #userMenu="matMenu" xPosition="before">
+  <button mat-menu-item data-testid="logout" (click)="logout()">Log out</button>
 </mat-menu>
 <main>
   <router-outlet />
