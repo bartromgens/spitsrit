@@ -12,7 +12,6 @@ export interface Trip {
   cancelled: boolean;
   carriages: number | null;
   coach_crowding: Array<Span>;
-  combine_stations: Array<string>;
   crowd_forecast: string;
   departure_actual: string;
   departure_delay_minutes: number;

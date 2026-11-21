@@ -154,7 +154,6 @@ class TripSerializer(serializers.Serializer[Any]):
     coach_crowding = SpanSerializer(many=True)
     platform_features = SpanSerializer(many=True)
     split_stations = serializers.ListField(child=serializers.CharField())
-    combine_stations = serializers.ListField(child=serializers.CharField())
     board_destination = serializers.CharField(allow_null=True)
 
 

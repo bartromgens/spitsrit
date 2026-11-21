@@ -114,7 +114,6 @@ const trip: Trip = {
   coach_crowding: [],
   platform_features: [],
   split_stations: [],
-  combine_stations: [],
   board_destination: null,
 };
 
@@ -197,7 +196,7 @@ describe('TripDetails', () => {
         },
       ],
     });
-    expect(text()).toContain('This train splits at Amersfoort Centraal.');
+    expect(text()).toContain('Part of this train stays behind at Amersfoort Centraal.');
     expect(text()).toContain('Board the part to Enschede.');
     const units = [...element.querySelectorAll('[data-testid="train-units"] li')];
     expect(units[0].textContent).toContain('to Zwolle');
@@ -207,15 +206,10 @@ describe('TripDetails', () => {
     expect(images.map((img) => img.classList.contains('other'))).toEqual([true, false]);
   });
 
-  it('asks to check the part when it is unknown which one to board', async () => {
-    await render({ ...trip, split_stations: ['Amersfoort Centraal'] });
-    expect(text()).toContain('Check which part goes to your stop.');
-    expect(text()).not.toContain(' to unknown');
-  });
-
-  it('says where another train joins', async () => {
-    await render({ ...trip, combine_stations: ['Amersfoort Centraal'] });
-    expect(text()).toContain('Another train joins this one at Amersfoort Centraal.');
+  it('says where part of the train stays behind without a part to pick', async () => {
+    await render({ ...trip, split_stations: ['Alkmaar'] });
+    expect(text()).toContain('Part of this train stays behind at Alkmaar.');
+    expect(text()).not.toContain('Board the part');
   });
 
   it('places the crowding per carriage and the platform features along the train', async () => {

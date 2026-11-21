@@ -32,7 +32,6 @@ const trip: Trip = {
   coach_crowding: [],
   platform_features: [],
   split_stations: [],
-  combine_stations: [],
   board_destination: null,
 };
 

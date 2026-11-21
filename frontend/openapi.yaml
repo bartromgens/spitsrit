@@ -834,10 +834,6 @@ components:
           type: array
           items:
             type: string
-        combine_stations:
-          type: array
-          items:
-            type: string
         board_destination:
           type: string
           nullable: true
@@ -849,7 +845,6 @@ components:
       - cancelled
       - carriages
       - coach_crowding
-      - combine_stations
       - crowd_forecast
       - departure_actual
       - departure_delay_minutes

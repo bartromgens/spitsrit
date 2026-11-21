@@ -127,19 +127,14 @@
         On the platform: {{ platformLabels().join(', ') }}
       </p>
     }
-    @for (station of t.split_stations; track station) {
+    @if (t.split_stations.length > 0) {
       <p class="notice" data-testid="train-split">
-        This train splits at {{ station }}.
+        Part of this train stays behind at {{ t.split_stations.join(', ') }}.
         @if (t.board_destination) {
           Board the part to <strong>{{ t.board_destination }}</strong
           >.
-        } @else {
-          Check which part goes to your stop.
         }
       </p>
-    }
-    @for (station of t.combine_stations; track station) {
-      <p class="hint" data-testid="train-combine">Another train joins this one at {{ station }}.</p>
     }
     @if (t.train_parts.length > 0) {
       <ol class="units" data-testid="train-units">

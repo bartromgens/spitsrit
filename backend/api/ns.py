@@ -161,10 +161,9 @@ class Trip:
     # Crowding per carriage and what stands along the platform, at the boarding stop.
     coach_crowding: tuple[Span, ...] = ()
     platform_features: tuple[Span, ...] = ()
-    # Where the train splits or joins another one, from the boarding stop on.
+    # Where units of the train stay behind, from the boarding stop on.
     split_stations: tuple[str, ...] = ()
-    combine_stations: tuple[str, ...] = ()
-    # When the train splits: the destination of the part that reaches the leg's last stop.
+    # Only when some units stop short of the rider's stop: where the part to board goes.
     board_destination: str | None = None
 
     @property
@@ -355,55 +354,57 @@ def parse_boarding_layout(
 @dataclass(frozen=True)
 class SplitInfo:
     split_stations: tuple[str, ...] = ()
-    combine_stations: tuple[str, ...] = ()
     board_destination: str | None = None
+
+
+def _stops_ahead(stops: list[dict[str, Any]], start: dict[str, Any]) -> list[dict[str, Any]]:
+    """The stops from `start` on, following `nextStopId` (the first one where it branches)."""
+    by_id = {str(s["id"]): s for s in stops if s.get("id")}
+    ahead: list[dict[str, Any]] = []
+    current: dict[str, Any] | None = start
+    while current is not None and current not in ahead:
+        ahead.append(current)
+        following = current.get("nextStopId") or []
+        current = by_id.get(str(following[0])) if following else None
+    return ahead
 
 
 def parse_split(
     stops: list[Any], boarding_uic_code: str | None, alighting_uic_code: str | None
 ) -> SplitInfo:
-    """Where the train splits or joins after boarding, and which part reaches the rider's stop.
+    """Where units of the train stay behind, and which part to board to reach the rider's stop.
 
-    Journey stops form a graph through `nextStopId`: after a split it branches, one branch per
-    part. The rider's part is the one whose branch end can be reached from the alighting stop.
+    NS does not mark splits with a `SPLIT` status; the units at the boarding stop each have a
+    `destination` instead, and the journey follows the part that goes furthest. A unit whose
+    destination comes before the journey's end stays behind there. `board_destination` is only
+    set when that matters: when some units do not get as far as the rider's stop.
     """
-    journey_stops = [s for s in stops if isinstance(s, dict) and s.get("id")]
-    by_id = {str(s["id"]): s for s in journey_stops}
+    journey_stops = [s for s in stops if isinstance(s, dict)]
     boarding = _boarding_stop(journey_stops, boarding_uic_code)
     if boarding is None:
         return SplitInfo()
-
-    def after(stop_id: str) -> list[dict[str, Any]]:
-        """The stops after `stop_id` (itself included), each once, depth first."""
-        seen: list[str] = []
-        pending = [stop_id]
-        while pending:
-            current = pending.pop()
-            if current in seen or current not in by_id:
-                continue
-            seen.append(current)
-            pending.extend(str(n) for n in reversed(by_id[current].get("nextStopId") or []))
-        return [by_id[i] for i in seen]
-
-    ahead = after(str(boarding["id"]))
-
-    def names(status: str) -> tuple[str, ...]:
-        found = [_station_name(s.get("stop")) for s in ahead if s.get("status") == status]
-        return tuple(dict.fromkeys(n for n in found if n))
-
-    split_stations = names("SPLIT")
+    ahead = _stops_ahead(journey_stops, boarding)
+    position = {(s.get("stop") or {}).get("uicCode"): i for i, s in enumerate(ahead)}
+    stock = boarding.get("actualStock") or boarding.get("plannedStock") or {}
+    parts = [p for p in stock.get("trainParts") or [] if isinstance(p, dict)]
+    # Each unit's destination with how far along the journey it is, when it is on the journey.
+    reach: list[tuple[int, str]] = []
+    for part in parts:
+        destination = part.get("destination") or {}
+        index = position.get(destination.get("uicCode"))
+        name = _station_name(destination)
+        if index is not None and name:
+            reach.append((index, name))
+    last = len(ahead) - 1
+    split_stations = tuple(dict.fromkeys(name for index, name in sorted(reach) if index < last))
+    if not split_stations:
+        return SplitInfo()
+    alighting = position.get(alighting_uic_code)
     board_destination = None
-    if split_stations and alighting_uic_code:
-        alighting = next(
-            (s for s in ahead if (s.get("stop") or {}).get("uicCode") == alighting_uic_code),
-            None,
-        )
-        ends = (
-            [s for s in after(str(alighting["id"])) if not s.get("nextStopId")] if alighting else []
-        )
-        if len(ends) == 1:
-            board_destination = _station_name(ends[0].get("stop"))
-    return SplitInfo(split_stations, names("COMBINE"), board_destination)
+    if alighting is not None and any(index < alighting for index, _ in reach):
+        enough = {name for index, name in reach if index >= alighting}
+        board_destination = enough.pop() if len(enough) == 1 else None
+    return SplitInfo(split_stations, board_destination)
 
 
 def parse_train_origin(stops: list[Any]) -> str | None:
@@ -644,7 +645,6 @@ def _with_journey(trip: Trip, info: JourneyInfo | None) -> Trip:
         coach_crowding=info.coach_crowding,
         platform_features=info.platform_features,
         split_stations=info.split.split_stations,
-        combine_stations=info.split.combine_stations,
         board_destination=info.split.board_destination,
     )
 

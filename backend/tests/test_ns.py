@@ -678,56 +678,42 @@ def journey_stop(
     }
 
 
-# Utrecht → Amersfoort, where the train splits: the front part goes to Zwolle, the rear part to
-# Enschede. Both branches pass a stop of their own.
-SPLITTING = [
-    journey_stop("UT_0", "1", "Utrecht Centraal", ["AMF_0"], "ORIGIN", kind="DEPARTURE"),
-    journey_stop("AMF_0", "2", "Amersfoort Centraal", ["HVL_0", "AMRI_0"], "SPLIT"),
-    journey_stop("HVL_0", "3", "Harderwijk", ["ZL_0"]),
-    journey_stop("ZL_0", "4", "Zwolle", [], "DESTINATION"),
-    journey_stop("AMRI_0", "5", "Apeldoorn", ["ES_0"]),
-    journey_stop("ES_0", "6", "Enschede", [], "DESTINATION"),
-]
+REAL_SPLIT = Path(__file__).parent / "fixtures" / "ns_journey_3070_split.json"
 
 
-def test_parse_split_finds_the_part_that_reaches_the_riders_stop() -> None:
-    split = ns.parse_split(SPLITTING, "1", "5")
-    assert split.split_stations == ("Amersfoort Centraal",)
-    assert split.board_destination == "Enschede"
-    assert ns.parse_split(SPLITTING, "1", "3").board_destination == "Zwolle"
+def test_parse_split_from_a_real_journey_where_a_unit_stays_behind() -> None:
+    # IC 3070 Nijmegen → Den Helder: unit 9404 goes no further than Alkmaar (8400050).
+    # NS marks no SPLIT stop; only the units' destinations and a note say so.
+    stops = json.loads(REAL_SPLIT.read_text())["payload"]["stops"]
+    assert ns.parse_split(stops, "8400621", "8400058") == ns.SplitInfo(("Alkmaar",), None)
+    # Past Alkmaar only the Den Helder part gets there: Den Helder (8400311).
+    assert ns.parse_split(stops, "8400621", "8400311") == ns.SplitInfo(("Alkmaar",), "Den Helder")
+    # Boarding at Alkmaar (found by uicCode once `kind` is gone): one unit left, no split.
+    unmarked = [{k: v for k, v in s.items() if k != "kind"} for s in stops]
+    assert ns.parse_split(unmarked, "8400050", "8400311") == ns.SplitInfo()
 
 
-def test_parse_split_without_a_single_part_for_the_riders_stop() -> None:
-    # Getting off at the split station: both parts get there, so either will do.
-    assert ns.parse_split(SPLITTING, "1", "2").board_destination is None
-    # An unknown stop, or no stop given.
-    assert ns.parse_split(SPLITTING, "1", "99").board_destination is None
-    assert ns.parse_split(SPLITTING, "1", None).board_destination is None
+def part_to(uic: str, name: str) -> dict[str, Any]:
+    return {"stockIdentifier": uic, "destination": {"uicCode": uic, "name": name}}
 
 
-def test_parse_split_ignores_splits_before_boarding() -> None:
-    unmarked = [{k: v for k, v in s.items() if k != "kind"} for s in SPLITTING]
-    split = ns.parse_split(unmarked, "5", "6")
-    assert split == ns.SplitInfo()
-
-
-def test_parse_split_lists_where_trains_combine() -> None:
+def test_parse_split_needs_a_boarding_stop_and_known_destinations() -> None:
     stops = [
-        journey_stop("ZL_0", "4", "Zwolle", ["AMF_0"], "ORIGIN", kind="DEPARTURE"),
-        journey_stop("AMF_0", "2", "Amersfoort Centraal", ["UT_0"], "COMBINE"),
-        journey_stop("UT_0", "1", "Utrecht Centraal", [], "DESTINATION"),
+        journey_stop(
+            "A",
+            "1",
+            "A",
+            ["B"],
+            kind="DEPARTURE",
+            actualStock={
+                "trainParts": [part_to("2", "B"), part_to("9", "Elsewhere"), {"destination": None}]
+            },
+        ),
+        journey_stop("B", "2", "B", ["C"]),
+        journey_stop("C", "3", "C", ["A"]),  # a cycle back to the start ends the walk
     ]
-    split = ns.parse_split(stops, "4", "1")
-    assert split == ns.SplitInfo((), ("Amersfoort Centraal",), None)
-
-
-def test_parse_split_without_a_boarding_stop_or_with_a_cycle() -> None:
-    assert ns.parse_split([], "1", "2") == ns.SplitInfo()
-    looping = [
-        journey_stop("A", "1", "A", ["B"], "SPLIT", kind="DEPARTURE"),
-        journey_stop("B", "2", "B", ["A"]),
-    ]
-    assert ns.parse_split(looping, "1", "2").split_stations == ("A",)
+    assert ns.parse_split(stops, "1", "3") == ns.SplitInfo(("B",), None)
+    assert ns.parse_split([], "1", "3") == ns.SplitInfo()
 
 
 def test_parse_boarding_layout_reads_coaches_and_platform_features() -> None:
@@ -759,19 +745,22 @@ def test_fetch_trips_adds_split_and_layout_of_the_boarding_stop(
     leg = {
         **TRIP_ITEM["legs"][0],
         "origin": {**TRIP_ITEM["legs"][0]["origin"], "uicCode": "1"},
-        "destination": {**TRIP_ITEM["legs"][0]["destination"], "uicCode": "5"},
+        "destination": {**TRIP_ITEM["legs"][0]["destination"], "uicCode": "3"},
     }
-    stops = [
-        {
-            **SPLITTING[0],
-            "coachCrowdForecast": [{"classification": "LOW", "paddingLeft": 0, "width": 5}],
-        },
-        *SPLITTING[1:],
-    ]
+    boarding = journey_stop(
+        "A",
+        "1",
+        "A",
+        ["B"],
+        kind="DEPARTURE",
+        actualStock={**stock(600), "trainParts": [part_to("2", "B"), part_to("3", "C")]},
+        coachCrowdForecast=[{"classification": "LOW", "paddingLeft": 0, "width": 5}],
+    )
+    stops = [boarding, journey_stop("B", "2", "B", ["C"]), journey_stop("C", "3", "C", [])]
     trips_with_journey(monkeypatch, journey(*stops), {**TRIP_ITEM, "legs": [leg]})
-    [trip] = ns.fetch_trips("UT", "ES", NOW)
-    assert trip.split_stations == ("Amersfoort Centraal",)
-    assert trip.board_destination == "Enschede"
+    [trip] = ns.fetch_trips("A", "C", NOW)
+    assert trip.split_stations == ("B",)
+    assert trip.board_destination == "C"
     assert trip.coach_crowding == (ns.Span(0, 5, "LOW"),)
 
 
