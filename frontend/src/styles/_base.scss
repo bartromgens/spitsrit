@@ -18,6 +18,12 @@ h1 {
   margin: 0 0 var(--sp-space-2);
   font-size: var(--sp-text-xl);
   font-weight: var(--sp-weight-bold);
+
+  // On a phone the page title only labels the page; the content below it matters more.
+  @include layout.mobile {
+    margin-bottom: var(--sp-space-half);
+    font-size: var(--sp-text-lg);
+  }
 }
 
 // Links share one colour whether visited or not. Material buttons and menu items style themselves.
@@ -111,6 +117,11 @@ a:not([class*='mat-']) {
     .mat-mdc-card-content,
     .mat-mdc-card-actions {
       padding-inline: 0;
+    }
+
+    // Without a visible card the header's top padding is just a gap under the page title.
+    .mat-mdc-card-header {
+      padding-top: var(--sp-space-1);
     }
   }
 }

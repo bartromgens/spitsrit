@@ -10,34 +10,42 @@
 @if (t.cancelled) {
   <span class="cancelled-label">Cancelled</span>
 } @else {
-  <span class="train">{{ trainType() }}</span>
+  <span
+    class="train"
+    [attr.title]="trainTypeName() || null"
+    [attr.aria-label]="trainTypeName() || null"
+    >{{ trainType() }}</span
+  >
   <app-platform-sign class="platform" [track]="t.departure_track" />
   <span class="load">
     <app-crowding [forecast]="t.crowd_forecast" />
     <app-carriages [count]="t.carriages" />
   </span>
-  @if (route(); as r) {
-    <span class="route" data-testid="train-route">{{ r.origin }} → {{ r.destination }}</span>
-  }
-  <span class="details">
+  <span class="meta">
+    @if (route(); as r) {
+      <span class="route" data-testid="train-route">{{ r.origin }} → {{ r.destination }}</span>
+    }
     <app-train-length
+      class="stock"
       [seats]="t.seats"
       [trainType]="t.train_type"
       [shorterStock]="t.shorter_stock"
       [shorterStockWarning]="t.shorter_stock_warning"
     />
+  </span>
+  <span class="details">
     <span class="journey">
-      <span class="value"
-        >arrives <span class="sp-mono">{{ t.arrival_actual | date: 'HH:mm' }}</span></span
-      >
-      @if (arrivalDelay() && t.arrival_delay_minutes > 0) {
-        <span class="arrival-delay sp-mono">(+{{ t.arrival_delay_minutes }})</span>
-      }
-      <span class="value"
+      <span class="arrival"
+        >arrives <span class="sp-mono">{{ t.arrival_actual | date: 'HH:mm' }}</span>
+        @if (arrivalDelay() && t.arrival_delay_minutes > 0) {
+          <span class="arrival-delay sp-mono">(+{{ t.arrival_delay_minutes }})</span>
+        }
+      </span>
+      <span class="duration"
         ><span class="sp-mono">{{ t.duration_minutes }}</span> min</span
       >
       @if (t.transfers > 0) {
-        <span class="value"
+        <span class="transfers"
           ><span class="sp-mono">{{ t.transfers }}</span> transfer{{
             t.transfers === 1 ? '' : 's'
           }}</span

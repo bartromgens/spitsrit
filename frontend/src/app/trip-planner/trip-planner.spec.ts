@@ -71,9 +71,10 @@ describe('TripPlanner', () => {
       .flush({ fetched_at: '', trips: [trip], recommended_uid: 'a', wait_minutes: 0 });
     await planned;
     await settle(fixture);
-    expect(text()).toContain('Intercity');
+    expect(text()).toContain('IC');
     expect(text()).not.toContain('2736');
-    expect(text()).toContain('Show train route');
+    expect(text()).not.toContain('Show train route');
+    expect(text()).toContain('Nijmegen → Den Haag C.');
     expect(
       (fixture.nativeElement as HTMLElement).querySelector('[aria-label="620 seats"]'),
     ).not.toBeNull();

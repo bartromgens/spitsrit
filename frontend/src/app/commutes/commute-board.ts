@@ -11,13 +11,11 @@ import {
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
-import { MatChipsModule } from '@angular/material/chips';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { Api } from '../api/api';
 import { commutesPartialUpdate, commutesTripsRetrieve } from '../api/functions';
 import { Commute, CommuteTrips } from '../api/models';
-import { TrainRouteToggle } from '../shared/train-route-toggle/train-route-toggle';
 import { TripRow } from '../shared/trip-row/trip-row';
 
 const REFRESH_MS = 60_000;
@@ -28,10 +26,8 @@ const REFRESH_MS = 60_000;
     ReactiveFormsModule,
     MatButtonModule,
     MatCardModule,
-    MatChipsModule,
     MatFormFieldModule,
     MatInputModule,
-    TrainRouteToggle,
     TripRow,
   ],
   selector: 'app-commute-board',
@@ -55,10 +51,14 @@ export class CommuteBoard implements OnInit {
     const duration = this.savedDuration();
     const transfers = this.savedTransfers();
     if (duration !== null) {
-      chips.push(`≤ ${duration} min`);
+      chips.push(`Max ${duration} min`);
     }
     if (transfers !== null) {
-      chips.push(`≤ ${transfers} ${transfers === 1 ? 'transfer' : 'transfers'}`);
+      chips.push(
+        transfers === 0
+          ? 'Direct only'
+          : `Max ${transfers} ${transfers === 1 ? 'transfer' : 'transfers'}`,
+      );
     }
     return chips;
   });

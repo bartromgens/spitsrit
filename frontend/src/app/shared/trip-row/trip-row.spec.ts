@@ -1,6 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Trip } from '../../api/models';
-import { TrainRouteSetting } from '../train-route-setting';
 import { TripRow } from './trip-row';
 
 const trip: Trip = {
@@ -39,15 +38,14 @@ describe('TripRow', () => {
   };
 
   beforeEach(async () => {
-    localStorage.clear();
     await TestBed.configureTestingModule({ imports: [TripRow] }).compileComponents();
     fixture = TestBed.createComponent(TripRow);
   });
-  afterEach(() => localStorage.clear());
 
   it('shows the train type, its seats, platform sign and crowding', async () => {
     await render({});
-    expect(element().querySelector('.train')?.textContent).toBe('Intercity');
+    expect(element().querySelector('.train')?.textContent).toBe('IC');
+    expect(element().querySelector('.train')?.getAttribute('title')).toBe('Intercity');
     expect(element().querySelector('.seats')?.getAttribute('aria-label')).toBe('620 seats');
     expect(element().querySelector('.shorter')).toBeNull();
     expect(element().querySelector('.sign')?.textContent).toBe('5');
@@ -100,8 +98,8 @@ describe('TripRow', () => {
 
   it('keeps each journey value on one line', async () => {
     await render({ transfers: 1 });
-    const values = Array.from(element().querySelectorAll('.value')).map((el) =>
-      el.textContent?.replace(/\s+/g, ' ').trim(),
+    const values = Array.from(element().querySelectorAll('.arrival, .duration, .transfers')).map(
+      (el) => el.textContent?.replace(/\s+/g, ' ').trim(),
     );
     expect(values).toEqual(['arrives 08:30', '30 min', '1 transfer']);
   });
@@ -109,16 +107,18 @@ describe('TripRow', () => {
   it('shows cancelled trips as cancelled without details', async () => {
     await render({ cancelled: true });
     expect(element().textContent).toContain('Cancelled');
-    expect(element().textContent).not.toContain('Intercity');
+    expect(element().querySelector('.train')).toBeNull();
   });
 
   it('shows the train type but never the train number', async () => {
     await render({});
     expect(element().textContent).not.toContain('2736');
     await render({ train: 'SPR 5' });
-    expect(element().querySelector('.train')?.textContent).toBe('Sprinter');
+    expect(element().querySelector('.train')?.textContent).toBe('SPR');
+    expect(element().querySelector('.train')?.getAttribute('title')).toBe('Sprinter');
     await render({ train: 'ICE 12' });
     expect(element().querySelector('.train')?.textContent).toBe('ICE');
+    expect(element().querySelector('.train')?.getAttribute('title')).toBeNull();
   });
 
   it('shows the carriages as a labelled icon next to the crowding, as reported', async () => {
@@ -143,10 +143,7 @@ describe('TripRow', () => {
     expect(element().querySelector('.type')?.textContent).toBe('VIRM');
   });
 
-  it('shows the train route only when the toggle is on and the route is known', async () => {
-    await render({});
-    expect(element().querySelector('.route')).toBeNull();
-    TestBed.inject(TrainRouteSetting).set(true);
+  it('always shows the train route when it is known', async () => {
     await render({});
     expect(element().querySelector('.route')?.textContent).toBe('Nijmegen → Den Haag C.');
     await render({ train_origin: null });
