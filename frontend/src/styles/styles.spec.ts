@@ -81,6 +81,9 @@ describe('colour tokens meet WCAG AA', () => {
       [token('sp-signal-red')[scheme], token('sp-signal-green-surface')[scheme]],
       [token('sp-blue')[scheme], SURFACE[scheme]],
       [ON_SURFACE[scheme], token('sp-signal-green-surface')[scheme]],
+      [token('sp-link')[scheme], SURFACE[scheme]],
+      [token('sp-link-hover')[scheme], SURFACE[scheme]],
+      [token('sp-link')[scheme], token('sp-signal-green-surface')[scheme]],
     ];
     for (const [foreground, background] of pairs) {
       expect(contrast(foreground, background), `${foreground} on ${background}`).toBeGreaterThan(

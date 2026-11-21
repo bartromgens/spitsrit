@@ -18,8 +18,25 @@ h1 {
   font-weight: var(--sp-weight-bold);
 }
 
-a {
-  color: var(--sp-blue);
+// Links share one colour whether visited or not. Material buttons and menu items style themselves.
+a:not([class*='mat-']) {
+  color: var(--sp-link);
+  text-underline-offset: var(--sp-space-half);
+
+  &:visited {
+    color: var(--sp-link);
+  }
+
+  &:hover {
+    color: var(--sp-link-hover);
+    text-decoration-thickness: var(--sp-border-width-strong);
+  }
+
+  &:focus-visible {
+    outline: var(--sp-border-width-strong) solid var(--sp-link);
+    outline-offset: var(--sp-border-width-strong);
+    border-radius: var(--sp-radius-xs);
+  }
 }
 
 .sr-only {
@@ -87,7 +104,7 @@ a {
   }
 }
 
-// Mono, tabular figures so columns of times line up like a departure board.
+// Mono, tabular figures for numeric tokens only (times, delays, platforms, train numbers).
 .sp-mono {
   font-family: var(--sp-font-mono);
   font-variant-numeric: tabular-nums;

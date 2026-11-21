@@ -5,12 +5,12 @@
 }
 
 .seats {
-  font-family: var(--sp-font-mono);
   font-size: var(--sp-text-sm);
-  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .type {
+  white-space: nowrap;
   font-size: var(--sp-text-xs);
   opacity: 0.75;
 }

@@ -1,5 +1,7 @@
 @if (seats()) {
-  <span class="seats">~{{ seats() }} seats</span>
+  <span class="seats"
+    >~<span class="sp-mono">{{ seats() }}</span> seats</span
+  >
   @if (trainType()) {
     <span class="type">{{ trainType() }}</span>
   }

@@ -1,31 +1,47 @@
 @let t = trip();
 @if (recommended()) {
-  <span class="signal" aria-hidden="true"></span>
   <span class="sr-only">Recommended: </span>
 }
-<app-departure-time [time]="t.departure_actual" [delayMinutes]="t.departure_delay_minutes" />
-<span class="detail">
-  @if (t.cancelled) {
-    <span class="cancelled-label">Cancelled</span>
-  } @else {
-    <span class="train">{{ t.train }}</span>
+<app-departure-time
+  class="time"
+  [time]="t.departure_actual"
+  [delayMinutes]="t.departure_delay_minutes"
+/>
+@if (t.cancelled) {
+  <span class="cancelled-label">Cancelled</span>
+} @else {
+  <span class="train">
+    {{ trainName() }}
+    @if (trainNumber()) {
+      <span class="sp-mono">{{ trainNumber() }}</span>
+    }
+  </span>
+  <app-platform-sign class="platform" [track]="t.departure_track" />
+  <app-crowding class="crowding" [forecast]="t.crowd_forecast" />
+  <span class="details">
     <app-train-length
       [seats]="t.seats"
       [trainType]="t.train_type"
       [shorterStock]="t.shorter_stock"
       [shorterStockWarning]="t.shorter_stock_warning"
     />
-    <app-platform-sign [track]="t.departure_track" />
-    <app-crowding [forecast]="t.crowd_forecast" />
-    <span class="journey sp-mono">
-      arrives {{ t.arrival_actual | date: 'HH:mm' }}
+    <span class="journey">
+      <span class="value"
+        >arrives <span class="sp-mono">{{ t.arrival_actual | date: 'HH:mm' }}</span></span
+      >
       @if (arrivalDelay() && t.arrival_delay_minutes > 0) {
-        <span class="arrival-delay">(+{{ t.arrival_delay_minutes }})</span>
+        <span class="arrival-delay sp-mono">(+{{ t.arrival_delay_minutes }})</span>
       }
-      · {{ t.duration_minutes }} min
+      <span class="value"
+        ><span class="sp-mono">{{ t.duration_minutes }}</span> min</span
+      >
       @if (t.transfers > 0) {
-        · {{ t.transfers }} transfer{{ t.transfers === 1 ? '' : 's' }}
+        <span class="value"
+          ><span class="sp-mono">{{ t.transfers }}</span> transfer{{
+            t.transfers === 1 ? '' : 's'
+          }}</span
+        >
       }
     </span>
-  }
-</span>
+  </span>
+}
