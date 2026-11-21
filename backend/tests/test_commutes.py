@@ -1,3 +1,5 @@
+from dataclasses import replace
+
 import pytest
 from django.contrib.auth.models import User
 from django.test import override_settings
@@ -7,7 +9,7 @@ from rest_framework.test import APIClient
 from api import ns
 from api.models import Commute
 from tests.factories import CommuteFactory, UserFactory
-from tests.test_ns import make_trip
+from tests.test_ns import DETAILED_LEG, make_trip
 
 
 @pytest.mark.django_db
@@ -186,3 +188,29 @@ def test_plan_trip_ns_failures(
 
     monkeypatch.setattr(ns, "fetch_trips", fail)
     assert logged_in.get("/api/trips/?from=UT&to=ASD").status_code == expected
+
+
+def test_plan_trip_serializes_the_trip_details(
+    logged_in: APIClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+
+    leg = ns.parse_leg(DETAILED_LEG)
+    detailed = replace(
+        make_trip("only", 5, base=timezone.now()),
+        legs=(leg,),
+        messages=("Storing",),
+        punctuality=90.0,
+        train_parts=(ns.TrainPart("9469", ("WIFI", "STILTE")),),
+    )
+    monkeypatch.setattr(ns, "fetch_trips", lambda *args: [detailed])
+    [trip] = logged_in.get("/api/trips/?from=UT&to=ASD").json()["trips"]
+    assert trip["messages"] == ["Storing"]
+    assert trip["punctuality"] == 90.0
+    assert trip["train_parts"] == [{"stock_identifier": "9469", "facilities": ["WIFI", "STILTE"]}]
+    [serialized] = trip["legs"]
+    assert serialized["name"] == "IC 2136"
+    assert serialized["departure_track"] == "7"
+    assert serialized["departure_track_changed"] is True
+    assert [s["name"] for s in serialized["stops"]] == ["Utrecht Centraal", "Woerden", "Gouda"]
+    assert serialized["stops"][1]["passing"] is True
+    assert serialized["exit_side"] == "RIGHT"

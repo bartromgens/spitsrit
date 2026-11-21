@@ -37,6 +37,10 @@ function trip(overrides: Partial<Trip>): Trip {
     shorter_stock_warning: null,
     train_origin: 'Nijmegen',
     train_destination: 'Den Haag C.',
+    train_parts: [],
+    punctuality: null,
+    messages: [],
+    legs: [],
     ...overrides,
   };
 }

@@ -25,6 +25,10 @@ const trip: Trip = {
   shorter_stock_warning: null,
   train_origin: 'Nijmegen',
   train_destination: 'Den Haag C.',
+  train_parts: [],
+  punctuality: null,
+  messages: [],
+  legs: [],
 };
 
 // The pipe shows times in the runner's timezone; derive the expectation the same way.

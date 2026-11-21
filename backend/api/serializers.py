@@ -71,6 +71,50 @@ class StationSerializer(serializers.Serializer[Any]):
     name = serializers.CharField()
 
 
+class TrainPartSerializer(serializers.Serializer[Any]):
+    stock_identifier = serializers.CharField()
+    facilities = serializers.ListField(child=serializers.CharField())
+
+
+class LegStopSerializer(serializers.Serializer[Any]):
+    name = serializers.CharField()
+    arrival_planned = serializers.DateTimeField(allow_null=True)
+    arrival_actual = serializers.DateTimeField(allow_null=True)
+    departure_planned = serializers.DateTimeField(allow_null=True)
+    departure_actual = serializers.DateTimeField(allow_null=True)
+    track = serializers.CharField(allow_null=True)
+    track_changed = serializers.BooleanField()
+    passing = serializers.BooleanField()
+    cancelled = serializers.BooleanField()
+
+
+class LegSerializer(serializers.Serializer[Any]):
+    travel_type = serializers.CharField()  # "PUBLIC_TRANSIT", "WALK", ...
+    name = serializers.CharField()
+    category = serializers.CharField(allow_null=True)
+    operator = serializers.CharField(allow_null=True)
+    direction = serializers.CharField(allow_null=True)
+    origin = serializers.CharField()
+    departure_planned = serializers.DateTimeField(allow_null=True)
+    departure_actual = serializers.DateTimeField(allow_null=True)
+    departure_track = serializers.CharField(allow_null=True)
+    departure_track_changed = serializers.BooleanField()
+    destination = serializers.CharField()
+    arrival_planned = serializers.DateTimeField(allow_null=True)
+    arrival_actual = serializers.DateTimeField(allow_null=True)
+    arrival_track = serializers.CharField(allow_null=True)
+    arrival_track_changed = serializers.BooleanField()
+    exit_side = serializers.CharField(allow_null=True)  # "LEFT", "RIGHT" or "UNKNOWN"
+    cancelled = serializers.BooleanField()
+    crowd_forecast = serializers.CharField()
+    punctuality = serializers.FloatField(allow_null=True)
+    stops = LegStopSerializer(many=True)
+    notes = serializers.ListField(child=serializers.CharField())
+    messages = serializers.ListField(child=serializers.CharField())
+    transfer_messages = serializers.ListField(child=serializers.CharField())
+    shorter_stock_warning = serializers.CharField(allow_null=True)
+
+
 class TripSerializer(serializers.Serializer[Any]):
     uid = serializers.CharField()
     departure_planned = serializers.DateTimeField()
@@ -93,6 +137,10 @@ class TripSerializer(serializers.Serializer[Any]):
     shorter_stock_warning = serializers.CharField(allow_null=True)
     train_origin = serializers.CharField(allow_null=True)
     train_destination = serializers.CharField(allow_null=True)
+    train_parts = TrainPartSerializer(many=True)
+    punctuality = serializers.FloatField(allow_null=True)
+    messages = serializers.ListField(child=serializers.CharField())
+    legs = LegSerializer(many=True)
 
 
 class CommuteTripsSerializer(serializers.Serializer[None]):

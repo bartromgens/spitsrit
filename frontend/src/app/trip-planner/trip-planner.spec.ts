@@ -30,6 +30,10 @@ const trip: Trip = {
   shorter_stock_warning: null,
   train_origin: 'Nijmegen',
   train_destination: 'Den Haag C.',
+  train_parts: [],
+  punctuality: null,
+  messages: [],
+  legs: [],
 };
 
 /** The protected members the template uses, reachable from the test. */
@@ -81,6 +85,57 @@ describe('TripPlanner', () => {
     expect(text()).toContain('platform 5');
     expect(text()).toContain('1 transfer');
     expect((fixture.nativeElement as HTMLElement).querySelector('li.best')).not.toBeNull();
+  });
+
+  it('opens the details of a clicked trip beside the results and closes them again', async () => {
+    choose(utrecht, amsterdam);
+    const planned = planner.plan();
+    http
+      .expectOne('/api/trips/?from=UT&to=ASD')
+      .flush({ fetched_at: '', trips: [trip], recommended_uid: 'a', wait_minutes: 0 });
+    await planned;
+    await settle(fixture);
+    const element = fixture.nativeElement as HTMLElement;
+    const details = (): Element | null => element.querySelector('[data-testid="trip-details"]');
+    const row = (): HTMLButtonElement => element.querySelector('[data-testid="trip-row-button"]')!;
+    expect(details()).toBeNull();
+
+    row().click();
+    await settle(fixture);
+    expect(details()).not.toBeNull();
+    expect(row().getAttribute('aria-expanded')).toBe('true');
+    expect(element.classList).toContain('with-details');
+
+    element.querySelector<HTMLButtonElement>('[data-testid="trip-details-close"]')!.click();
+    await settle(fixture);
+    expect(details()).toBeNull();
+    expect(element.classList).not.toContain('with-details');
+
+    row().click();
+    await settle(fixture);
+    row().click();
+    await settle(fixture);
+    expect(details()).toBeNull();
+  });
+
+  it('closes the details when planning again', async () => {
+    choose(utrecht, amsterdam);
+    const flush = (): void =>
+      http
+        .expectOne('/api/trips/?from=UT&to=ASD')
+        .flush({ fetched_at: '', trips: [trip], recommended_uid: 'a', wait_minutes: 0 });
+    let planned = planner.plan();
+    flush();
+    await planned;
+    await settle(fixture);
+    const element = fixture.nativeElement as HTMLElement;
+    element.querySelector<HTMLButtonElement>('[data-testid="trip-row-button"]')!.click();
+    await settle(fixture);
+    planned = planner.plan();
+    flush();
+    await planned;
+    await settle(fixture);
+    expect(element.querySelector('[data-testid="trip-details"]')).toBeNull();
   });
 
   it('holds the place of the results with placeholder rows while planning', async () => {
