@@ -92,7 +92,7 @@
             <span class="unit-number sp-mono">{{ part.stock_identifier || '?' }}</span>
             <span class="facilities">
               @for (code of part.facilities; track code) {
-                <span class="facility">{{ facility(code) }}</span>
+                <app-facility-icon [code]="code" />
               } @empty {
                 <span class="muted">no facilities listed</span>
               }
