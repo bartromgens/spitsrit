@@ -8,7 +8,23 @@ const REFRESH_MS = 60_000;
 
 interface RentalPoint {
   name: string;
+  closed: boolean;
   status: string;
+}
+
+/**
+ * The rental point's name without the station's: NS writes "Utrecht Centraal Knoop" and
+ * "Leiden Centraal, Centrumzijde". Keeps the full name when nothing else is left.
+ */
+function withoutStation(name: string, station: string): string {
+  if (!name.startsWith(station)) {
+    return name.trim();
+  }
+  const rest = name
+    .slice(station.length)
+    .replace(/^[\s,:–-]+/, '')
+    .trim();
+  return rest || name.trim();
 }
 
 function bikes(count: number): string {
@@ -40,6 +56,9 @@ export class OvFietsCount {
       return '';
     }
     const at = `at ${this.stationName()}`;
+    if (data.locations.every((location) => location.open === 'No')) {
+      return `OV-fiets ${at}: closed now`;
+    }
     return data.available === null
       ? `OV-fiets ${at}: number unknown`
       : `${bikes(data.available)} ${at}`;
@@ -51,9 +70,9 @@ export class OvFietsCount {
     if (locations.length < 2) {
       return [];
     }
-    const prefix = `${this.stationName()} `;
     return locations.map((location) => ({
-      name: location.name.startsWith(prefix) ? location.name.slice(prefix.length) : location.name,
+      name: withoutStation(location.name, this.stationName()),
+      closed: location.open === 'No',
       status:
         location.open === 'No'
           ? 'closed'

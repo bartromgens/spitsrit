@@ -16,7 +16,6 @@ import { MatInputModule } from '@angular/material/input';
 import { Api } from '../api/api';
 import { commutesPartialUpdate, commutesTripsRetrieve } from '../api/functions';
 import { Commute, CommuteTrips } from '../api/models';
-import { OvFietsCount } from '../shared/ov-fiets-count/ov-fiets-count';
 import { TripListSkeleton } from '../shared/trip-list-skeleton/trip-list-skeleton';
 import { TripRow } from '../shared/trip-row/trip-row';
 
@@ -30,7 +29,6 @@ const REFRESH_MS = 60_000;
     MatCardModule,
     MatFormFieldModule,
     MatInputModule,
-    OvFietsCount,
     TripListSkeleton,
     TripRow,
   ],
