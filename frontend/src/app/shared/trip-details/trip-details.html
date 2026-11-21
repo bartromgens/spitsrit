@@ -225,3 +225,10 @@
     </li>
   }
 </ol>
+
+@if (destination(); as to) {
+  <section class="arrival" aria-labelledby="trip-details-arrival">
+    <h3 id="trip-details-arrival">At {{ to.name }}</h3>
+    <app-ov-fiets-count [stationCode]="to.code" [stationName]="to.name" />
+  </section>
+}

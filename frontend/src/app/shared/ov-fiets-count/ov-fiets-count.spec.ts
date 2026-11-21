@@ -9,7 +9,9 @@ function point(overrides: Partial<OvFietsLocation>): OvFietsLocation {
 }
 
 function ovFiets(...locations: OvFietsLocation[]): OvFiets {
-  const counts = locations.flatMap((l) => (l.available === null ? [] : [l.available]));
+  const counts = locations.flatMap((l) =>
+    l.available === null || l.open === 'No' ? [] : [l.available],
+  );
   return {
     station_code: 'UT',
     available: counts.length ? counts.reduce((a, b) => a + b, 0) : null,
@@ -36,6 +38,10 @@ describe('OvFietsCount', () => {
 
   const el = (): HTMLElement => fixture.nativeElement as HTMLElement;
   const text = (): string => (el().textContent ?? '').replace(/\s+/g, ' ').trim();
+  const rows = (): (string | undefined)[][] =>
+    Array.from(el().querySelectorAll('li')).map((li) =>
+      Array.from(li.querySelectorAll('span')).map((span) => span.textContent?.trim()),
+    );
   const respond = async (body: OvFiets | null, status = 200): Promise<void> => {
     http
       .expectOne('/api/stations/UT/ov-fiets/')
@@ -64,14 +70,36 @@ describe('OvFietsCount', () => {
         point({ name: 'Utrecht Centraal Stationsplein', available: 4, open: 'No' }),
       ),
     );
-    expect(text()).toContain('47 OV-fietsen at Utrecht Centraal');
-    const items = Array.from(el().querySelectorAll('li')).map((li) => li.textContent?.trim());
-    expect(items).toEqual([
-      'Jaarbeursplein: 10',
-      'Knoop: 33',
-      'Fietsenstalling Oost: ?',
-      'Stationsplein: closed',
+    expect(text()).toContain('43 OV-fietsen at Utrecht Centraal');
+    expect(rows()).toEqual([
+      ['Jaarbeursplein', '10'],
+      ['Knoop', '33'],
+      ['Fietsenstalling Oost', '?'],
+      ['Stationsplein', 'closed'],
     ]);
+    expect(el().querySelectorAll('li.closed')).toHaveLength(1);
+  });
+
+  it('drops the station name however NS joins it to the rental point', async () => {
+    fixture.componentRef.setInput('stationName', 'Leiden Centraal');
+    await respond(
+      ovFiets(
+        point({ name: 'Leiden Centraal,Uitgang LUMC', available: 6 }),
+        point({ name: 'Leiden Centraal, Centrumzijde', available: 28, open: 'No' }),
+        point({ name: 'Leiden Centraal', available: 1 }),
+      ),
+    );
+    expect(text()).toContain('7 OV-fietsen at Leiden Centraal');
+    expect(rows()).toEqual([
+      ['Uitgang LUMC', '6'],
+      ['Centrumzijde', 'closed'],
+      ['Leiden Centraal', '1'],
+    ]);
+  });
+
+  it('says closed now when every rental point is closed', async () => {
+    await respond(ovFiets(point({ open: 'No' }), point({ name: 'Oost', open: 'No' })));
+    expect(text()).toContain('OV-fiets at Utrecht Centraal: closed now');
   });
 
   it('says when no rental point gives a number', async () => {

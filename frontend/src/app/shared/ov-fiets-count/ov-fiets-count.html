@@ -4,9 +4,12 @@
     <span>{{ summary() }}</span>
   </p>
   @if (points().length > 0) {
-    <ul class="points">
+    <ul class="points" aria-label="Per rental point">
       @for (point of points(); track $index) {
-        <li>{{ point.name }}: {{ point.status }}</li>
+        <li [class.closed]="point.closed">
+          <span class="name">{{ point.name }}</span>
+          <span class="status" [class.sp-mono]="!point.closed">{{ point.status }}</span>
+        </li>
       }
     </ul>
   }

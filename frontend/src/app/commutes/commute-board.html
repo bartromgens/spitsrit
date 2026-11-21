@@ -92,10 +92,6 @@
       <span class="sp-skeleton advice-skeleton" aria-hidden="true"></span>
       <app-trip-list-skeleton />
     }
-    <app-ov-fiets-count
-      [stationCode]="commute().destination_code"
-      [stationName]="commute().destination_name"
-    />
   </mat-card-content>
   <mat-card-actions>
     <button matButton (click)="refresh()">Refresh</button>

@@ -8,10 +8,11 @@ import {
   output,
   viewChild,
 } from '@angular/core';
-import { Leg, LegStop, Trip } from '../../api/models';
+import { Leg, LegStop, Station, Trip } from '../../api/models';
 import { Crowding } from '../crowding/crowding';
 import { DepartureTime } from '../departure-time/departure-time';
 import { FacilityIcon } from '../facility-icon/facility-icon';
+import { OvFietsCount } from '../ov-fiets-count/ov-fiets-count';
 import { PlatformSign } from '../platform-sign/platform-sign';
 import { TrainLength } from '../train-length/train-length';
 
@@ -77,6 +78,7 @@ function stopView(stop: LegStop, index: number, count: number): StopView {
     Crowding,
     DepartureTime,
     FacilityIcon,
+    OvFietsCount,
     PlatformSign,
     TrainLength,
   ],
@@ -87,6 +89,8 @@ function stopView(stop: LegStop, index: number, count: number): StopView {
 })
 export class TripDetails {
   readonly trip = input.required<Trip>();
+  /** Where the trip ends, to show its OV-fiets count; none when not known. */
+  readonly destination = input<Station | null>(null);
   /** The rider closed the details. */
   readonly closed = output();
 

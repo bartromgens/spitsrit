@@ -52,9 +52,6 @@
           <li>No upcoming trips.</li>
         }
       </ul>
-      @if (destination(); as to) {
-        <app-ov-fiets-count [stationCode]="to.code" [stationName]="to.name" />
-      }
     }
   </mat-card-content>
 </mat-card>
@@ -66,6 +63,6 @@
     aria-labelledby="trip-details-title"
     data-testid="trip-details"
   >
-    <app-trip-details [trip]="trip" (closed)="close()" />
+    <app-trip-details [trip]="trip" [destination]="destination()" (closed)="close()" />
   </aside>
 }

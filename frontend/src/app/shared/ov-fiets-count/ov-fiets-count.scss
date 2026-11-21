@@ -1,6 +1,5 @@
 :host {
   display: block;
-  margin-top: var(--sp-space-2);
   font-size: var(--sp-text-sm);
 }
 
@@ -11,18 +10,29 @@
   margin: 0;
 }
 
-// The rental points on one wrapping line, separated by a dot.
+// One rental point per row: its name, and the count or "closed" right-aligned, indented to
+// line up with the text after the bike icon.
 .points {
-  display: flex;
-  flex-wrap: wrap;
-  column-gap: var(--sp-space-1);
-  margin: var(--sp-space-half) 0 0;
-  padding: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: var(--sp-space-2);
+  row-gap: var(--sp-space-half);
+  max-width: 20rem;
+  margin: var(--sp-space-1) 0 0;
+  padding: 0 0 0 calc(1.5rem + var(--sp-space-1));
   list-style: none;
-  color: var(--mat-sys-on-surface-variant);
 
-  li + li::before {
-    content: '·';
-    margin-right: var(--sp-space-1);
+  li {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+  }
+
+  .status {
+    text-align: right;
+  }
+
+  .closed {
+    color: var(--mat-sys-on-surface-variant);
   }
 }
