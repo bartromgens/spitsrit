@@ -158,3 +158,45 @@ a:not([class*='mat-']) {
   font-family: var(--sp-font-mono);
   font-variant-numeric: tabular-nums;
 }
+
+// A loading placeholder: a rounded grey bar one line of text tall at the element's font size,
+// with a soft shimmer, standing in for content that is still loading. Set its width (and font
+// size) where it is used so it takes the space of the content it stands in for.
+.sp-skeleton {
+  position: relative;
+  display: block;
+  height: 1lh;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0.2lh 0;
+    border-radius: var(--sp-radius-sm);
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        var(--sp-skeleton-shine) 50%,
+        transparent 100%
+      )
+      var(--sp-skeleton);
+    background-size: 200% 100%;
+    background-repeat: no-repeat;
+    animation: sp-skeleton-shimmer 1.5s ease-in-out infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &::after {
+      animation: none;
+    }
+  }
+}
+
+@keyframes sp-skeleton-shimmer {
+  from {
+    background-position: 150% 0;
+  }
+
+  to {
+    background-position: -50% 0;
+  }
+}

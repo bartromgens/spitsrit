@@ -13,6 +13,7 @@ import { debounceTime, distinctUntilChanged, of, switchMap } from 'rxjs';
 import { Api } from '../api/api';
 import { stationsList, tripsRetrieve } from '../api/functions';
 import { CommuteTrips, Station } from '../api/models';
+import { TripListSkeleton } from '../shared/trip-list-skeleton/trip-list-skeleton';
 import { TripRow } from '../shared/trip-row/trip-row';
 
 const SEARCH_DEBOUNCE_MS = 250;
@@ -36,6 +37,7 @@ function isStation(value: unknown): value is Station {
     MatCardModule,
     MatFormFieldModule,
     MatInputModule,
+    TripListSkeleton,
     TripRow,
   ],
   selector: 'app-trip-planner',
@@ -47,6 +49,8 @@ export class TripPlanner {
   protected readonly destinationOptions = signal<Station[]>([]);
   protected readonly result = signal<CommuteTrips | null>(null);
   protected readonly error = signal('');
+  /** Whether a plan request is in flight; placeholder rows hold the results' place meanwhile. */
+  protected readonly loading = signal(false);
 
   protected readonly form = inject(NonNullableFormBuilder).group({
     origin: ['', Validators.required],
@@ -80,12 +84,15 @@ export class TripPlanner {
       this.fail('Origin and destination must differ.');
       return;
     }
+    this.loading.set(true);
+    this.error.set('');
     try {
       this.result.set(await this.api.invoke(tripsRetrieve, { from: from.code, to: to.code }));
-      this.error.set('');
       this.remember(from, to);
     } catch {
       this.fail('Train times are unavailable right now.');
+    } finally {
+      this.loading.set(false);
     }
   }
 

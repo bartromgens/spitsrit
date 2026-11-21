@@ -52,6 +52,15 @@ describe('Commutes', () => {
     page.pick('destination', stationEvent('ASD', 'Amsterdam Centraal'));
   };
 
+  it('shows a placeholder board while the commutes load', async () => {
+    const skeleton = (): Element | null =>
+      element().querySelector('[data-testid="commutes-skeleton"]');
+    expect(skeleton()).not.toBeNull();
+    expect(element().textContent).not.toContain('No commutes yet');
+    await loadList([]);
+    expect(skeleton()).toBeNull();
+  });
+
   it('lists the commutes with their boards', async () => {
     await loadList([saved]);
     http.expectOne('/api/commutes/1/trips/').flush(null, { status: 503, statusText: 'x' });

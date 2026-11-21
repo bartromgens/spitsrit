@@ -13,6 +13,7 @@ import { debounceTime, distinctUntilChanged, of, switchMap } from 'rxjs';
 import { Api } from '../api/api';
 import { commutesCreate, commutesDestroy, commutesList, stationsList } from '../api/functions';
 import { Commute, Station } from '../api/models';
+import { TripListSkeleton } from '../shared/trip-list-skeleton/trip-list-skeleton';
 import { CommuteBoard } from './commute-board';
 
 const SEARCH_DEBOUNCE_MS = 250;
@@ -27,6 +28,7 @@ const MIN_QUERY_LENGTH = 2;
     MatFormFieldModule,
     MatInputModule,
     CommuteBoard,
+    TripListSkeleton,
   ],
   selector: 'app-commutes',
   styleUrl: './commutes.scss',

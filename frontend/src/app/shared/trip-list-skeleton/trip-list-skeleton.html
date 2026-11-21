@@ -1,0 +1,20 @@
+<span class="sr-only">Loading trips…</span>
+<ul class="sp-trips sp-full-bleed" aria-hidden="true">
+  @for (i of indexes(); track i) {
+    <li>
+      <span class="row">
+        <span class="sp-skeleton time"></span>
+        <span class="sp-skeleton train"></span>
+        <span class="sp-skeleton platform"></span>
+        <span class="sp-skeleton load"></span>
+        <span class="meta">
+          <span class="sp-skeleton route">&#8203;</span>
+          <span class="sp-skeleton stock"
+            ><span class="icon"></span><span class="sp-mono">&#8203;</span></span
+          >
+        </span>
+        <span class="sp-skeleton journey"></span>
+      </span>
+    </li>
+  }
+</ul>
