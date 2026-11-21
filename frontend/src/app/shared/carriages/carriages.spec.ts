@@ -24,9 +24,12 @@ describe('Carriages', () => {
     expect(element().querySelector('.count')?.textContent).toBe('4');
   });
 
-  it('is empty when unknown', async () => {
+  it('shows a ? with the icon when unknown', async () => {
     await fixture.whenStable();
-    expect(element().querySelector('svg')).toBeNull();
-    expect(element().textContent?.trim()).toBe('');
+    expect(element().querySelector('svg')).not.toBeNull();
+    expect(element().querySelector('.count')?.textContent).toBe('?');
+    expect(element().querySelector('[role="img"]')?.getAttribute('aria-label')).toBe(
+      'Number of carriages unknown',
+    );
   });
 });
