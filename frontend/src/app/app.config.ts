@@ -6,6 +6,10 @@ import {
   provideBrowserGlobalErrorListeners,
 } from '@angular/core';
 import { provideHttpClient, withXsrfConfiguration } from '@angular/common/http';
+import {
+  MAT_FORM_FIELD_DEFAULT_OPTIONS,
+  MatFormFieldDefaultOptions,
+} from '@angular/material/form-field';
 import { provideRouter } from '@angular/router';
 import * as Sentry from '@sentry/angular';
 import { Api } from './api/api';
@@ -23,6 +27,11 @@ export const appConfig: ApplicationConfig = {
       withXsrfConfiguration({ cookieName: 'csrftoken', headerName: 'X-CSRFToken' }),
     ),
     { provide: ErrorHandler, useValue: Sentry.createErrorHandler() },
+    // Outlined fields: lighter than Material's grey filled boxes, and they sit well on white.
+    {
+      provide: MAT_FORM_FIELD_DEFAULT_OPTIONS,
+      useValue: { appearance: 'outline' } satisfies MatFormFieldDefaultOptions,
+    },
     provideAppInitializer(async () => {
       const api = inject(Api);
       const auth = inject(Auth);
