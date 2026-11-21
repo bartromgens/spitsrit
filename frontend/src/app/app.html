@@ -1,5 +1,18 @@
 <mat-toolbar>
-  <span>Spitsrit</span>
+  <button matIconButton class="menu-toggle" aria-label="Open menu" [matMenuTriggerFor]="mobileMenu">
+    <mat-icon>menu</mat-icon>
+  </button>
+  <span class="brand">Spitsrit</span>
+  <nav class="nav" aria-label="Main">
+    <a
+      matButton
+      routerLink="/"
+      routerLinkActive="active"
+      [routerLinkActiveOptions]="{ exact: true }"
+      >Home</a
+    >
+    <a matButton routerLink="/commutes" routerLinkActive="active">Commutes</a>
+  </nav>
   <span class="spacer"></span>
   @if (auth.user(); as user) {
     <span class="user">{{ user.username }}</span>
@@ -9,22 +22,10 @@
     <a matButton routerLink="/login">Log in</a>
   }
 </mat-toolbar>
-<mat-sidenav-container>
-  <mat-sidenav mode="side" opened>
-    <mat-nav-list>
-      <a
-        mat-list-item
-        routerLink="/"
-        routerLinkActive="active"
-        [routerLinkActiveOptions]="{ exact: true }"
-        >Home</a
-      >
-      <a mat-list-item routerLink="/commutes" routerLinkActive="active">Commutes</a>
-    </mat-nav-list>
-  </mat-sidenav>
-  <mat-sidenav-content>
-    <main>
-      <router-outlet />
-    </main>
-  </mat-sidenav-content>
-</mat-sidenav-container>
+<mat-menu #mobileMenu="matMenu">
+  <a mat-menu-item routerLink="/">Home</a>
+  <a mat-menu-item routerLink="/commutes">Commutes</a>
+</mat-menu>
+<main>
+  <router-outlet />
+</main>

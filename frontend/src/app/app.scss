@@ -8,19 +8,40 @@
   flex: 1;
 }
 
+.brand {
+  margin-right: 16px;
+}
+
+.nav {
+  display: flex;
+  gap: 4px;
+}
+
+.nav .active {
+  font-weight: 600;
+}
+
+.menu-toggle {
+  display: none;
+  margin-right: 8px;
+}
+
 .user {
   margin-right: 8px;
   font: var(--mat-sys-body-medium);
 }
 
-mat-sidenav-container {
-  flex: 1;
-}
-
-mat-sidenav {
-  width: 200px;
-}
-
 main {
+  flex: 1;
   padding: 24px;
+}
+
+@media (max-width: 600px) {
+  .menu-toggle {
+    display: inline-flex;
+  }
+
+  .nav {
+    display: none;
+  }
 }
