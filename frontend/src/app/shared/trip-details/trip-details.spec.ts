@@ -135,6 +135,22 @@ describe('TripDetails', () => {
 
   const text = (): string => element.textContent?.replace(/\s+/g, ' ') ?? '';
 
+  it('shows the OV-fiets count at the destination when it is known', async () => {
+    expect(element.querySelector('app-ov-fiets-count')).toBeNull();
+    fixture.componentRef.setInput('destination', { code: 'GD', name: 'Gouda' });
+    await fixture.whenStable();
+    TestBed.inject(HttpTestingController)
+      .expectOne('/api/stations/GD/ov-fiets/')
+      .flush({
+        station_code: 'GD',
+        available: 12,
+        locations: [{ name: 'Gouda', available: 12, open: 'Yes' }],
+      });
+    await settle(fixture);
+    expect(text()).toContain('At Gouda');
+    expect(text()).toContain('12 OV-fietsen at Gouda');
+  });
+
   it('shows a toilet icon at the stations where you board or get off, if they have one', async () => {
     const http = TestBed.inject(HttpTestingController);
     http

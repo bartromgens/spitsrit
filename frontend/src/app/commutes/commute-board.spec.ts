@@ -108,17 +108,6 @@ describe('CommuteBoard', () => {
     expect(element.querySelector('[aria-label="8 carriages"]')).not.toBeNull();
   });
 
-  it('shows the OV-fiets count at the destination', async () => {
-    await flush(trips({ trips: [trip({})], recommended_uid: 'a', wait_minutes: 0 }));
-    http.expectOne('/api/stations/ASD/ov-fiets/').flush({
-      station_code: 'ASD',
-      available: 3,
-      locations: [{ name: 'Amsterdam Centraal IJzijde', available: 3, open: 'Yes' }],
-    });
-    await settle(fixture);
-    expect(text()).toContain('3 OV-fietsen at Amsterdam Centraal');
-  });
-
   it('always shows the train route, without a toggle', async () => {
     await flush(trips({ trips: [trip({})], recommended_uid: 'a', wait_minutes: 0 }));
     const element = fixture.nativeElement as HTMLElement;

@@ -48,6 +48,13 @@ def test_open_is_yes_no_or_unknown() -> None:
     assert [p.open for p in parsed] == ["No", "Unknown", "Unknown"]
 
 
+def test_names_are_trimmed() -> None:
+    # Real ASD response: "Amsterdam Centraal Stationsplein " ends in a space.
+    item = {**location(), "description": "Amsterdam Centraal Stationsplein "}
+    (parsed,) = places.parse_ov_fiets(payload(item))
+    assert parsed.name == "Amsterdam Centraal Stationsplein"
+
+
 def test_name_falls_back_to_the_location_name() -> None:
     item = {**location(), "description": None}
     (parsed,) = places.parse_ov_fiets(payload(item))
@@ -68,6 +75,14 @@ def test_total_counts_only_known_numbers() -> None:
     assert places.OvFiets("UT", (known, unknown)).available == 4
     assert places.OvFiets("UT", (unknown,)).available is None
     assert places.OvFiets("UT").available is None
+
+
+def test_total_leaves_out_closed_rental_points() -> None:
+    # Real LEDN response at night: the closed point still reports the bikes standing there.
+    open_ = places.OvFietsLocation("Leiden Centraal,Uitgang LUMC", 6, "Yes")
+    closed = places.OvFietsLocation("Leiden Centraal, Centrumzijde", 28, "No")
+    assert places.OvFiets("LEDN", (open_, closed)).available == 6
+    assert places.OvFiets("LEDN", (closed,)).available is None
 
 
 def test_fetch_ov_fiets_asks_by_station_code_and_caches(monkeypatch: pytest.MonkeyPatch) -> None:

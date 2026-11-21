@@ -40,8 +40,15 @@ class OvFiets:
 
     @property
     def available(self) -> int | None:
-        """Bikes available at the whole station; `None` when no rental point gives a number."""
-        counts = [loc.available for loc in self.locations if loc.available is not None]
+        """Bikes you can rent now: at rental points not closed. `None` when none gives a number.
+
+        A closed rental point still reports the bikes standing there, which cannot be rented.
+        """
+        counts = [
+            loc.available
+            for loc in self.locations
+            if loc.available is not None and loc.open != "No"
+        ]
         return sum(counts) if counts else None
 
 
@@ -94,7 +101,7 @@ def parse_ov_fiets(payload: Any) -> tuple[OvFietsLocation, ...]:
             open_ = item.get("open")
             locations.append(
                 OvFietsLocation(
-                    name=str(item.get("description") or item.get("name") or ""),
+                    name=str(item.get("description") or item.get("name") or "").strip(),
                     available=_count(extra.get("rentalBikes")),
                     open=_open(open_),
                 )
