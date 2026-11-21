@@ -1,20 +1,22 @@
-@if (count()) {
-  <span class="carriages" role="img" [attr.aria-label]="count() + ' carriages'">
-    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <rect
-        x="2"
-        y="4"
-        width="20"
-        height="13"
-        rx="3"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-      />
-      <path d="M2 11h20" stroke="currentColor" stroke-width="2" />
-      <circle cx="7" cy="20" r="1.5" fill="currentColor" />
-      <circle cx="17" cy="20" r="1.5" fill="currentColor" />
-    </svg>
-    <span class="sp-mono count" aria-hidden="true">{{ count() }}</span>
-  </span>
-}
+<span
+  class="carriages"
+  role="img"
+  [attr.aria-label]="count() ? count() + ' carriages' : 'Number of carriages unknown'"
+>
+  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <rect
+      x="2"
+      y="4"
+      width="20"
+      height="13"
+      rx="3"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+    />
+    <path d="M2 11h20" stroke="currentColor" stroke-width="2" />
+    <circle cx="7" cy="20" r="1.5" fill="currentColor" />
+    <circle cx="17" cy="20" r="1.5" fill="currentColor" />
+  </svg>
+  <span class="sp-mono count" aria-hidden="true">{{ count() || '?' }}</span>
+</span>
