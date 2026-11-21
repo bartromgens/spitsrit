@@ -1,5 +1,6 @@
 import pytest
 from django.contrib.auth.models import User
+from django.test import override_settings
 from django.utils import timezone
 from rest_framework.test import APIClient
 
@@ -126,6 +127,7 @@ def test_stations_search(logged_in: APIClient, monkeypatch: pytest.MonkeyPatch) 
     assert response.json() == [{"code": "UT", "name": "Utrecht Centraal"}]
 
 
+@override_settings(NS_API_KEY="")  # a local settings_local.py may set a real key
 def test_stations_without_key(logged_in: APIClient) -> None:
     assert logged_in.get("/api/stations/?q=utr").status_code == 503
 

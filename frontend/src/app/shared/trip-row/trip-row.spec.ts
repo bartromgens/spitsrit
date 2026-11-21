@@ -1,3 +1,4 @@
+import { formatDate } from '@angular/common';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Trip } from '../../api/models';
 import { TripRow } from './trip-row';
@@ -25,6 +26,9 @@ const trip: Trip = {
   train_origin: 'Nijmegen',
   train_destination: 'Den Haag C.',
 };
+
+// The pipe shows times in the runner's timezone; derive the expectation the same way.
+const ARRIVES = formatDate(trip.arrival_actual, 'HH:mm', 'en-US');
 
 describe('TripRow', () => {
   let fixture: ComponentFixture<TripRow>;
@@ -92,7 +96,7 @@ describe('TripRow', () => {
   it('uses mono only for numbers', async () => {
     await render({ transfers: 1 });
     const mono = Array.from(element().querySelectorAll('.sp-mono')).map((el) => el.textContent);
-    expect(mono).toEqual(['8', '620', '08:30', '30', '1']);
+    expect(mono).toEqual(['8', '620', ARRIVES, '30', '1']);
     expect(element().querySelector('.journey')?.classList.contains('sp-mono')).toBe(false);
   });
 
@@ -101,7 +105,7 @@ describe('TripRow', () => {
     const values = Array.from(element().querySelectorAll('.arrival, .duration, .transfers')).map(
       (el) => el.textContent?.replace(/\s+/g, ' ').trim(),
     );
-    expect(values).toEqual(['arrives 08:30', '30 min', '1 transfer']);
+    expect(values).toEqual([`arrives ${ARRIVES}`, '30 min', '1 transfer']);
   });
 
   it('shows cancelled trips as cancelled without details', async () => {
