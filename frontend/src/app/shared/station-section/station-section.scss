@@ -1,0 +1,17 @@
+:host {
+  display: block;
+  margin-top: var(--sp-space-2);
+}
+
+.toilet {
+  margin: 0;
+  font-size: var(--sp-text-sm);
+
+  &:empty {
+    display: none;
+  }
+}
+
+[hidden] {
+  display: none;
+}

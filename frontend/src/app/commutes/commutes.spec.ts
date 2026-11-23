@@ -258,7 +258,7 @@ describe('Commutes', () => {
       expect(rows(1)[0].getAttribute('aria-expanded')).toBe('true');
       http.expectOne('/api/stations/UT/ov-fiets/').flush({ station_code: 'UT', locations: [] });
       await settle(fixture);
-      expect(details()?.textContent).toContain('Utrecht Centraal');
+      expect(details()?.textContent).toContain('direct');
     });
 
     it('closes the details when the selected row is clicked again', async () => {

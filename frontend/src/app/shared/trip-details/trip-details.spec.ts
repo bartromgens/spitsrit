@@ -1,6 +1,6 @@
 import { HttpTestingController } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Leg, Trip } from '../../api/models';
+import { Leg, StationToilets, Trip } from '../../api/models';
 import { settle, testProviders } from '../../testing';
 import { TripDetails } from './trip-details';
 
@@ -157,19 +157,84 @@ describe('TripDetails', () => {
     expect(text()).toContain('12 OV-fietsen at Gouda');
   });
 
-  it('shows a toilet icon at the stations where you board or get off, if they have one', async () => {
-    const http = TestBed.inject(HttpTestingController);
-    http
-      .expectOne('/api/stations/UT/toilets/')
-      .flush({ station_code: 'UT', toilets: [{ name: 'Stationshal', open: 'Yes' }] });
-    http.expectOne('/api/stations/GD/toilets/').flush({ station_code: 'GD', toilets: [] });
-    http.expectNone((request) => request.url.includes('/toilets/'));
-    await settle(fixture);
-    const stops = Array.from(element.querySelectorAll('.stop'));
-    const withToilet = stops.filter((stop) => stop.querySelector('[data-testid="station-toilet"]'));
-    expect(withToilet.map((stop) => stop.querySelector('.stop-label')?.textContent)).toEqual([
-      'Utrecht Centraal',
-    ]);
+  describe('at the stations', () => {
+    const http = (): HttpTestingController => TestBed.inject(HttpTestingController);
+    const headings = (): string[] =>
+      Array.from(element.querySelectorAll('app-station-section h3')).map(
+        (h) => h.textContent?.trim() ?? '',
+      );
+    const toilets = (code: string, ...open: string[]): StationToilets => ({
+      station_code: code,
+      toilets: open.map((state) => ({ name: 'Stationshal', open: state })),
+    });
+
+    async function showDestination(): Promise<void> {
+      fixture.componentRef.setInput('destination', { code: 'GD', name: 'Gouda' });
+      await fixture.whenStable();
+    }
+
+    it('keeps toilets out of the stop list', async () => {
+      await showDestination();
+      http().expectOne('/api/stations/UT/toilets/').flush(toilets('UT', 'Yes'));
+      http().expectOne('/api/stations/GD/toilets/').flush(toilets('GD', 'Yes'));
+      http().expectOne('/api/stations/GD/ov-fiets/').flush({ station_code: 'GD', locations: [] });
+      await settle(fixture);
+      expect(element.querySelector('.legs [data-testid="station-toilet"]')).toBeNull();
+      expect(element.querySelectorAll('[data-testid="station-toilet"]').length).toBe(2);
+    });
+
+    it('ends with the departure station, then the destination, each with its toilets', async () => {
+      await showDestination();
+      http().expectOne('/api/stations/UT/toilets/').flush(toilets('UT', 'Yes'));
+      http().expectOne('/api/stations/GD/toilets/').flush(toilets('GD', 'Yes'));
+      http()
+        .expectOne('/api/stations/GD/ov-fiets/')
+        .flush({
+          station_code: 'GD',
+          available: 12,
+          locations: [{ name: 'Gouda', available: 12, open: 'Yes' }],
+        });
+      await settle(fixture);
+      expect(headings()).toEqual(['At Utrecht Centraal', 'At Gouda']);
+      const [from, to] = Array.from(element.querySelectorAll('app-station-section'));
+      expect(from.textContent).toContain('Toilets');
+      expect(from.textContent).not.toContain('OV-fiets');
+      expect(to.textContent).toContain('Toilets');
+      expect(to.textContent).toContain('12 OV-fietsen at Gouda');
+    });
+
+    it('says when the toilets are closed', async () => {
+      http().expectOne('/api/stations/UT/toilets/').flush(toilets('UT', 'No'));
+      await settle(fixture);
+      expect(text()).toContain('Toilets · closed');
+    });
+
+    it('shows no toilet line without toilet information', async () => {
+      await showDestination();
+      http().expectOne('/api/stations/UT/toilets/').flush(toilets('UT', 'Yes'));
+      http().expectOne('/api/stations/GD/toilets/').flush(toilets('GD'));
+      http()
+        .expectOne('/api/stations/GD/ov-fiets/')
+        .flush({
+          station_code: 'GD',
+          available: 3,
+          locations: [{ name: 'Gouda', available: 3, open: 'Yes' }],
+        });
+      await settle(fixture);
+      const to = element.querySelector('[data-testid="section-destination"]')!;
+      expect(to.querySelector('[data-testid="station-toilet"]')).toBeNull();
+      expect(to.textContent).not.toContain('Toilets');
+      expect(to.textContent).toContain('3 OV-fietsen at Gouda');
+    });
+
+    it('omits the heading of a station with nothing to show', async () => {
+      await showDestination();
+      http().expectOne('/api/stations/UT/toilets/').flush(toilets('UT', 'Yes'));
+      http().expectOne('/api/stations/GD/toilets/').flush(toilets('GD'));
+      http().expectOne('/api/stations/GD/ov-fiets/').flush({ station_code: 'GD', locations: [] });
+      await settle(fixture);
+      expect(headings()).toEqual(['At Utrecht Centraal']);
+    });
   });
 
   it('summarises the trip with its disruptions', () => {

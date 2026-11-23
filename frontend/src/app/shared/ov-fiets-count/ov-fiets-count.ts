@@ -1,4 +1,13 @@
-import { Component, DestroyRef, computed, effect, inject, input, signal } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  computed,
+  effect,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { Api } from '../../api/api';
 import { stationsOvFietsRetrieve } from '../../api/functions';
 import { OvFiets } from '../../api/models';
@@ -45,6 +54,8 @@ function bikes(count: number): string {
 export class OvFietsCount {
   readonly stationCode = input.required<string>();
   readonly stationName = input.required<string>();
+  /** Whether there is a count to show; follows the data as it loads. */
+  readonly present = output<boolean>();
 
   private readonly data = signal<OvFiets | null>(null);
   private readonly api = inject(Api);
@@ -84,6 +95,7 @@ export class OvFietsCount {
 
   constructor() {
     effect(() => void this.load(this.stationCode()));
+    effect(() => this.present.emit(this.summary() !== ''));
     const timer = setInterval(() => void this.load(this.stationCode()), REFRESH_MS);
     inject(DestroyRef).onDestroy(() => clearInterval(timer));
   }

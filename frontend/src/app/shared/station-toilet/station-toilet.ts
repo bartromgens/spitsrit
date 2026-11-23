@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, input, signal } from '@angular/core';
+import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { Api } from '../../api/api';
 import { stationsToiletsRetrieve } from '../../api/functions';
 import { StationToilets } from '../../api/models';
@@ -17,6 +17,10 @@ import { FacilityIcon } from '../facility-icon/facility-icon';
 export class StationToilet {
   /** The NS station code, such as `UT`. */
   readonly stationCode = input.required<string>();
+  /** Spell it out ("Toilets", "Toilets · closed") instead of the bare icon. */
+  readonly labelled = input(false);
+  /** Whether there is a toilet to show; follows the data as it loads. */
+  readonly present = output<boolean>();
 
   private readonly data = signal<StationToilets | null>(null);
   private readonly api = inject(Api);
@@ -32,6 +36,7 @@ export class StationToilet {
 
   constructor() {
     effect(() => void this.load(this.stationCode()));
+    effect(() => this.present.emit(this.state() !== null));
   }
 
   private async load(code: string): Promise<void> {

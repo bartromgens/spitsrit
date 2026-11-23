@@ -1,0 +1,19 @@
+<section [hidden]="empty()" [attr.aria-labelledby]="empty() ? null : headingId">
+  @if (!empty()) {
+    <h3 [id]="headingId">At {{ station().name }}</h3>
+  }
+  <p class="toilet">
+    <app-station-toilet
+      [stationCode]="station().code"
+      [labelled]="true"
+      (present)="hasToilet.set($event)"
+    />
+  </p>
+  @if (ovFiets()) {
+    <app-ov-fiets-count
+      [stationCode]="station().code"
+      [stationName]="station().name"
+      (present)="hasOvFiets.set($event)"
+    />
+  }
+</section>

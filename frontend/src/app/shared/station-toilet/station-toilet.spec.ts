@@ -51,6 +51,19 @@ describe('StationToilet', () => {
     expect(el().textContent).toContain('closed');
   });
 
+  it('spells out the label when asked', async () => {
+    fixture.componentRef.setInput('labelled', true);
+    await respond(toilets({ open: 'No' }));
+    expect(el().textContent?.replace(/\s+/g, ' ').trim()).toContain('Toilets · closed');
+  });
+
+  it('reports whether there is a toilet', async () => {
+    const seen: boolean[] = [];
+    fixture.componentInstance.present.subscribe((value) => seen.push(value));
+    await respond(toilets({}));
+    expect(seen.at(-1)).toBe(true);
+  });
+
   it('shows nothing for a station without a toilet', async () => {
     await respond(toilets());
     expect(icon()).toBeNull();

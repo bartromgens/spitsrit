@@ -221,9 +221,6 @@
               <span class="stop-dot" aria-hidden="true"></span>
               <span class="stop-name"
                 ><span class="stop-label">{{ stop.name }}</span>
-                @if (stop.stationCode) {
-                  <app-station-toilet [stationCode]="stop.stationCode" />
-                }
                 @if (stop.passing) {
                   <span class="muted">(passes)</span>
                 }
@@ -248,12 +245,7 @@
                 }
               </span>
               <span class="stop-dot" aria-hidden="true"></span>
-              <span class="stop-name"
-                >{{ leg.origin }}
-                @if (leg.origin_code) {
-                  <app-station-toilet [stationCode]="leg.origin_code" />
-                }
-              </span>
+              <span class="stop-name">{{ leg.origin }}</span>
               <span class="stop-track"><app-platform-sign [track]="leg.departure_track" /></span>
             </li>
             <li class="stop endpoint">
@@ -263,12 +255,7 @@
                 }
               </span>
               <span class="stop-dot" aria-hidden="true"></span>
-              <span class="stop-name"
-                >{{ leg.destination }}
-                @if (leg.destination_code) {
-                  <app-station-toilet [stationCode]="leg.destination_code" />
-                }
-              </span>
+              <span class="stop-name">{{ leg.destination }}</span>
               <span class="stop-track"><app-platform-sign [track]="leg.arrival_track" /></span>
             </li>
           }
@@ -304,9 +291,9 @@
   }
 </ol>
 
+@if (departure(); as from) {
+  <app-station-section data-testid="section-departure" [station]="from" />
+}
 @if (destination(); as to) {
-  <section class="arrival" aria-labelledby="trip-details-arrival">
-    <h3 id="trip-details-arrival">At {{ to.name }}</h3>
-    <app-ov-fiets-count [stationCode]="to.code" [stationName]="to.name" />
-  </section>
+  <app-station-section data-testid="section-destination" [station]="to" [ovFiets]="true" />
 }
