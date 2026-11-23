@@ -15,9 +15,9 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { Api } from '../api/api';
 import { commutesPartialUpdate, commutesTripsRetrieve } from '../api/functions';
-import { Commute, CommuteTrips } from '../api/models';
+import { Commute, CommuteTrips, Trip } from '../api/models';
+import { TripList } from '../shared/trip-list/trip-list';
 import { TripListSkeleton } from '../shared/trip-list-skeleton/trip-list-skeleton';
-import { TripRow } from '../shared/trip-row/trip-row';
 
 const REFRESH_MS = 60_000;
 
@@ -29,8 +29,8 @@ const REFRESH_MS = 60_000;
     MatCardModule,
     MatFormFieldModule,
     MatInputModule,
+    TripList,
     TripListSkeleton,
-    TripRow,
   ],
   selector: 'app-commute-board',
   styleUrl: './commute-board.scss',
@@ -38,7 +38,12 @@ const REFRESH_MS = 60_000;
 })
 export class CommuteBoard implements OnInit {
   readonly commute = input.required<Commute>();
+  /** The uid of this board's trip whose details are open, if any. */
+  readonly selectedUid = input<string | null>(null);
   readonly removed = output<Commute>();
+  readonly tripSelected = output<Trip>();
+  /** Emits the trips after every successful load, so the page can drop a selection that left. */
+  readonly tripsLoaded = output<Trip[]>();
 
   protected readonly data = signal<CommuteTrips | null>(null);
   protected readonly error = signal('');
@@ -100,13 +105,13 @@ export class CommuteBoard implements OnInit {
   /** Loads the trips; `fromNow` plans from now instead of the usual time, for this load only. */
   protected async refresh(fromNow = false): Promise<void> {
     try {
-      this.data.set(
-        await this.api.invoke(commutesTripsRetrieve, {
-          id: String(this.commute().id),
-          ...(fromNow ? { now: true } : {}),
-        }),
-      );
+      const data = await this.api.invoke(commutesTripsRetrieve, {
+        id: String(this.commute().id),
+        ...(fromNow ? { now: true } : {}),
+      });
+      this.data.set(data);
       this.error.set('');
+      this.tripsLoaded.emit(data.trips);
     } catch {
       this.error.set('Train times are unavailable right now.');
     }

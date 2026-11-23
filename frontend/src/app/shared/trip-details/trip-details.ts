@@ -187,11 +187,14 @@ export class TripDetails {
 
   private readonly closeButton = viewChild.required<ElementRef<HTMLButtonElement>>('closeButton');
 
+  private readonly tripUid = computed(() => this.trip().uid);
+
   constructor() {
     // Move focus into the details whenever another trip opens, so keyboard and screen reader
-    // users land on them; Escape or the close button take them back out.
+    // users land on them; Escape or the close button take them back out. Keyed on the uid so a
+    // refreshed copy of the same trip leaves focus where it is.
     afterRenderEffect(() => {
-      this.trip();
+      this.tripUid();
       this.closeButton().nativeElement.focus();
     });
   }

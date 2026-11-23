@@ -1,0 +1,26 @@
+<ul class="sp-trips sp-full-bleed" data-testid="trip-results">
+  @for (trip of trips(); track trip.uid) {
+    <li
+      [class.best]="trip.uid === recommendedUid()"
+      [class.cancelled]="trip.cancelled"
+      [class.selected]="trip.uid === selectedUid()"
+    >
+      <button
+        type="button"
+        class="trip-button"
+        data-testid="trip-row-button"
+        [attr.aria-expanded]="trip.uid === selectedUid()"
+        aria-controls="trip-details"
+        (click)="tripSelected.emit(trip)"
+      >
+        <app-trip-row
+          [trip]="trip"
+          [recommended]="trip.uid === recommendedUid()"
+          [arrivalDelay]="arrivalDelay()"
+        />
+      </button>
+    </li>
+  } @empty {
+    <li>No upcoming trips.</li>
+  }
+</ul>

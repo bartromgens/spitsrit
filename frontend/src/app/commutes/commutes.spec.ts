@@ -1,6 +1,6 @@
 import { HttpTestingController } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Commute } from '../api/models';
+import { Commute, Trip } from '../api/models';
 import { settle, testProviders } from '../testing';
 import { Commutes } from './commutes';
 
@@ -152,6 +152,167 @@ describe('Commutes', () => {
     http.expectOne((r) => r.method === 'DELETE').flush(null, { status: 500, statusText: 'x' });
     await settle(fixture);
     expect(element().textContent).toContain('could not be deleted');
+  });
+
+  describe('trip details', () => {
+    const other: Commute = {
+      ...saved,
+      id: 2,
+      name: 'Way home', // sorts after "To work", so its board is the second one
+      origin_code: 'ASD',
+      origin_name: 'Amsterdam Centraal',
+      destination_code: 'UT',
+      destination_name: 'Utrecht Centraal',
+    };
+
+    const trip = (uid: string): Trip => ({
+      uid,
+      departure_planned: '2026-11-20T08:00:00Z',
+      departure_actual: '2026-11-20T08:00:00Z',
+      arrival_planned: '2026-11-20T08:30:00Z',
+      arrival_actual: '2026-11-20T08:30:00Z',
+      departure_delay_minutes: 0,
+      arrival_delay_minutes: 0,
+      duration_minutes: 30,
+      departure_track: '5',
+      transfers: 0,
+      status: 'NORMAL',
+      cancelled: false,
+      crowd_forecast: 'LOW',
+      train: 'IC 2736',
+      seats: 620,
+      carriages: 8,
+      train_type: 'VIRM',
+      shorter_stock: null,
+      shorter_stock_warning: null,
+      train_origin: 'Nijmegen',
+      train_destination: 'Den Haag C.',
+      train_parts: [],
+      punctuality: null,
+      messages: [],
+      legs: [],
+      coach_crowding: [],
+      platform_features: [],
+      split_stations: [],
+      board_destination: null,
+    });
+    const board = (uids: string[]): object => ({
+      fetched_at: '',
+      planned_from: '',
+      planned_from_usual_time: false,
+      trips: uids.map(trip),
+      recommended_uid: uids[0] ?? null,
+      wait_minutes: 0,
+    });
+
+    const details = (): Element | null => element().querySelector('[data-testid="trip-details"]');
+    const rows = (boardIndex: number): HTMLButtonElement[] =>
+      Array.from(
+        element()
+          .querySelectorAll('app-commute-board')
+          [boardIndex].querySelectorAll<HTMLButtonElement>('[data-testid="trip-row-button"]'),
+      );
+    const click = async (button: HTMLButtonElement): Promise<void> => {
+      button.click();
+      await settle(fixture);
+    };
+
+    const loadBoards = async (): Promise<void> => {
+      await loadList([saved, other]);
+      http.expectOne('/api/commutes/1/trips/').flush(board(['a', 'b']));
+      http.expectOne('/api/commutes/2/trips/').flush(board(['a', 'c']));
+      await settle(fixture);
+    };
+
+    it('opens the details of a row with the commute destination and closes them', async () => {
+      await loadBoards();
+      expect(details()).toBeNull();
+      await click(rows(0)[1]);
+      expect(details()).not.toBeNull();
+      expect(rows(0)[1].getAttribute('aria-expanded')).toBe('true');
+      expect(rows(0)[0].getAttribute('aria-expanded')).toBe('false');
+      expect(element().classList).toContain('with-details');
+      http.expectOne('/api/stations/ASD/ov-fiets/').flush({
+        station_code: 'ASD',
+        available: 7,
+        locations: [{ name: 'Amsterdam Centraal IJzijde', available: 7, open: 'Yes' }],
+      });
+      await settle(fixture);
+      expect(details()?.textContent).toContain('7 OV-fietsen at Amsterdam Centraal');
+
+      element().querySelector<HTMLButtonElement>('[data-testid="trip-details-close"]')!.click();
+      await settle(fixture);
+      expect(details()).toBeNull();
+      expect(element().classList).not.toContain('with-details');
+      expect(rows(0)[1].getAttribute('aria-expanded')).toBe('false');
+    });
+
+    it('shows one panel across boards and switches between them', async () => {
+      await loadBoards();
+      await click(rows(0)[0]);
+      http.expectOne('/api/stations/ASD/ov-fiets/').flush({ station_code: 'ASD', locations: [] });
+      await click(rows(1)[0]);
+      // Same uid on another board is a different selection: the first board's row is deselected.
+      expect(element().querySelectorAll('[data-testid="trip-details"]').length).toBe(1);
+      expect(rows(0)[0].getAttribute('aria-expanded')).toBe('false');
+      expect(rows(1)[0].getAttribute('aria-expanded')).toBe('true');
+      http.expectOne('/api/stations/UT/ov-fiets/').flush({ station_code: 'UT', locations: [] });
+      await settle(fixture);
+      expect(details()?.textContent).toContain('Utrecht Centraal');
+    });
+
+    it('closes the details when the selected row is clicked again', async () => {
+      await loadBoards();
+      await click(rows(1)[1]);
+      http.expectOne('/api/stations/UT/ov-fiets/').flush({ station_code: 'UT', locations: [] });
+      await click(rows(1)[1]);
+      expect(details()).toBeNull();
+    });
+
+    it('closes the details when a refresh no longer lists the trip', async () => {
+      await loadBoards();
+      await click(rows(0)[1]);
+      http.expectOne('/api/stations/ASD/ov-fiets/').flush({ station_code: 'ASD', locations: [] });
+      const refresh = Array.from(
+        element().querySelectorAll('app-commute-board')[0].querySelectorAll('button'),
+      ).find((b) => b.textContent?.includes('Refresh'))!;
+
+      refresh.click();
+      http.expectOne('/api/commutes/1/trips/').flush(board(['a', 'b']));
+      await settle(fixture);
+      expect(details()).not.toBeNull();
+
+      refresh.click();
+      http.expectOne('/api/commutes/1/trips/').flush(board(['a']));
+      await settle(fixture);
+      expect(details()).toBeNull();
+    });
+
+    it('keeps the details open when another board refreshes', async () => {
+      await loadBoards();
+      await click(rows(0)[1]);
+      http.expectOne('/api/stations/ASD/ov-fiets/').flush({ station_code: 'ASD', locations: [] });
+      const refresh = Array.from(
+        element().querySelectorAll('app-commute-board')[1].querySelectorAll('button'),
+      ).find((b) => b.textContent?.includes('Refresh'))!;
+      refresh.click();
+      http.expectOne('/api/commutes/2/trips/').flush(board(['x']));
+      await settle(fixture);
+      expect(details()).not.toBeNull();
+    });
+
+    it('closes the details when their commute is deleted', async () => {
+      await loadBoards();
+      await click(rows(0)[1]);
+      http.expectOne('/api/stations/ASD/ov-fiets/').flush({ station_code: 'ASD', locations: [] });
+      const remove = Array.from(
+        element().querySelectorAll('app-commute-board')[0].querySelectorAll('button'),
+      ).find((b) => b.textContent?.includes('Delete'))!;
+      remove.click();
+      http.expectOne((r) => r.method === 'DELETE').flush(null, { status: 204, statusText: 'x' });
+      await settle(fixture);
+      expect(details()).toBeNull();
+    });
   });
 
   it('searches stations as you type', async () => {

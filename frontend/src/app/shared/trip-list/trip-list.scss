@@ -1,0 +1,23 @@
+// The whole row opens the trip's details; the button only adds a focus ring and a hover tint.
+.trip-button {
+  all: unset;
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: var(--sp-border-width-strong) solid var(--sp-link);
+    outline-offset: var(--sp-space-half);
+    border-radius: var(--sp-radius-xs);
+  }
+}
+
+li:not(.best):has(.trip-button:hover) {
+  background: var(--mat-sys-surface-container-low);
+}
+
+// The open trip keeps its own background (green when recommended) and gets a blue frame.
+li.selected {
+  box-shadow: inset 0 0 0 var(--sp-border-width-strong) var(--sp-blue);
+}

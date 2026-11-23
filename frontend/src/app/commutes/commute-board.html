@@ -90,19 +90,13 @@
         </p>
       }
       <p class="advice" data-testid="advice">{{ advice() }}</p>
-      <ul class="sp-trips sp-full-bleed">
-        @for (trip of d.trips; track trip.uid) {
-          <li [class.best]="trip.uid === d.recommended_uid" [class.cancelled]="trip.cancelled">
-            <app-trip-row
-              [trip]="trip"
-              [recommended]="trip.uid === d.recommended_uid"
-              [arrivalDelay]="true"
-            />
-          </li>
-        } @empty {
-          <li>No upcoming trips.</li>
-        }
-      </ul>
+      <app-trip-list
+        [trips]="d.trips"
+        [recommendedUid]="d.recommended_uid"
+        [selectedUid]="selectedUid()"
+        [arrivalDelay]="true"
+        (tripSelected)="tripSelected.emit($event)"
+      />
     } @else if (!error()) {
       <span class="sp-skeleton advice-skeleton" aria-hidden="true"></span>
       <app-trip-list-skeleton />

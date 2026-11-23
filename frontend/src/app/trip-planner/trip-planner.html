@@ -31,28 +31,12 @@
     @if (loading()) {
       <app-trip-list-skeleton />
     } @else if (result(); as r) {
-      <ul class="sp-trips sp-full-bleed" data-testid="trip-results">
-        @for (trip of r.trips; track trip.uid) {
-          <li
-            [class.best]="trip.uid === r.recommended_uid"
-            [class.cancelled]="trip.cancelled"
-            [class.selected]="trip.uid === selected()?.uid"
-          >
-            <button
-              type="button"
-              class="trip-button"
-              data-testid="trip-row-button"
-              [attr.aria-expanded]="trip.uid === selected()?.uid"
-              aria-controls="trip-details"
-              (click)="select(trip)"
-            >
-              <app-trip-row [trip]="trip" [recommended]="trip.uid === r.recommended_uid" />
-            </button>
-          </li>
-        } @empty {
-          <li>No upcoming trips.</li>
-        }
-      </ul>
+      <app-trip-list
+        [trips]="r.trips"
+        [recommendedUid]="r.recommended_uid"
+        [selectedUid]="selected()?.uid ?? null"
+        (tripSelected)="select($event)"
+      />
     }
   </mat-card-content>
 </mat-card>
