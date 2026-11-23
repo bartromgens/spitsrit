@@ -17,6 +17,11 @@ export interface TripsRetrieve$Params {
   around?: boolean;
 
 /**
+ * Treat `time` as the arrival time; needs `time`
+ */
+  arrive?: boolean;
+
+/**
  * Origin station code
  */
   from: string;
@@ -36,6 +41,7 @@ export function tripsRetrieve(http: HttpClient, rootUrl: string, params: TripsRe
   const rb = new RequestBuilder(rootUrl, tripsRetrieve.PATH, 'get');
   if (params) {
     rb.query('around', params.around, {});
+    rb.query('arrive', params.arrive, {});
     rb.query('from', params.from, {});
     rb.query('time', params.time, {});
     rb.query('to', params.to, {});

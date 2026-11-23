@@ -414,6 +414,74 @@ describe('TripPlanner', () => {
       expectTrips({ time: '17:00' }).flush(empty);
       await second;
     });
+
+    describe('arrive by', () => {
+      const click = (testid: string): void => {
+        (fixture.nativeElement as HTMLElement)
+          .querySelector<HTMLElement>(`[data-testid="${testid}"] button`)!
+          .click();
+        fixture.detectChanges();
+      };
+      const planButton = (): HTMLButtonElement =>
+        (fixture.nativeElement as HTMLElement).querySelector('[data-testid="plan"]')!;
+
+      it('defaults to Depart', () => {
+        const toggles = (fixture.nativeElement as HTMLElement).querySelectorAll(
+          'mat-button-toggle',
+        );
+        expect(toggles[0].classList).toContain('mat-button-toggle-checked');
+        expect(toggles[1].classList).not.toContain('mat-button-toggle-checked');
+        expect((fixture.nativeElement as HTMLElement).textContent).toContain('Departure time');
+      });
+
+      it('disables Plan while the time is Now', async () => {
+        click('mode-arrive');
+        expect(planButton().disabled).toBe(true);
+        expect(text()).toContain('Pick a time to arrive by');
+        choose(utrecht, amsterdam);
+        await planner.plan();
+        http.expectNone('/api/trips/?from=UT&to=ASD');
+        planner.form.controls.time.setValue('10:00');
+        fixture.detectChanges();
+        expect(planButton().disabled).toBe(false);
+        click('mode-depart');
+        planner.form.controls.time.setValue('');
+        fixture.detectChanges();
+        expect(planButton().disabled).toBe(false);
+      });
+
+      it('sends the arrival time', async () => {
+        click('mode-arrive');
+        planner.form.controls.time.setValue('10:00');
+        choose(utrecht, amsterdam);
+        const planned = planner.plan();
+        expectTrips({ time: '10:00', arrive: 'true' }).flush(empty);
+        await planned;
+        await settle(fixture);
+        expect(text()).toContain('Arriving by 10:00');
+      });
+
+      it('does not remember the choice after a reload', async () => {
+        click('mode-arrive');
+        planner.form.controls.time.setValue('10:00');
+        choose(utrecht, amsterdam);
+        const planned = planner.plan();
+        expectTrips({ time: '10:00', arrive: 'true' }).flush(empty);
+        await planned;
+        const again = TestBed.createComponent(TripPlanner);
+        again.detectChanges();
+        const toggles = (again.nativeElement as HTMLElement).querySelectorAll('mat-button-toggle');
+        expect(toggles[0].classList).toContain('mat-button-toggle-checked');
+      });
+
+      it('plans a commute chip by departure', async () => {
+        click('mode-arrive');
+        planner.form.controls.time.setValue('10:00');
+        const planned = planner.planCommute(commute('16:00:00'));
+        expectTrips({ time: '16:00', around: 'true' }).flush(empty);
+        await planned;
+      });
+    });
   });
 
   it('searches stations as you type', async () => {

@@ -98,3 +98,52 @@ def test_plan_trip_keeps_the_wall_clock_across_a_clock_change(
 @pytest.mark.parametrize("query", ["time=8", "time=25:00", "time=abc", "time=08:00:00"])
 def test_plan_trip_rejects_an_invalid_time(logged_in: APIClient, query: str) -> None:
     assert logged_in.get(f"/api/trips/?from=UT&to=ASD&{query}").status_code == 400
+
+
+def _plan_arrival(
+    logged_in: APIClient, monkeypatch: pytest.MonkeyPatch, now: datetime, query: str
+) -> tuple[list[tuple[datetime, Any]], dict[str, Any]]:
+    seen: list[tuple[datetime, Any]] = []
+
+    def fake_fetch(origin: str, destination: str, when: datetime, *filters: Any) -> list[ns.Trip]:
+        seen.append((when, filters[-1]))
+        return [make_trip("a", 10, base=now), make_trip("b", 70, base=now)]
+
+    monkeypatch.setattr(ns, "fetch_trips", fake_fetch)
+    monkeypatch.setattr(timezone, "now", lambda: now)
+    response = logged_in.get(f"/api/trips/?from=UT&to=ASD&{query}")
+    assert response.status_code == 200
+    return seen, response.json()
+
+
+def test_plan_trip_by_arrival_passes_the_arrival_time(
+    logged_in: APIClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    now = datetime(2026, 11, 20, 6, 15, tzinfo=UTC)  # 07:15 in Amsterdam
+    seen, body = _plan_arrival(logged_in, monkeypatch, now, "time=09:00&arrive=1")
+    assert seen == [(datetime(2026, 11, 20, 8, 0, tzinfo=UTC), True)]
+    assert body["planned_tomorrow"] is False
+    assert body["recommended_uid"] == "b"
+    assert body["wait_minutes"] is None  # the recommended trip leaves in 70 minutes
+
+
+def test_plan_trip_by_arrival_ignores_around_and_earlier_than_now_is_tomorrow(
+    logged_in: APIClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    now = datetime(2026, 11, 20, 6, 15, tzinfo=UTC)
+    seen, body = _plan_arrival(logged_in, monkeypatch, now, "time=07:00&arrive=1&around=1")
+    assert seen == [(datetime(2026, 11, 21, 6, 0, tzinfo=UTC), True)]
+    assert body["planned_tomorrow"] is True
+    assert body["planned_from_usual_time"] is False
+
+
+def test_plan_trip_defaults_to_departure(
+    logged_in: APIClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    now = datetime(2026, 11, 20, 6, 15, tzinfo=UTC)
+    seen, _ = _plan_arrival(logged_in, monkeypatch, now, "time=09:00")
+    assert seen == [(datetime(2026, 11, 20, 8, 0, tzinfo=UTC), False)]
+
+
+def test_plan_trip_by_arrival_needs_a_time(logged_in: APIClient) -> None:
+    assert logged_in.get("/api/trips/?from=UT&to=ASD&arrive=1").status_code == 400

@@ -377,6 +377,11 @@ paths:
           type: boolean
         description: Plan from 15 minutes before `time`, as the commute board
       - in: query
+        name: arrive
+        schema:
+          type: boolean
+        description: Treat `time` as the arrival time; needs `time`
+      - in: query
         name: from
         schema:
           type: string

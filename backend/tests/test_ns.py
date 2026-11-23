@@ -789,3 +789,34 @@ def test_train_parts_read_their_destination() -> None:
         ]
     )
     assert [p.destination for p in parts] == ["Zwolle", "Enschede", None]
+
+
+def test_fetch_trips_by_arrival_asks_ns_for_arrival_and_keeps_trips_arriving_in_time(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # 30 minutes long: the trip leaving in 40 minutes arrives after NOW + 60.
+    calls = serve_pages(
+        monkeypatch, [[page_item("late", 40), page_item("b", 25), page_item("a", 5)]]
+    )
+    arrival = NOW + timedelta(minutes=60)
+    trips = ns.fetch_trips("UT", "ASD", arrival, arrive=True)
+    assert [t.uid for t in trips] == ["a", "b"]
+    assert calls[0] is not None
+    assert calls[0]["searchForArrival"] == "true"
+    assert calls[0]["dateTime"] == arrival.isoformat()
+    assert len(calls) == 1
+
+
+def test_fetch_trips_by_default_does_not_search_for_arrival(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls = serve_pages(monkeypatch, [[page_item("a", 5)]])
+    ns.fetch_trips("UT", "ASD", NOW)
+    assert calls[0] is not None
+    assert "searchForArrival" not in calls[0]
+
+
+def test_advise_by_arrival_picks_the_latest_departure() -> None:
+    early = make_trip("early", 5, duration=20)
+    late = make_trip("late", 15, duration=40)
+    assert ns.advise([early, late], NOW, arrive=True) == ns.Advice("late", 15)
