@@ -16,6 +16,7 @@ import { MatInputModule } from '@angular/material/input';
 import { Api } from '../api/api';
 import { commutesPartialUpdate, commutesTripsRetrieve } from '../api/functions';
 import { Commute, CommuteTrips, Trip } from '../api/models';
+import { DepartureTime } from '../shared/departure-time/departure-time';
 import { TripList } from '../shared/trip-list/trip-list';
 import { TripListSkeleton } from '../shared/trip-list-skeleton/trip-list-skeleton';
 
@@ -29,6 +30,7 @@ const REFRESH_MS = 60_000;
     MatCardModule,
     MatFormFieldModule,
     MatInputModule,
+    DepartureTime,
     TripList,
     TripListSkeleton,
   ],
@@ -73,15 +75,20 @@ export class CommuteBoard implements OnInit {
   protected readonly maxDuration = new FormControl<number | null>(null, [Validators.min(1)]);
   protected readonly maxTransfers = new FormControl<number | null>(null, [Validators.min(0)]);
 
-  protected readonly advice = computed(() => {
+  /** What to tell the rider: a wait, or the recommended trip's departure when planned ahead. */
+  protected readonly advice = computed<{ text?: string; trip?: Trip }>(() => {
     const data = this.data();
     if (data === null) {
-      return '';
+      return {};
     }
-    if (data.recommended_uid === null || data.wait_minutes === null) {
-      return 'No trip available right now';
+    const trip = data.trips.find((t) => t.uid === data.recommended_uid);
+    if (data.recommended_uid === null || trip === undefined) {
+      return { text: 'No trip available' };
     }
-    return data.wait_minutes === 0 ? 'Leave now' : `Wait ${data.wait_minutes} min`;
+    if (data.wait_minutes === null) {
+      return { trip };
+    }
+    return { text: data.wait_minutes === 0 ? 'Leave now' : `Wait ${data.wait_minutes} min` };
   });
 
   private readonly api = inject(Api);

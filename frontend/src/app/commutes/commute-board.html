@@ -89,7 +89,19 @@
           </button>
         </p>
       }
-      <p class="advice" data-testid="advice">{{ advice() }}</p>
+      @let a = advice();
+      <p class="advice" data-testid="advice">
+        @if (a.trip; as next) {
+          Next:
+          <app-departure-time
+            [time]="next.departure_actual"
+            [delayMinutes]="next.departure_delay_minutes"
+          />
+          · platform <span class="sp-mono">{{ next.departure_track || '?' }}</span>
+        } @else {
+          {{ a.text }}
+        }
+      </p>
       <app-trip-list
         [trips]="d.trips"
         [recommendedUid]="d.recommended_uid"
