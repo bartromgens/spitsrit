@@ -13,9 +13,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { Api } from '../api/api';
-import { commutesPartialUpdate, commutesTripsRetrieve } from '../api/functions';
 import { Commute, CommuteTrips, Trip } from '../api/models';
+import { CommuteStore } from './commute-store';
 import { DepartureTime } from '../shared/departure-time/departure-time';
 import { TripList } from '../shared/trip-list/trip-list';
 import { TripListSkeleton } from '../shared/trip-list-skeleton/trip-list-skeleton';
@@ -91,7 +90,7 @@ export class CommuteBoard implements OnInit {
     return { text: data.wait_minutes === 0 ? 'Leave now' : `Wait ${data.wait_minutes} min` };
   });
 
-  private readonly api = inject(Api);
+  private readonly store = inject(CommuteStore);
   private readonly destroyRef = inject(DestroyRef);
 
   ngOnInit(): void {
@@ -112,10 +111,7 @@ export class CommuteBoard implements OnInit {
   /** Loads the trips; `fromNow` plans from now instead of the usual time, for this load only. */
   protected async refresh(fromNow = false): Promise<void> {
     try {
-      const data = await this.api.invoke(commutesTripsRetrieve, {
-        id: String(this.commute().id),
-        ...(fromNow ? { now: true } : {}),
-      });
+      const data = await this.store.trips(this.commute(), fromNow);
       this.data.set(data);
       this.error.set('');
       this.tripsLoaded.emit(data);
@@ -131,12 +127,9 @@ export class CommuteBoard implements OnInit {
       return;
     }
     try {
-      await this.api.invoke(commutesPartialUpdate, {
-        id: String(this.commute().id),
-        body: {
-          max_duration_minutes: this.maxDuration.value,
-          max_transfers: this.maxTransfers.value,
-        },
+      await this.store.update(this.commute().id, {
+        max_duration_minutes: this.maxDuration.value,
+        max_transfers: this.maxTransfers.value,
       });
       this.filterError.set('');
       this.savedDuration.set(this.maxDuration.value);

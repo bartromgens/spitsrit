@@ -1,7 +1,8 @@
 import { HttpTestingController } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Commute, Trip } from '../api/models';
+import { Commute, Trip, User } from '../api/models';
+import { Auth } from '../auth';
 import { Desktop } from '../shared/desktop/desktop';
 import { settle, testProviders } from '../testing';
 import { Commutes } from './commutes';
@@ -75,10 +76,12 @@ describe('Commutes on desktop', () => {
 
   beforeEach(() => {
     wide.set(true);
+    localStorage.clear();
     TestBed.configureTestingModule({
       imports: [Commutes],
       providers: [...testProviders, { provide: Desktop, useValue: { wide } }],
     });
+    TestBed.inject(Auth).user.set({ id: 1 } as User);
     fixture = TestBed.createComponent(Commutes);
     http = TestBed.inject(HttpTestingController);
     fixture.detectChanges();

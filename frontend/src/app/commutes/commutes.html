@@ -5,6 +5,21 @@
     <p class="error" role="alert">{{ error() }}</p>
   }
 
+  @if (moveNotice()) {
+    <p class="notice" role="status" data-testid="move-notice">{{ moveNotice() }}</p>
+  }
+  @if (!loggedIn()) {
+    <p class="notice" data-testid="local-note">
+      Saved on this device. Create an account to use your commutes on other devices.
+      <a routerLink="/register">Create an account</a>
+    </p>
+  }
+  @if (storageUnavailable()) {
+    <p class="notice" role="status" data-testid="storage-notice">
+      This browser can't save commutes, so they are kept only until you close this page.
+    </p>
+  }
+
   @for (commute of commutes(); track commute.id) {
     <app-commute-board
       [commute]="commute"

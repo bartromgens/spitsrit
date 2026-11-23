@@ -36,7 +36,9 @@ describe('Home', () => {
     fixture.detectChanges();
     await settle(fixture);
     const element = fixture.nativeElement as HTMLElement;
-    expect(element.querySelector('a[href="/login"]')?.textContent).toContain('Save your commutes');
+    expect(element.querySelector('a[href="/commutes"]')?.textContent).toContain(
+      'Save your commutes',
+    );
     expect(element.querySelector('button.sp-chip')).toBeNull();
   });
 

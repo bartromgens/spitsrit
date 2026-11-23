@@ -1,4 +1,4 @@
-@if (auth.loggedIn()) {
+@if (auth.loggedIn() || commutes().length > 0) {
   <section class="strip" data-testid="commute-strip" aria-labelledby="commute-strip-title">
     <div class="header">
       <h2 id="commute-strip-title">Your commutes</h2>
@@ -16,5 +16,5 @@
     </div>
   </section>
 } @else {
-  <p class="save"><a routerLink="/login">Save your commutes</a></p>
+  <p class="save"><a routerLink="/commutes">Save your commutes</a></p>
 }

@@ -41,6 +41,11 @@ app-commute-board,
   margin-bottom: var(--sp-space-2);
 }
 
+.notice {
+  margin: 0 0 var(--sp-space-2);
+  color: var(--mat-sys-on-surface-variant);
+}
+
 form {
   display: flex;
   flex-direction: column;
