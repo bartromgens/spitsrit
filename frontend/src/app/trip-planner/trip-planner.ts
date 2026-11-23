@@ -1,5 +1,5 @@
-import { Component, inject, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Component, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
   MatAutocompleteModule,
@@ -22,6 +22,12 @@ const SEARCH_DEBOUNCE_MS = 250;
 const MIN_QUERY_LENGTH = 2;
 
 const STORAGE_KEY = 'spitsrit.lastTrip';
+
+/** Whether a `HH:MM` time of day has already passed today, to the minute. */
+function isEarlierThanNow(time: string, now: Date): boolean {
+  const [hours, minutes] = time.split(':').map(Number);
+  return hours * 60 + minutes < now.getHours() * 60 + now.getMinutes();
+}
 
 type Side = 'origin' | 'destination';
 
@@ -64,13 +70,32 @@ export class TripPlanner {
   protected readonly form = inject(NonNullableFormBuilder).group({
     origin: ['', Validators.required],
     destination: ['', Validators.required],
+    /** `HH:MM`, or empty to plan from now. Unlike the stations, it is not remembered. */
+    time: [''],
   });
+
+  private readonly timeValue = toSignal(this.form.controls.time.valueChanges, {
+    initialValue: this.form.controls.time.value,
+  });
+  /** Whether the chosen time is earlier than now, so the plan is for tomorrow. */
+  protected readonly tomorrow = computed(() => {
+    const time = this.timeValue();
+    return time !== '' && isEarlierThanNow(time, new Date());
+  });
+  /** Whether the time came from a commute chip, so the results are "around" it. */
+  protected readonly around = signal(false);
+  /** The time the shown results were planned around. */
+  protected readonly resultTime = signal('');
 
   private readonly api = inject(Api);
   private readonly picked: Record<Side, Station | null> = { origin: null, destination: null };
 
   constructor() {
     this.restore();
+    // Any edit of the time field, or its reset, ends "around" planning from a chip.
+    this.form.controls.time.valueChanges
+      .pipe(takeUntilDestroyed())
+      .subscribe(() => this.around.set(false));
     this.search('origin', this.originOptions);
     this.search('destination', this.destinationOptions);
   }
@@ -91,7 +116,16 @@ export class TripPlanner {
       this.picked[side] = stations[side];
       this.form.controls[side].setValue(stations[side].name, { emitEvent: false });
     }
+    const usual = commute.usual_departure_time?.slice(0, 5) ?? '';
+    const ahead = usual !== '' && !isEarlierThanNow(usual, new Date());
+    this.form.controls.time.setValue(ahead ? usual : '');
+    this.around.set(ahead);
     return this.plan();
+  }
+
+  /** Plans from now again. */
+  protected resetTime(): void {
+    this.form.controls.time.setValue('');
   }
 
   /** Opens the details of a trip, or closes them when its row is clicked again. */
@@ -119,7 +153,14 @@ export class TripPlanner {
     this.error.set('');
     this.selected.set(null);
     try {
-      this.result.set(await this.api.invoke(tripsRetrieve, { from: from.code, to: to.code }));
+      this.result.set(
+        await this.api.invoke(tripsRetrieve, {
+          from: from.code,
+          to: to.code,
+          ...this.timeParams(),
+        }),
+      );
+      this.resultTime.set(this.form.controls.time.value);
       this.destination.set(to);
       this.remember(from, to);
     } catch {
@@ -127,6 +168,12 @@ export class TripPlanner {
     } finally {
       this.loading.set(false);
     }
+  }
+
+  private timeParams(): { time?: string; around?: boolean } {
+    const time = this.form.controls.time.value;
+    if (time === '') return {};
+    return this.around() ? { time, around: true } : { time };
   }
 
   private remember(origin: Station, destination: Station): void {

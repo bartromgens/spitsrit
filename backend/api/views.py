@@ -47,6 +47,7 @@ def ns_error_response(error: ns.NsError) -> Response:
 
 DUTCH_TIME_ZONE = ZoneInfo("Europe/Amsterdam")
 USUAL_TIME_LEAD = timedelta(minutes=15)
+WAIT_ADVICE_HORIZON = timedelta(minutes=60)
 
 
 def usual_planning_time(usual: time | None, now: datetime) -> datetime | None:
@@ -58,16 +59,39 @@ def usual_planning_time(usual: time | None, now: datetime) -> datetime | None:
     return usual_at - USUAL_TIME_LEAD if usual_at > now else None
 
 
+def requested_planning_time(requested: time, now: datetime, around: bool) -> tuple[datetime, bool]:
+    """When to plan from for a Dutch local time of day, and whether that is tomorrow.
+
+    A time before now (to the minute) means tomorrow. With `around`, plans from 15 minutes
+    before it, as the commute board does.
+    """
+    wall_clock = requested.replace(tzinfo=None)
+    local_now = now.astimezone(DUTCH_TIME_ZONE)
+    at = datetime.combine(local_now.date(), wall_clock, DUTCH_TIME_ZONE)
+    tomorrow = at < local_now.replace(second=0, microsecond=0)
+    if tomorrow:
+        # Add the day to the local date, so a daylight-saving change keeps the wall clock.
+        at = datetime.combine(local_now.date() + timedelta(days=1), wall_clock, DUTCH_TIME_ZONE)
+    return (at - USUAL_TIME_LEAD if around else at), tomorrow
+
+
 def trips_response(
     origin_code: str,
     destination_code: str,
     max_duration_minutes: int | None = None,
     max_transfers: int | None = None,
     usual_time: time | None = None,
+    requested_time: time | None = None,
+    around: bool = False,
 ) -> Response:
     now = timezone.now()
-    usual_from = usual_planning_time(usual_time, now)
-    planned_from = usual_from or now
+    tomorrow = False
+    if requested_time is not None:
+        planned_from, tomorrow = requested_planning_time(requested_time, now, around)
+        usual_from = planned_from if around else None
+    else:
+        usual_from = usual_planning_time(usual_time, now)
+        planned_from = usual_from or now
     try:
         trips = ns.fetch_trips(
             origin_code, destination_code, planned_from, max_duration_minutes, max_transfers
@@ -81,14 +105,17 @@ def trips_response(
         and (max_transfers is None or t.transfers <= max_transfers)
     ]
     advice = ns.advise(trips, now)
+    # The advice counts from now, so it only makes sense for a plan that starts soon.
+    wait_minutes = advice.wait_minutes if planned_from - now <= WAIT_ADVICE_HORIZON else None
     return Response(
         {
             "fetched_at": now,
             "planned_from": planned_from,
             "planned_from_usual_time": usual_from is not None,
+            "planned_tomorrow": tomorrow,
             "trips": TripSerializer(trips, many=True).data,
             "recommended_uid": advice.recommended_uid,
-            "wait_minutes": advice.wait_minutes,
+            "wait_minutes": wait_minutes,
         }
     )
 
@@ -172,6 +199,14 @@ def station_toilets(request: Request, code: str) -> Response:
     parameters=[
         OpenApiParameter("from", str, required=True, description="Origin station code"),
         OpenApiParameter("to", str, required=True, description="Destination station code"),
+        OpenApiParameter(
+            "time",
+            str,
+            description="Departure time as HH:MM, Dutch local time; earlier than now is tomorrow",
+        ),
+        OpenApiParameter(
+            "around", bool, description="Plan from 15 minutes before `time`, as the commute board"
+        ),
     ],
     responses={200: CommuteTripsSerializer, 400: None, 502: None, 503: None},
 )
@@ -189,7 +224,15 @@ def plan_trip(request: Request) -> Response:
         return Response(
             {"detail": "Origin and destination must differ."}, status=status.HTTP_400_BAD_REQUEST
         )
-    return trips_response(origin, destination)
+    requested_time: time | None = None
+    raw_time = request.query_params.get("time", "").strip()
+    if raw_time:
+        try:
+            requested_time = datetime.strptime(raw_time, "%H:%M").time()
+        except ValueError:
+            return Response({"detail": "'time' must be HH:MM."}, status=status.HTTP_400_BAD_REQUEST)
+    around = request.query_params.get("around", "").lower() in ("1", "true")
+    return trips_response(origin, destination, requested_time=requested_time, around=around)
 
 
 @extend_schema(responses=ClientConfigSerializer)

@@ -185,6 +185,7 @@ class CommuteTripsSerializer(serializers.Serializer[None]):
     fetched_at = serializers.DateTimeField()
     planned_from = serializers.DateTimeField()
     planned_from_usual_time = serializers.BooleanField()
+    planned_tomorrow = serializers.BooleanField()
     trips = TripSerializer(many=True)
     recommended_uid = serializers.CharField(allow_null=True)
     wait_minutes = serializers.IntegerField(allow_null=True)

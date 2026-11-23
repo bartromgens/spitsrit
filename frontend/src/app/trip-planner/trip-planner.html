@@ -22,6 +22,28 @@
           }
         </mat-autocomplete>
       </mat-form-field>
+      <div class="departure">
+        <mat-form-field subscriptSizing="dynamic">
+          <mat-label>Departure time</mat-label>
+          <input
+            matInput
+            type="time"
+            class="sp-mono"
+            formControlName="time"
+            data-testid="departure-time"
+          />
+          <mat-hint data-testid="departure-hint">
+            @if (form.controls.time.value === '') {
+              Now
+            } @else if (tomorrow()) {
+              <span data-testid="tomorrow">tomorrow</span>
+            }
+          </mat-hint>
+        </mat-form-field>
+        @if (form.controls.time.value !== '') {
+          <button matButton type="button" data-testid="time-now" (click)="resetTime()">Now</button>
+        }
+      </div>
       <button matButton="filled" type="submit" [disabled]="loading()">Plan</button>
     </form>
     <app-commute-strip (chosen)="planCommute($event)" />
@@ -31,6 +53,11 @@
     @if (loading()) {
       <app-trip-list-skeleton />
     } @else if (result(); as r) {
+      @if (r.planned_from_usual_time) {
+        <p class="planned-from" data-testid="planned-from">
+          Trains around <span class="sp-mono">{{ resultTime() }}</span>
+        </p>
+      }
       <app-trip-list
         [trips]="r.trips"
         [recommendedUid]="r.recommended_uid"

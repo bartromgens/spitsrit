@@ -1,7 +1,7 @@
 import { HttpTestingController } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
-import { Station, Trip } from '../api/models';
+import { Commute, Station, Trip } from '../api/models';
 import { settle, testProviders } from '../testing';
 import { TripPlanner } from './trip-planner';
 
@@ -45,7 +45,30 @@ interface Internals {
   form: TripPlanner['form'];
   pick(side: 'origin' | 'destination', event: MatAutocompleteSelectedEvent): void;
   plan(): Promise<void>;
+  planCommute(commute: Commute): Promise<void>;
 }
+
+function commute(usual: string | null): Commute {
+  return {
+    id: 1,
+    name: 'Home',
+    created_at: '',
+    origin_code: 'UT',
+    origin_name: utrecht.name,
+    destination_code: 'ASD',
+    destination_name: amsterdam.name,
+    usual_departure_time: usual,
+  };
+}
+
+const empty = {
+  fetched_at: '',
+  trips: [],
+  recommended_uid: null,
+  wait_minutes: null,
+  planned_from_usual_time: false,
+  planned_tomorrow: false,
+};
 
 describe('TripPlanner', () => {
   let fixture: ComponentFixture<TripPlanner>;
@@ -210,6 +233,7 @@ describe('TripPlanner', () => {
     expect(next.form.getRawValue()).toEqual({
       origin: 'Utrecht Centraal',
       destination: 'Amsterdam Centraal',
+      time: '',
     });
     const replanned = next.plan();
     http
@@ -219,12 +243,13 @@ describe('TripPlanner', () => {
   });
 
   it('starts empty without or with unreadable stored stations', () => {
-    expect(planner.form.getRawValue()).toEqual({ origin: '', destination: '' });
+    expect(planner.form.getRawValue()).toEqual({ origin: '', destination: '', time: '' });
     localStorage.setItem('spitsrit.lastTrip', '{nope');
     const again = TestBed.createComponent(TripPlanner);
     expect((again.componentInstance as unknown as Internals).form.getRawValue()).toEqual({
       origin: '',
       destination: '',
+      time: '',
     });
   });
 
@@ -262,7 +287,7 @@ describe('TripPlanner', () => {
   });
 
   it('asks for stations from the suggestions', async () => {
-    planner.form.setValue({ origin: 'Utr', destination: 'Ams' });
+    planner.form.setValue({ origin: 'Utr', destination: 'Ams', time: '' });
     await planner.plan();
     await settle(fixture);
     http.expectNone('/api/trips/?from=UT&to=ASD');
@@ -271,7 +296,7 @@ describe('TripPlanner', () => {
 
   it('refuses identical stations', async () => {
     choose(utrecht, utrecht);
-    planner.form.setValue({ origin: utrecht.name, destination: utrecht.name });
+    planner.form.setValue({ origin: utrecht.name, destination: utrecht.name, time: '' });
     await planner.plan();
     await settle(fixture);
     expect(text()).toContain('Origin and destination must differ.');
@@ -286,6 +311,109 @@ describe('TripPlanner', () => {
     await planned;
     await settle(fixture);
     expect(text()).toContain('Train times are unavailable');
+  });
+
+  describe('departure time', () => {
+    const input = (): HTMLInputElement =>
+      (fixture.nativeElement as HTMLElement).querySelector('[data-testid="departure-time"]')!;
+    const hint = (): string =>
+      (fixture.nativeElement as HTMLElement).querySelector('[data-testid="departure-hint"]')!
+        .textContent!;
+
+    /** The one trips request, matched on its query parameters (the colon in a time is encoded). */
+    const expectTrips = (extra: Record<string, string>) => {
+      const expected = { from: 'UT', to: 'ASD', ...extra };
+      return http.expectOne(
+        (req) =>
+          req.url === '/api/trips/' &&
+          req.params.keys().length === Object.keys(expected).length &&
+          Object.entries(expected).every(([key, value]) => req.params.get(key) === value),
+      );
+    };
+
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(new Date(2026, 10, 20, 9, 0)); // 09:00 local
+    });
+
+    afterEach(() => vi.useRealTimers());
+
+    it('plans from now by default', async () => {
+      fixture.detectChanges();
+      expect(planner.form.controls.time.value).toBe('');
+      expect(hint().trim()).toBe('Now');
+      choose(utrecht, amsterdam);
+      const planned = planner.plan();
+      http.expectOne('/api/trips/?from=UT&to=ASD').flush(empty);
+      await planned;
+    });
+
+    it('sends the chosen time, and says tomorrow for a time that has passed', async () => {
+      planner.form.controls.time.setValue('16:00');
+      fixture.detectChanges();
+      expect(hint()).not.toContain('tomorrow');
+      planner.form.controls.time.setValue('07:30');
+      fixture.detectChanges();
+      expect(hint()).toContain('tomorrow');
+      choose(utrecht, amsterdam);
+      const planned = planner.plan();
+      expectTrips({ time: '07:30' }).flush(empty);
+      await planned;
+    });
+
+    it('goes back to now with the Now button', () => {
+      planner.form.controls.time.setValue('07:30');
+      fixture.detectChanges();
+      (fixture.nativeElement as HTMLElement)
+        .querySelector<HTMLButtonElement>('[data-testid="time-now"]')!
+        .click();
+      fixture.detectChanges();
+      expect(input().value).toBe('');
+      expect(hint().trim()).toBe('Now');
+      expect(planner.form.controls.time.value).toBe('');
+    });
+
+    it('does not restore the time after a reload', async () => {
+      choose(utrecht, amsterdam);
+      planner.form.controls.time.setValue('16:00');
+      const planned = planner.plan();
+      expectTrips({ time: '16:00' }).flush(empty);
+      await planned;
+      const again = TestBed.createComponent(TripPlanner);
+      expect((again.componentInstance as unknown as Internals).form.controls.time.value).toBe('');
+    });
+
+    it('fills in an upcoming usual time from a chip and plans around it', async () => {
+      const planned = planner.planCommute(commute('16:00:00'));
+      expectTrips({ time: '16:00', around: 'true' }).flush({
+        ...empty,
+        planned_from_usual_time: true,
+      });
+      await planned;
+      await settle(fixture);
+      expect(planner.form.controls.time.value).toBe('16:00');
+      expect(text()).toContain('Trains around 16:00');
+    });
+
+    it('plans from now for a chip whose usual time has passed or is missing', async () => {
+      for (const usual of ['08:00:00', null]) {
+        planner.form.controls.time.setValue('12:00');
+        const planned = planner.planCommute(commute(usual));
+        http.expectOne('/api/trips/?from=UT&to=ASD').flush(empty);
+        await planned;
+        expect(planner.form.controls.time.value).toBe('');
+      }
+    });
+
+    it('plans from the typed time, not around it, after editing a chip’s time', async () => {
+      const first = planner.planCommute(commute('16:00:00'));
+      expectTrips({ time: '16:00', around: 'true' }).flush(empty);
+      await first;
+      planner.form.controls.time.setValue('17:00');
+      const second = planner.plan();
+      expectTrips({ time: '17:00' }).flush(empty);
+      await second;
+    });
   });
 
   it('searches stations as you type', async () => {

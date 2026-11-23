@@ -372,11 +372,22 @@ paths:
       description: Plan upcoming trips between two stations, without saving a commute.
       parameters:
       - in: query
+        name: around
+        schema:
+          type: boolean
+        description: Plan from 15 minutes before `time`, as the commute board
+      - in: query
         name: from
         schema:
           type: string
         description: Origin station code
         required: true
+      - in: query
+        name: time
+        schema:
+          type: string
+        description: Departure time as HH:MM, Dutch local time; earlier than now is
+          tomorrow
       - in: query
         name: to
         schema:
@@ -520,6 +531,8 @@ components:
           format: date-time
         planned_from_usual_time:
           type: boolean
+        planned_tomorrow:
+          type: boolean
         trips:
           type: array
           items:
@@ -534,6 +547,7 @@ components:
       - fetched_at
       - planned_from
       - planned_from_usual_time
+      - planned_tomorrow
       - recommended_uid
       - trips
       - wait_minutes
