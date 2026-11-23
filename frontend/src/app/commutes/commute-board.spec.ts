@@ -185,6 +185,43 @@ describe('CommuteBoard', () => {
     expect(rows[1].textContent).toContain('1 transfer');
   });
 
+  const advice = (): string =>
+    (el().querySelector('[data-testid="advice"]')?.textContent ?? '').replace(/\s+/g, ' ').trim();
+
+  it('says no trip is available without a recommended trip', async () => {
+    await flush(trips({ trips: [trip({})] }));
+    expect(advice()).toBe('No trip available');
+  });
+
+  it('shows the recommended departure when planned ahead without a wait time', async () => {
+    await flush(
+      trips({
+        planned_from_usual_time: true,
+        trips: [
+          trip({
+            departure_actual: '2026-11-20T15:52:00Z',
+            departure_delay_minutes: 2,
+            departure_track: '5',
+          }),
+        ],
+        recommended_uid: 'a',
+        wait_minutes: null,
+      }),
+    );
+    expect(advice()).not.toContain('No trip available');
+    expect(advice()).toMatch(/^Next: \d\d:52delay \+2 · platform 5$/);
+  });
+
+  it('says to leave now when the wait is zero', async () => {
+    await flush(trips({ trips: [trip({})], recommended_uid: 'a', wait_minutes: 0 }));
+    expect(advice()).toBe('Leave now');
+  });
+
+  it('says how long to wait when the wait is above zero', async () => {
+    await flush(trips({ trips: [trip({})], recommended_uid: 'a', wait_minutes: 7 }));
+    expect(advice()).toBe('Wait 7 min');
+  });
+
   it('lays the results out edge to edge on mobile', async () => {
     await flush(trips({ trips: [trip({ uid: 'a' })] }));
     const element = fixture.nativeElement as HTMLElement;
@@ -204,7 +241,7 @@ describe('CommuteBoard', () => {
     expect(text()).toContain('+4');
     expect(text()).toContain('(+6)');
     expect(text()).toContain('Cancelled');
-    expect(text()).toContain('No trip available right now');
+    expect(text()).toContain('No trip available');
   });
 
   it('says when there are no trips', async () => {
