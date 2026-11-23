@@ -1,6 +1,11 @@
 @if (state(); as s) {
   <app-facility-icon code="TOILET" data-testid="station-toilet" />
-  @if (s === 'closed') {
+  @if (labelled()) {
+    <span class="label">Toilets</span>
+    @if (s === 'closed') {
+      <span class="closed">&ngsp;· closed</span>
+    }
+  } @else if (s === 'closed') {
     <span class="closed">closed</span>
   }
 }

@@ -12,9 +12,8 @@ import { Leg, LegStop, Span, Station, Trip, TrainPart } from '../../api/models';
 import { Crowding } from '../crowding/crowding';
 import { DepartureTime } from '../departure-time/departure-time';
 import { FacilityIcon } from '../facility-icon/facility-icon';
-import { OvFietsCount } from '../ov-fiets-count/ov-fiets-count';
 import { PlatformSign } from '../platform-sign/platform-sign';
-import { StationToilet } from '../station-toilet/station-toilet';
+import { StationSection } from '../station-section/station-section';
 import { TrainLength } from '../train-length/train-length';
 
 const EXIT_SIDES: Record<string, string> = { LEFT: 'left', RIGHT: 'right' };
@@ -30,8 +29,6 @@ interface StopView {
   cancelled: boolean;
   /** The first or last stop of the leg: where you board or get off. */
   endpoint: boolean;
-  /** The NS station code where you board or get off, to look up its toilets; else null. */
-  stationCode: string | null;
 }
 
 interface LegView {
@@ -95,7 +92,6 @@ function stopView(stop: LegStop, index: number, leg: Leg): StopView {
     passing: stop.passing,
     cancelled: stop.cancelled,
     endpoint: index === 0 || last,
-    stationCode: index === 0 ? leg.origin_code : last ? leg.destination_code : null,
   };
 }
 
@@ -111,9 +107,8 @@ function stopView(stop: LegStop, index: number, leg: Leg): StopView {
     Crowding,
     DepartureTime,
     FacilityIcon,
-    OvFietsCount,
     PlatformSign,
-    StationToilet,
+    StationSection,
     TrainLength,
   ],
   selector: 'app-trip-details',
@@ -125,6 +120,11 @@ export class TripDetails {
   readonly trip = input.required<Trip>();
   /** Where the trip ends, to show its OV-fiets count; none when not known. */
   readonly destination = input<Station | null>(null);
+  /** Where the trip starts: the origin of its first ride, when NS gave a station code for it. */
+  protected readonly departure = computed<Station | null>(() => {
+    const leg = this.trip().legs.find((l) => l.travel_type === 'PUBLIC_TRANSIT');
+    return leg?.origin_code ? { code: leg.origin_code, name: leg.origin } : null;
+  });
   /** The rider closed the details. */
   readonly closed = output();
 
