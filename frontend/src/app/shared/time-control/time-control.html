@@ -1,0 +1,41 @@
+<div class="when">
+  <mat-button-toggle-group
+    class="mode"
+    aria-label="Time is for"
+    hideSingleSelectionIndicator
+    [value]="model().arrive()"
+    (change)="model().arrive.set($event.value)"
+  >
+    <mat-button-toggle [value]="false" data-testid="mode-depart">Depart</mat-button-toggle>
+    <mat-button-toggle [value]="true" data-testid="mode-arrive">Arrive</mat-button-toggle>
+  </mat-button-toggle-group>
+  <mat-form-field class="time" subscriptSizing="dynamic">
+    <mat-label>{{ model().arrive() ? 'Arrival' : 'Departure' }}</mat-label>
+    <input
+      matInput
+      type="time"
+      class="sp-mono"
+      [formControl]="model().control"
+      data-testid="departure-time"
+    />
+  </mat-form-field>
+  <button
+    matButton="text"
+    type="button"
+    class="now"
+    data-testid="time-now"
+    [class.subdued]="model().following()"
+    (click)="model().followNow()"
+  >
+    Now
+  </button>
+</div>
+@if (model().needsTime()) {
+  <p class="hint" data-testid="departure-hint">
+    <span data-testid="needs-time">Pick a time to arrive by</span>
+  </p>
+} @else if (model().tomorrow()) {
+  <p class="hint" data-testid="departure-hint">
+    <span data-testid="tomorrow">tomorrow</span>
+  </p>
+}

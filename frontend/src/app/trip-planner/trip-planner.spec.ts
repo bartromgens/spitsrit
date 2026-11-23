@@ -557,8 +557,12 @@ describe('TripPlanner', () => {
 
   describe('form spacing', () => {
     it('gives every form field dynamic subscript sizing', () => {
-      const html = readFileSync('src/app/trip-planner/trip-planner.html', 'utf8');
-      const fields = html.match(/<mat-form-field\b[^>]*>/g) ?? [];
+      // The station fields moved to app-station-autocomplete, the time field to app-time-control.
+      const planner = readFileSync('src/app/trip-planner/trip-planner.html', 'utf8');
+      const stations = planner.match(/<app-station-autocomplete\b[^>]*>/g) ?? [];
+      expect(stations.length).toBe(2);
+      const time = readFileSync('src/app/shared/time-control/time-control.html', 'utf8');
+      const fields = [...stations, ...(time.match(/<mat-form-field\b[^>]*>/g) ?? [])];
       expect(fields.length).toBe(3);
       for (const tag of fields) {
         expect(tag).toContain('subscriptSizing="dynamic"');
@@ -566,7 +570,7 @@ describe('TripPlanner', () => {
     });
 
     it('sizes the toggle and the Now button with the shared control-height token', () => {
-      const scss = readFileSync('src/app/trip-planner/trip-planner.scss', 'utf8');
+      const scss = readFileSync('src/app/shared/time-control/time-control.scss', 'utf8');
       expect(readFileSync('src/styles/_tokens.scss', 'utf8')).toContain('--sp-control-height:');
       expect(scss).toMatch(/--mat-button-toggle-height:\s*var\(--sp-control-height\)/);
       expect(scss).toMatch(/\n\s+height:\s*var\(--sp-control-height\)/);
