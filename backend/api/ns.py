@@ -677,8 +677,12 @@ def fetch_trips(
     when: datetime,
     max_duration_minutes: int | None = None,
     max_transfers: int | None = None,
+    arrive: bool = False,
 ) -> list[Trip]:
     """Trips from `when` on, within the filters, covering at least the next hour.
+
+    With `arrive`, `when` is the arrival time instead: one page of NS's trips (`searchForArrival`),
+    kept when they arrive by then, in departure order.
 
     Requests pages forward (at most `MAX_TRIP_REQUESTS`) until the last kept trip leaves
     `COVERED_MINUTES` or more after `when`, NS has no further page, or a page adds nothing new.
@@ -693,6 +697,8 @@ def fetch_trips(
             "toStation": destination_code,
             "dateTime": when.isoformat(),
         }
+        if arrive:
+            params["searchForArrival"] = "true"
         if context:
             params["context"] = context
         payload = _get("v3/trips", params)
@@ -707,11 +713,18 @@ def fetch_trips(
                 max_transfers is None or trip.transfers <= max_transfers
             ):
                 kept.append((trip, item))
+        if arrive:
+            break
         context = _forward_context(payload)
         covered = any(trip.departure_actual >= horizon for trip, _ in kept)
         if covered or not added or not context:
             break
-    kept = kept[:MAX_TRIPS]
+    if arrive:
+        kept = [(trip, item) for trip, item in kept if trip.arrival_actual <= when]
+        kept.sort(key=lambda pair: pair[0].departure_actual)
+        kept = kept[-MAX_TRIPS:]
+    else:
+        kept = kept[:MAX_TRIPS]
     # Only the first train leg of a trip is shown, so only its journey is fetched.
     with ThreadPoolExecutor(max_workers=MAX_TRIPS) as pool:
         journeys = list(pool.map(_leg_journey, [_train_leg(item) for _, item in kept]))
@@ -724,14 +737,19 @@ class Advice:
     wait_minutes: int | None
 
 
-def advise(trips: list[Trip], now: datetime) -> Advice:
+def advise(trips: list[Trip], now: datetime, arrive: bool = False) -> Advice:
     """Pick the trip that gets you there first; on a tie, the one that leaves latest.
+
+    When planning by arrival, every trip arrives in time, so pick the one that leaves latest.
 
     `wait_minutes` is how long until that trip leaves: 0 means leave now.
     """
     candidates = [t for t in trips if not t.cancelled and t.departure_actual >= now]
     if not candidates:
         return Advice(None, None)
-    best = min(candidates, key=lambda t: (t.arrival_actual, -t.departure_actual.timestamp()))
+    if arrive:
+        best = max(candidates, key=lambda t: t.departure_actual)
+    else:
+        best = min(candidates, key=lambda t: (t.arrival_actual, -t.departure_actual.timestamp()))
     wait = max(0, round((best.departure_actual - now).total_seconds() / 60))
     return Advice(best.uid, wait)

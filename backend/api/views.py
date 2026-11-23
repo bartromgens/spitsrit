@@ -83,10 +83,12 @@ def trips_response(
     usual_time: time | None = None,
     requested_time: time | None = None,
     around: bool = False,
+    arrive: bool = False,
 ) -> Response:
     now = timezone.now()
     tomorrow = False
     if requested_time is not None:
+        around = around and not arrive
         planned_from, tomorrow = requested_planning_time(requested_time, now, around)
         usual_from = planned_from if around else None
     else:
@@ -94,7 +96,7 @@ def trips_response(
         planned_from = usual_from or now
     try:
         trips = ns.fetch_trips(
-            origin_code, destination_code, planned_from, max_duration_minutes, max_transfers
+            origin_code, destination_code, planned_from, max_duration_minutes, max_transfers, arrive
         )
     except ns.NsError as error:
         return ns_error_response(error)
@@ -104,9 +106,14 @@ def trips_response(
         if (max_duration_minutes is None or t.duration_minutes <= max_duration_minutes)
         and (max_transfers is None or t.transfers <= max_transfers)
     ]
-    advice = ns.advise(trips, now)
-    # The advice counts from now, so it only makes sense for a plan that starts soon.
-    wait_minutes = advice.wait_minutes if planned_from - now <= WAIT_ADVICE_HORIZON else None
+    advice = ns.advise(trips, now, arrive)
+    # The advice counts from now, so it only makes sense for a plan that starts soon. When
+    # planning by arrival, that is the trip itself, as the arrival time can be far later.
+    wait_minutes = advice.wait_minutes
+    if wait_minutes is not None:
+        starts_in = timedelta(minutes=wait_minutes) if arrive else planned_from - now
+        if starts_in > WAIT_ADVICE_HORIZON:
+            wait_minutes = None
     return Response(
         {
             "fetched_at": now,
@@ -205,6 +212,9 @@ def station_toilets(request: Request, code: str) -> Response:
             description="Departure time as HH:MM, Dutch local time; earlier than now is tomorrow",
         ),
         OpenApiParameter(
+            "arrive", bool, description="Treat `time` as the arrival time; needs `time`"
+        ),
+        OpenApiParameter(
             "around", bool, description="Plan from 15 minutes before `time`, as the commute board"
         ),
     ],
@@ -231,8 +241,15 @@ def plan_trip(request: Request) -> Response:
             requested_time = datetime.strptime(raw_time, "%H:%M").time()
         except ValueError:
             return Response({"detail": "'time' must be HH:MM."}, status=status.HTTP_400_BAD_REQUEST)
+    arrive = request.query_params.get("arrive", "").lower() in ("1", "true")
+    if arrive and requested_time is None:
+        return Response(
+            {"detail": "Arriving by needs a 'time'."}, status=status.HTTP_400_BAD_REQUEST
+        )
     around = request.query_params.get("around", "").lower() in ("1", "true")
-    return trips_response(origin, destination, requested_time=requested_time, around=around)
+    return trips_response(
+        origin, destination, requested_time=requested_time, around=around, arrive=arrive
+    )
 
 
 @extend_schema(responses=ClientConfigSerializer)

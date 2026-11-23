@@ -15,6 +15,13 @@ Check these alongside `reisinformatie-openapi.json`.
   parameter. The spec shows the field on each trip; we read it from the response object, then from
   the last trip. Verify against a real response.
 
+- **Arrival search.** `v3/trips` takes `searchForArrival=true` (boolean), and then `dateTime` is
+  the arrival time. The spec's older `departure` parameter is deprecated in its favour; we do not
+  use it. We read one page only and keep the trips whose actual arrival is at or before
+  `dateTime`, sorted by departure. Not yet checked against a real response: verify how NS orders
+  the page, whether it can include trips arriving after `dateTime`, and what
+  `scrollRequestForwardContext` pages through in this mode.
+
 - **Train route.** The train's destination is the leg's `direction` in the trips response. Its
   first stop is the first entry of `stops` in the `/api/v2/journey` response (`stop.name`, with
   `status: "ORIGIN"`); no extra call is needed beyond the one made for the train size.

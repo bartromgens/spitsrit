@@ -22,9 +22,18 @@
           }
         </mat-autocomplete>
       </mat-form-field>
+      <mat-button-toggle-group
+        aria-label="Time is for"
+        hideSingleSelectionIndicator
+        [value]="arrive()"
+        (change)="setArrive($event.value)"
+      >
+        <mat-button-toggle [value]="false" data-testid="mode-depart">Depart</mat-button-toggle>
+        <mat-button-toggle [value]="true" data-testid="mode-arrive">Arrive</mat-button-toggle>
+      </mat-button-toggle-group>
       <div class="departure">
         <mat-form-field subscriptSizing="dynamic">
-          <mat-label>Departure time</mat-label>
+          <mat-label>{{ arrive() ? 'Arrival time' : 'Departure time' }}</mat-label>
           <input
             matInput
             type="time"
@@ -33,7 +42,9 @@
             data-testid="departure-time"
           />
           <mat-hint data-testid="departure-hint">
-            @if (form.controls.time.value === '') {
+            @if (needsTime()) {
+              <span data-testid="needs-time">Pick a time to arrive by</span>
+            } @else if (form.controls.time.value === '') {
               Now
             } @else if (tomorrow()) {
               <span data-testid="tomorrow">tomorrow</span>
@@ -44,7 +55,14 @@
           <button matButton type="button" data-testid="time-now" (click)="resetTime()">Now</button>
         }
       </div>
-      <button matButton="filled" type="submit" [disabled]="loading()">Plan</button>
+      <button
+        matButton="filled"
+        type="submit"
+        data-testid="plan"
+        [disabled]="loading() || needsTime()"
+      >
+        Plan
+      </button>
     </form>
     <app-commute-strip (chosen)="planCommute($event)" />
     @if (error()) {
@@ -53,7 +71,11 @@
     @if (loading()) {
       <app-trip-list-skeleton />
     } @else if (result(); as r) {
-      @if (r.planned_from_usual_time) {
+      @if (resultArrive()) {
+        <p class="planned-from" data-testid="planned-from">
+          Arriving by <span class="sp-mono">{{ resultTime() }}</span>
+        </p>
+      } @else if (r.planned_from_usual_time) {
         <p class="planned-from" data-testid="planned-from">
           Trains around <span class="sp-mono">{{ resultTime() }}</span>
         </p>

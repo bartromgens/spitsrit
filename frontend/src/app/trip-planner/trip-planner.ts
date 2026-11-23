@@ -6,6 +6,7 @@ import {
   MatAutocompleteSelectedEvent,
 } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -42,6 +43,7 @@ function isStation(value: unknown): value is Station {
     ReactiveFormsModule,
     MatAutocompleteModule,
     MatButtonModule,
+    MatButtonToggleModule,
     MatCardModule,
     MatFormFieldModule,
     MatInputModule,
@@ -86,6 +88,12 @@ export class TripPlanner {
   protected readonly around = signal(false);
   /** The time the shown results were planned around. */
   protected readonly resultTime = signal('');
+  /** Whether the time is when to arrive instead of when to leave. Not remembered either. */
+  protected readonly arrive = signal(false);
+  /** Whether the shown results are for arriving by `resultTime`. */
+  protected readonly resultArrive = signal(false);
+  /** Arriving by needs a time: with "Now" there is nothing to arrive by. */
+  protected readonly needsTime = computed(() => this.arrive() && this.timeValue() === '');
 
   private readonly api = inject(Api);
   private readonly picked: Record<Side, Station | null> = { origin: null, destination: null };
@@ -120,7 +128,12 @@ export class TripPlanner {
     const ahead = usual !== '' && !isEarlierThanNow(usual, new Date());
     this.form.controls.time.setValue(ahead ? usual : '');
     this.around.set(ahead);
+    this.arrive.set(false);
     return this.plan();
+  }
+
+  protected setArrive(arrive: boolean): void {
+    this.arrive.set(arrive);
   }
 
   /** Plans from now again. */
@@ -149,6 +162,10 @@ export class TripPlanner {
       this.fail('Origin and destination must differ.');
       return;
     }
+    if (this.needsTime()) {
+      this.fail('Pick a time to arrive by.');
+      return;
+    }
     this.loading.set(true);
     this.error.set('');
     this.selected.set(null);
@@ -161,6 +178,7 @@ export class TripPlanner {
         }),
       );
       this.resultTime.set(this.form.controls.time.value);
+      this.resultArrive.set(this.arrive());
       this.destination.set(to);
       this.remember(from, to);
     } catch {
@@ -170,9 +188,10 @@ export class TripPlanner {
     }
   }
 
-  private timeParams(): { time?: string; around?: boolean } {
+  private timeParams(): { time?: string; around?: boolean; arrive?: boolean } {
     const time = this.form.controls.time.value;
     if (time === '') return {};
+    if (this.arrive()) return { time, arrive: true };
     return this.around() ? { time, around: true } : { time };
   }
 
