@@ -18,6 +18,32 @@ import { CommuteBoard } from './commute-board';
 
 const SEARCH_DEBOUNCE_MS = 250;
 const MIN_QUERY_LENGTH = 2;
+const GRACE_MINUTES = 30;
+const DAY_MINUTES = 24 * 60;
+
+/** Minutes from `now` until the next usual departure; a time up to 30 minutes ago still counts as today. */
+function minutesUntilNext(usualTime: string, now: Date): number {
+  const [hours, minutes] = usualTime.split(':').map(Number);
+  const nowMinutes = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
+  const diff = hours * 60 + minutes - nowMinutes;
+  // Wrap into [-GRACE_MINUTES, DAY_MINUTES - GRACE_MINUTES) so yesterday's late-night time counts after midnight.
+  return ((((diff + GRACE_MINUTES) % DAY_MINUTES) + DAY_MINUTES) % DAY_MINUTES) - GRACE_MINUTES;
+}
+
+/** Commutes ordered by their next usual departure; those without a usual time come last, by name. */
+export function sortCommutes(commutes: Commute[], now: Date): Commute[] {
+  const next = (c: Commute): number | null =>
+    c.usual_departure_time ? minutesUntilNext(c.usual_departure_time, now) : null;
+  return [...commutes].sort((a, b) => {
+    const [na, nb] = [next(a), next(b)];
+    if (na !== nb) {
+      if (na === null) return 1;
+      if (nb === null) return -1;
+      return na - nb;
+    }
+    return a.name.localeCompare(b.name);
+  });
+}
 
 @Component({
   imports: [
@@ -93,7 +119,7 @@ export class Commutes {
           usual_departure_time: usualTime ? `${usualTime}:00` : null,
         },
       });
-      this.commutes.update((all) => [...all, created]);
+      this.commutes.update((all) => sortCommutes([...all, created], new Date()));
       this.form.reset();
       this.origin = null;
       this.destination = null;
@@ -106,7 +132,12 @@ export class Commutes {
   protected async remove(commute: Commute): Promise<void> {
     try {
       await this.api.invoke(commutesDestroy, { id: String(commute.id) });
-      this.commutes.update((all) => all.filter((c) => c.id !== commute.id));
+      this.commutes.update((all) =>
+        sortCommutes(
+          all.filter((c) => c.id !== commute.id),
+          new Date(),
+        ),
+      );
     } catch {
       this.error.set('The commute could not be deleted.');
     }
@@ -114,7 +145,7 @@ export class Commutes {
 
   private async load(): Promise<void> {
     try {
-      this.commutes.set((await this.api.invoke(commutesList)).results);
+      this.commutes.set(sortCommutes((await this.api.invoke(commutesList)).results, new Date()));
     } catch {
       this.error.set('Your commutes could not be loaded.');
     }
