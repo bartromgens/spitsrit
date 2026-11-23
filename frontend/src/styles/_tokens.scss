@@ -48,6 +48,9 @@
   --sp-page-margin-mobile: var(--sp-space-2); // page gutter below the mobile breakpoint
   --sp-row-inset: var(--sp-space-2); // inner padding of an edge-to-edge row
 
+  // Height of an outlined form field's box; controls beside a field match it.
+  --sp-control-height: 3.5rem;
+
   // Shape
   --sp-radius-xs: 0.125rem;
   --sp-radius-sm: 0.25rem;

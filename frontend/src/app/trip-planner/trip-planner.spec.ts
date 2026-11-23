@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { HttpTestingController } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
@@ -552,5 +553,24 @@ describe('TripPlanner', () => {
     http.expectOne('/api/stations/?q=Utr').flush([utrecht]);
     await settle(fixture);
     expect(planner.form.controls.origin.value).toBe('Utr');
+  });
+
+  describe('form spacing', () => {
+    it('gives every form field dynamic subscript sizing', () => {
+      const html = readFileSync('src/app/trip-planner/trip-planner.html', 'utf8');
+      const fields = html.match(/<mat-form-field\b[^>]*>/g) ?? [];
+      expect(fields.length).toBe(3);
+      for (const tag of fields) {
+        expect(tag).toContain('subscriptSizing="dynamic"');
+      }
+    });
+
+    it('sizes the toggle and the Now button with the shared control-height token', () => {
+      const scss = readFileSync('src/app/trip-planner/trip-planner.scss', 'utf8');
+      expect(readFileSync('src/styles/_tokens.scss', 'utf8')).toContain('--sp-control-height:');
+      expect(scss).toMatch(/--mat-button-toggle-height:\s*var\(--sp-control-height\)/);
+      expect(scss).toMatch(/\n\s+height:\s*var\(--sp-control-height\)/);
+      expect(scss).toMatch(/--mat-button-toggle-shape:\s*var\(--sp-radius-md\)/);
+    });
   });
 });

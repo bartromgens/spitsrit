@@ -12,24 +12,32 @@
   grid-template-columns: minmax(0, var(--sp-form-width)) minmax(0, var(--sp-details-width));
 }
 
+// One rhythm: --sp-space-2 between rows (the fields reserve no subscript space), more above Plan.
 form {
   display: flex;
   flex-direction: column;
-  gap: var(--sp-space-1);
+  gap: var(--sp-space-3);
 }
 
-// Switch, time field and Now button share one row and the field's height (the outlined field's
-// 56px container). Where that does not fit, the switch wraps to a line of its own above.
-$control-height: 56px;
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-space-2);
+}
 
+// Switch, time field and Now button share one row. The outlined field's label floats on its
+// border, so its box is exactly --sp-control-height; the row aligns to the top and the switch and
+// button take that height, which keeps them level with the outline even when an error sits below.
+// Where the row does not fit, the switch wraps to a line of its own above.
 .when {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--sp-space-1);
 
   .mode {
-    --mat-button-toggle-height: #{$control-height};
+    --mat-button-toggle-height: var(--sp-control-height);
+    --mat-button-toggle-shape: var(--sp-radius-md);
     flex: none;
   }
 
@@ -40,7 +48,7 @@ $control-height: 56px;
 
   .now {
     flex: none;
-    height: $control-height;
+    height: var(--sp-control-height);
 
     &.subdued {
       opacity: 0.5;
