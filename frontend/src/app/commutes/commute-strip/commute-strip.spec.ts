@@ -47,7 +47,7 @@ describe('CommuteStrip', () => {
     const sooner = commute(2, 'Sooner', at(120));
     const none = commute(3, 'Anytime', null);
     const { element } = await render(true, [none, later, sooner]);
-    const chips = Array.from(element.querySelectorAll('mat-chip')).map((c) =>
+    const chips = Array.from(element.querySelectorAll('button.sp-chip')).map((c) =>
       c.textContent?.replace(/\s+/g, ' ').trim(),
     );
     expect(chips).toEqual([
@@ -55,7 +55,10 @@ describe('CommuteStrip', () => {
       `Later ${at(180).slice(0, 5)}`,
       'Anytime',
     ]);
-    expect(element.querySelector('a[href="/commutes"]')?.textContent).toContain('My commutes');
+    expect(element.querySelector('a[href="/commutes"]')?.textContent).toContain('All commutes');
+    expect(element.querySelector('h2')?.textContent).toContain('Your commutes');
+    expect(element.querySelector('button.sp-chip .sp-mono')?.textContent).toBe(at(120).slice(0, 5));
+    expect(element.querySelector('mat-chip')).toBeNull();
   });
 
   it('emits the commute when its chip is tapped', async () => {
@@ -63,19 +66,19 @@ describe('CommuteStrip', () => {
     const { fixture, element } = await render(true, [saved]);
     const chosen: Commute[] = [];
     fixture.componentInstance.chosen.subscribe((c) => chosen.push(c));
-    element.querySelector<HTMLButtonElement>('mat-chip button')?.click();
+    element.querySelector<HTMLButtonElement>('button.sp-chip')?.click();
     expect(chosen).toEqual([saved]);
   });
 
-  it('shows only the My commutes link without commutes', async () => {
+  it('shows only the All commutes link without commutes', async () => {
     const { element } = await render(true, []);
-    expect(element.querySelector('mat-chip')).toBeNull();
+    expect(element.querySelector('button.sp-chip')).toBeNull();
     expect(element.querySelector('a[href="/commutes"]')).not.toBeNull();
   });
 
   it('offers to save commutes when logged out', async () => {
     const { element } = await render(false);
-    expect(element.querySelector('mat-chip')).toBeNull();
+    expect(element.querySelector('button.sp-chip')).toBeNull();
     expect(element.querySelector('a[href="/login"]')?.textContent).toContain('Save your commutes');
     TestBed.inject(HttpTestingController).expectNone('/api/commutes/');
   });

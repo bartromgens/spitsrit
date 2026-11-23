@@ -20,7 +20,9 @@ form {
 
 app-commute-strip {
   display: block;
-  margin-top: var(--sp-space-1);
+  margin-top: var(--sp-space-3);
+  padding-top: var(--sp-space-2);
+  border-top: var(--sp-border-width) solid var(--mat-sys-outline-variant);
 }
 
 .details {
