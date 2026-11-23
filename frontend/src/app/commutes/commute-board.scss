@@ -1,6 +1,8 @@
 .usual-time {
   margin-left: var(--sp-space-1);
   font-size: var(--sp-text-sm);
+  // "usually 07:10" wraps as one unit.
+  white-space: nowrap;
 }
 
 // Says the board follows the usual time, with a way back to planning from now.

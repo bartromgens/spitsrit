@@ -118,6 +118,7 @@ describe('CommuteBoard', () => {
     usual.detectChanges();
     const label = (usual.nativeElement as HTMLElement).querySelector('[data-testid="usual-time"]');
     expect(label?.textContent?.trim()).toBe('usually 08:05');
+    expect(getComputedStyle(label!).whiteSpace).toBe('nowrap');
     expect(label?.querySelector('.sp-mono')?.textContent).toBe('08:05');
     http.match('/api/commutes/7/trips/').forEach((r) => r.flush(trips({})));
     await settle(usual);

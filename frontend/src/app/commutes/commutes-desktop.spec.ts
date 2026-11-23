@@ -118,6 +118,15 @@ describe('Commutes on desktop', () => {
     expect(expanded(0)).toEqual(['true', 'false']);
   });
 
+  it('puts the page heading outside the left column, above both columns', async () => {
+    await loadList([first]);
+    const heading = element().querySelector('h1')!;
+    expect(heading.textContent).toContain('My commutes');
+    expect(heading.closest('.main')).toBeNull();
+    expect(heading.parentElement).toBe(element());
+    expect(getComputedStyle(heading).gridColumn.replace(/\s/g, '')).toBe('1/-1');
+  });
+
   it('shows an empty state when the first board has no trips', async () => {
     await loadList([first]);
     await flushBoard(1, board([], null));
