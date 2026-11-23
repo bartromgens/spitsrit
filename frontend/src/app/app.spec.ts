@@ -53,7 +53,7 @@ describe('App', () => {
     const element = fixture.nativeElement as HTMLElement;
     const toolbar = element.querySelector('mat-toolbar');
     const links = Array.from(toolbar?.querySelectorAll('nav a') ?? []).map((a) => a.textContent);
-    expect(links).toEqual(['Home', 'Commutes']);
+    expect(links).toEqual(['Commutes']);
     expect(element.querySelector('mat-sidenav')).toBeNull();
     const brand = toolbar?.querySelector('.brand') as Element;
     const nav = toolbar?.querySelector('nav') as Element;
@@ -69,6 +69,26 @@ describe('App', () => {
     const items = Array.from(document.querySelectorAll('a[mat-menu-item]')).map((a) =>
       a.textContent?.trim(),
     );
-    expect(items).toEqual(['Home', 'Commutes']);
+    expect(items).toEqual(['Commutes']);
+  });
+
+  it('links the brand name to the home page', async () => {
+    const fixture = TestBed.createComponent(App);
+    await fixture.whenStable();
+    const element = fixture.nativeElement as HTMLElement;
+    const brand = element.querySelector('mat-toolbar a.brand') as HTMLAnchorElement;
+    expect(brand.textContent?.trim()).toBe('Spitsrit');
+    expect(brand.getAttribute('aria-label')).toBe('Spitsrit, home');
+    expect(brand.getAttribute('href')).toBe('/');
+  });
+
+  it('has no Home item in the toolbar', async () => {
+    const fixture = TestBed.createComponent(App);
+    await fixture.whenStable();
+    const element = fixture.nativeElement as HTMLElement;
+    const texts = Array.from(element.querySelectorAll('mat-toolbar a')).map((a) =>
+      a.textContent?.trim(),
+    );
+    expect(texts).not.toContain('Home');
   });
 });

@@ -4,15 +4,8 @@
       <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" />
     </svg>
   </button>
-  <span class="brand">Spitsrit</span>
+  <a class="brand" routerLink="/" aria-label="Spitsrit, home">Spitsrit</a>
   <nav class="nav" aria-label="Main">
-    <a
-      matButton
-      routerLink="/"
-      routerLinkActive="active"
-      [routerLinkActiveOptions]="{ exact: true }"
-      >Home</a
-    >
     <a matButton routerLink="/commutes" routerLinkActive="active">Commutes</a>
   </nav>
   <span class="spacer"></span>
@@ -29,7 +22,6 @@
   }
 </mat-toolbar>
 <mat-menu #mobileMenu="matMenu">
-  <a mat-menu-item routerLink="/">Home</a>
   <a mat-menu-item routerLink="/commutes">Commutes</a>
 </mat-menu>
 <mat-menu #userMenu="matMenu" xPosition="before">
