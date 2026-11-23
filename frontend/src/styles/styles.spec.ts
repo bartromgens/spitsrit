@@ -43,6 +43,28 @@ describe('component styles', () => {
   });
 });
 
+describe('shared chip style', () => {
+  const read = (path: string): string => readFileSync(path, 'utf8');
+
+  it('is defined once, globally', () => {
+    expect(read('src/styles/_base.scss')).toContain('.sp-chip {');
+  });
+
+  it.each([
+    'src/app/commutes/commute-board.html',
+    'src/app/commutes/commute-strip/commute-strip.html',
+  ])('is used by %s', (file) => {
+    expect(read(file)).toContain('class="sp-chip"');
+  });
+
+  it.each([
+    'src/app/commutes/commute-board.scss',
+    'src/app/commutes/commute-strip/commute-strip.scss',
+  ])('is not restyled in %s', (file) => {
+    expect(read(file)).not.toMatch(/chip\s*\{|border-radius/);
+  });
+});
+
 /** Relative luminance of a `#rrggbb` colour, per WCAG 2.x. */
 function luminance(hex: string): number {
   const [r, g, b] = [1, 3, 5]

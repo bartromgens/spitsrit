@@ -36,7 +36,7 @@
   height: 1.5rem;
 }
 
-// The saved filters as small blue-tinted pills; tapping one opens the filter fields.
+// The saved filters as small pills (.sp-chip); tapping one opens the filter fields.
 .filter-chips {
   display: flex;
   flex-wrap: wrap;
@@ -44,27 +44,6 @@
   margin: var(--sp-space-1) 0 var(--sp-space-2);
   padding: 0;
   list-style: none;
-}
-
-.filter-chip {
-  padding: var(--sp-space-half) var(--sp-space-1);
-  border: 0;
-  border-radius: var(--sp-radius-pill);
-  background: color-mix(in srgb, var(--sp-blue) 12%, transparent);
-  color: var(--sp-blue);
-  font-family: var(--sp-font-ui);
-  font-size: var(--sp-text-sm);
-  font-weight: var(--sp-weight-medium);
-  cursor: pointer;
-
-  &:hover {
-    background: color-mix(in srgb, var(--sp-blue) 20%, transparent);
-  }
-
-  &:focus-visible {
-    outline: var(--sp-border-width-strong) solid var(--sp-blue);
-    outline-offset: var(--sp-border-width-strong);
-  }
 }
 
 .filters {

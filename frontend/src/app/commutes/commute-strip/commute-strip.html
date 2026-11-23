@@ -1,17 +1,20 @@
 @if (auth.loggedIn()) {
-  <div class="strip" data-testid="commute-strip">
-    @for (commute of commutes(); track commute.id) {
-      <mat-chip>
-        <button matChipAction type="button" (click)="chosen.emit(commute)">
+  <section class="strip" data-testid="commute-strip" aria-labelledby="commute-strip-title">
+    <div class="header">
+      <h2 id="commute-strip-title">Your commutes</h2>
+      <a routerLink="/commutes">All commutes →</a>
+    </div>
+    <div class="chips">
+      @for (commute of commutes(); track commute.id) {
+        <button type="button" class="sp-chip" (click)="chosen.emit(commute)">
           {{ commute.name }}
           @if (time(commute)) {
-            {{ time(commute) }}
+            <span class="sp-mono">{{ time(commute) }}</span>
           }
         </button>
-      </mat-chip>
-    }
-    <a class="more" routerLink="/commutes">My commutes</a>
-  </div>
+      }
+    </div>
+  </section>
 } @else {
   <p class="save"><a routerLink="/login">Save your commutes</a></p>
 }

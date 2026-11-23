@@ -37,7 +37,7 @@ describe('Home', () => {
     await settle(fixture);
     const element = fixture.nativeElement as HTMLElement;
     expect(element.querySelector('a[href="/login"]')?.textContent).toContain('Save your commutes');
-    expect(element.querySelector('mat-chip')).toBeNull();
+    expect(element.querySelector('button.sp-chip')).toBeNull();
   });
 
   it('fills in and plans a commute when its chip is tapped', async () => {
@@ -65,10 +65,10 @@ describe('Home', () => {
     await settle(fixture);
     fixture.detectChanges();
     const element = fixture.nativeElement as HTMLElement;
-    expect(element.querySelector('mat-chip')?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+    expect(element.querySelector('button.sp-chip')?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
       'Morning 08:05',
     );
-    element.querySelector<HTMLButtonElement>('mat-chip button')?.click();
+    element.querySelector<HTMLButtonElement>('button.sp-chip')?.click();
     http
       .expectOne('/api/trips/?from=UT&to=ASD')
       .flush({ fetched_at: '', trips: [], recommended_uid: null, wait_minutes: 0 });

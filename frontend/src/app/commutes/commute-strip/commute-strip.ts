@@ -1,5 +1,4 @@
 import { Component, effect, inject, output, signal } from '@angular/core';
-import { MatChipsModule } from '@angular/material/chips';
 import { RouterLink } from '@angular/router';
 import { Api } from '../../api/api';
 import { commutesList } from '../../api/functions';
@@ -9,7 +8,7 @@ import { sortCommutes } from '../commutes';
 
 /** A row of the user's commutes as chips; tapping one reports it so the planner can run it. */
 @Component({
-  imports: [MatChipsModule, RouterLink],
+  imports: [RouterLink],
   selector: 'app-commute-strip',
   styleUrl: './commute-strip.scss',
   templateUrl: './commute-strip.html',

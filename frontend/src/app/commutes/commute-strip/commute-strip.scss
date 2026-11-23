@@ -1,5 +1,25 @@
+.header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-space-1);
+  margin-bottom: var(--sp-space-1);
+  font-size: var(--sp-text-sm);
+}
+
+h2 {
+  margin: 0;
+  font-size: var(--sp-text-sm);
+  font-weight: var(--sp-weight-medium);
+}
+
+.header a {
+  flex: none;
+  white-space: nowrap;
+}
+
 // One row that scrolls on its own, so a long list never widens the page.
-.strip {
+.chips {
   display: flex;
   flex-wrap: nowrap;
   align-items: center;
@@ -8,22 +28,7 @@
   padding-bottom: var(--sp-space-half);
 }
 
-mat-chip {
-  flex: none;
-}
-
-.more {
-  flex: none;
-  color: var(--sp-link);
-  font-size: var(--mat-sys-body-small-size);
-  white-space: nowrap;
-}
-
 .save {
   margin: 0;
-  font-size: var(--mat-sys-body-small-size);
-}
-
-.save a {
-  color: var(--sp-link);
+  font-size: var(--sp-text-sm);
 }

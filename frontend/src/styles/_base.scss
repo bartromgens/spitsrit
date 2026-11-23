@@ -159,6 +159,30 @@ a:not([class*='mat-']) {
   font-variant-numeric: tabular-nums;
 }
 
+// A small blue-tinted pill that is itself the button: the active filters and the commute strip.
+.sp-chip {
+  flex: none;
+  padding: var(--sp-space-half) var(--sp-space-1);
+  border: 0;
+  border-radius: var(--sp-radius-pill);
+  background: color-mix(in srgb, var(--sp-blue) 12%, transparent);
+  color: var(--sp-blue);
+  font-family: var(--sp-font-ui);
+  font-size: var(--sp-text-sm);
+  font-weight: var(--sp-weight-medium);
+  white-space: nowrap;
+  cursor: pointer;
+
+  &:hover {
+    background: color-mix(in srgb, var(--sp-blue) 20%, transparent);
+  }
+
+  &:focus-visible {
+    outline: var(--sp-border-width-strong) solid var(--sp-blue);
+    outline-offset: var(--sp-border-width-strong);
+  }
+}
+
 // A loading placeholder: a rounded grey bar one line of text tall at the element's font size,
 // with a soft shimmer, standing in for content that is still loading. Set its width (and font
 // size) where it is used so it takes the space of the content it stands in for.
