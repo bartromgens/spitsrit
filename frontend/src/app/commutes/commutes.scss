@@ -6,7 +6,13 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   align-items: start;
-  gap: var(--sp-space-2);
+  column-gap: var(--sp-space-2);
+}
+
+// The page heading spans the whole container, so the boards and the details pane below it start
+// on the same line.
+.sp-page-title {
+  grid-column: 1 / -1;
 }
 
 @include layout.details-wide {
