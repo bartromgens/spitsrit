@@ -22,18 +22,19 @@
           }
         </mat-autocomplete>
       </mat-form-field>
-      <mat-button-toggle-group
-        aria-label="Time is for"
-        hideSingleSelectionIndicator
-        [value]="arrive()"
-        (change)="setArrive($event.value)"
-      >
-        <mat-button-toggle [value]="false" data-testid="mode-depart">Depart</mat-button-toggle>
-        <mat-button-toggle [value]="true" data-testid="mode-arrive">Arrive</mat-button-toggle>
-      </mat-button-toggle-group>
-      <div class="departure">
-        <mat-form-field subscriptSizing="dynamic">
-          <mat-label>{{ arrive() ? 'Arrival time' : 'Departure time' }}</mat-label>
+      <div class="when">
+        <mat-button-toggle-group
+          class="mode"
+          aria-label="Time is for"
+          hideSingleSelectionIndicator
+          [value]="arrive()"
+          (change)="setArrive($event.value)"
+        >
+          <mat-button-toggle [value]="false" data-testid="mode-depart">Depart</mat-button-toggle>
+          <mat-button-toggle [value]="true" data-testid="mode-arrive">Arrive</mat-button-toggle>
+        </mat-button-toggle-group>
+        <mat-form-field class="time" subscriptSizing="dynamic">
+          <mat-label>{{ arrive() ? 'Arrival' : 'Departure' }}</mat-label>
           <input
             matInput
             type="time"
@@ -41,20 +42,27 @@
             formControlName="time"
             data-testid="departure-time"
           />
-          <mat-hint data-testid="departure-hint">
-            @if (needsTime()) {
-              <span data-testid="needs-time">Pick a time to arrive by</span>
-            } @else if (form.controls.time.value === '') {
-              Now
-            } @else if (tomorrow()) {
-              <span data-testid="tomorrow">tomorrow</span>
-            }
-          </mat-hint>
         </mat-form-field>
-        @if (form.controls.time.value !== '') {
-          <button matButton type="button" data-testid="time-now" (click)="resetTime()">Now</button>
-        }
+        <button
+          matButton="outlined"
+          type="button"
+          class="now"
+          data-testid="time-now"
+          [class.subdued]="following()"
+          (click)="followNow()"
+        >
+          Now
+        </button>
       </div>
+      @if (needsTime()) {
+        <p class="hint" data-testid="departure-hint">
+          <span data-testid="needs-time">Pick a time to arrive by</span>
+        </p>
+      } @else if (tomorrow()) {
+        <p class="hint" data-testid="departure-hint">
+          <span data-testid="tomorrow">tomorrow</span>
+        </p>
+      }
       <button
         matButton="filled"
         type="submit"

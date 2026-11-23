@@ -18,14 +18,40 @@ form {
   gap: var(--sp-space-1);
 }
 
-.departure {
+// Switch, time field and Now button share one row and the field's height (the outlined field's
+// 56px container). Where that does not fit, the switch wraps to a line of its own above.
+$control-height: 56px;
+
+.when {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--sp-space-1);
 
-  mat-form-field {
-    flex: 1;
+  .mode {
+    --mat-button-toggle-height: #{$control-height};
+    flex: none;
   }
+
+  .time {
+    flex: 1 1 6.5rem;
+    min-width: 0;
+  }
+
+  .now {
+    flex: none;
+    height: $control-height;
+
+    &.subdued {
+      opacity: 0.5;
+    }
+  }
+}
+
+.hint {
+  margin: 0;
+  font-size: var(--sp-text-sm);
+  color: var(--mat-sys-on-surface-variant);
 }
 
 .planned-from {

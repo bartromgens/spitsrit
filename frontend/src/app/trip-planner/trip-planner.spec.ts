@@ -233,7 +233,7 @@ describe('TripPlanner', () => {
     expect(next.form.getRawValue()).toEqual({
       origin: 'Utrecht Centraal',
       destination: 'Amsterdam Centraal',
-      time: '',
+      time: expect.stringMatching(/^\d{2}:\d{2}$/),
     });
     const replanned = next.plan();
     http
@@ -243,13 +243,14 @@ describe('TripPlanner', () => {
   });
 
   it('starts empty without or with unreadable stored stations', () => {
-    expect(planner.form.getRawValue()).toEqual({ origin: '', destination: '', time: '' });
+    const clockTime = expect.stringMatching(/^\d{2}:\d{2}$/);
+    expect(planner.form.getRawValue()).toEqual({ origin: '', destination: '', time: clockTime });
     localStorage.setItem('spitsrit.lastTrip', '{nope');
     const again = TestBed.createComponent(TripPlanner);
     expect((again.componentInstance as unknown as Internals).form.getRawValue()).toEqual({
       origin: '',
       destination: '',
-      time: '',
+      time: clockTime,
     });
   });
 
@@ -332,26 +333,55 @@ describe('TripPlanner', () => {
     };
 
     beforeEach(() => {
-      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.useFakeTimers({ toFake: ['Date', 'setTimeout', 'clearTimeout'] });
       vi.setSystemTime(new Date(2026, 10, 20, 9, 0)); // 09:00 local
+      // A planner created now starts on the faked clock.
+      fixture = TestBed.createComponent(TripPlanner);
+      planner = fixture.componentInstance as unknown as Internals;
+      fixture.detectChanges();
     });
 
     afterEach(() => vi.useRealTimers());
 
-    it('plans from now by default', async () => {
+    /** `settle` waits on a real timeout, which is faked here. */
+    const settled = async (): Promise<void> => {
+      await fixture.whenStable();
       fixture.detectChanges();
-      expect(planner.form.controls.time.value).toBe('');
-      expect(hint().trim()).toBe('Now');
+    };
+    const nowButton = (): HTMLButtonElement =>
+      (fixture.nativeElement as HTMLElement).querySelector('[data-testid="time-now"]')!;
+    const hintElement = (): Element | null =>
+      (fixture.nativeElement as HTMLElement).querySelector('[data-testid="departure-hint"]');
+
+    it('shows the current time on load and plans from now without sending a time', async () => {
+      expect(planner.form.controls.time.value).toBe('09:00');
+      expect(input().value).toBe('09:00');
+      expect(hintElement()).toBeNull();
       choose(utrecht, amsterdam);
+      vi.setSystemTime(new Date(2026, 10, 20, 9, 20));
       const planned = planner.plan();
       http.expectOne('/api/trips/?from=UT&to=ASD').flush(empty);
       await planned;
     });
 
+    it('follows the clock every minute until the field is edited', () => {
+      vi.advanceTimersByTime(60_000);
+      fixture.detectChanges();
+      expect(input().value).toBe('09:01');
+      vi.advanceTimersByTime(5 * 60_000);
+      expect(planner.form.controls.time.value).toBe('09:06');
+
+      input().value = '16:00';
+      input().dispatchEvent(new Event('input'));
+      vi.advanceTimersByTime(2 * 60_000);
+      fixture.detectChanges();
+      expect(planner.form.controls.time.value).toBe('16:00');
+    });
+
     it('sends the chosen time, and says tomorrow for a time that has passed', async () => {
       planner.form.controls.time.setValue('16:00');
       fixture.detectChanges();
-      expect(hint()).not.toContain('tomorrow');
+      expect(hintElement()).toBeNull();
       planner.form.controls.time.setValue('07:30');
       fixture.detectChanges();
       expect(hint()).toContain('tomorrow');
@@ -361,16 +391,36 @@ describe('TripPlanner', () => {
       await planned;
     });
 
-    it('goes back to now with the Now button', () => {
+    it('does not say tomorrow while following the clock', () => {
+      vi.setSystemTime(new Date(2026, 10, 20, 9, 30));
+      fixture.detectChanges();
+      expect(hintElement()).toBeNull();
+    });
+
+    it('goes back to following now with the Now button', async () => {
+      expect(nowButton().classList).toContain('subdued');
       planner.form.controls.time.setValue('07:30');
       fixture.detectChanges();
-      (fixture.nativeElement as HTMLElement)
-        .querySelector<HTMLButtonElement>('[data-testid="time-now"]')!
-        .click();
+      expect(nowButton().classList).not.toContain('subdued');
+      vi.setSystemTime(new Date(2026, 10, 20, 9, 10));
+      nowButton().click();
       fixture.detectChanges();
-      expect(input().value).toBe('');
-      expect(hint().trim()).toBe('Now');
-      expect(planner.form.controls.time.value).toBe('');
+      expect(input().value).toBe('09:10');
+      expect(nowButton().classList).toContain('subdued');
+      expect(hintElement()).toBeNull();
+      vi.advanceTimersByTime(60_000);
+      expect(planner.form.controls.time.value).toBe('09:11');
+      choose(utrecht, amsterdam);
+      const planned = planner.plan();
+      http.expectOne('/api/trips/?from=UT&to=ASD').flush(empty);
+      await planned;
+    });
+
+    it('keeps the Now button visible while following the clock', () => {
+      expect(nowButton()).not.toBeNull();
+      nowButton().click();
+      fixture.detectChanges();
+      expect(nowButton()).not.toBeNull();
     });
 
     it('does not restore the time after a reload', async () => {
@@ -380,7 +430,9 @@ describe('TripPlanner', () => {
       expectTrips({ time: '16:00' }).flush(empty);
       await planned;
       const again = TestBed.createComponent(TripPlanner);
-      expect((again.componentInstance as unknown as Internals).form.controls.time.value).toBe('');
+      expect((again.componentInstance as unknown as Internals).form.controls.time.value).toBe(
+        '09:00',
+      );
     });
 
     it('fills in an upcoming usual time from a chip and plans around it', async () => {
@@ -390,7 +442,7 @@ describe('TripPlanner', () => {
         planned_from_usual_time: true,
       });
       await planned;
-      await settle(fixture);
+      await settled();
       expect(planner.form.controls.time.value).toBe('16:00');
       expect(text()).toContain('Trains around 16:00');
     });
@@ -401,8 +453,10 @@ describe('TripPlanner', () => {
         const planned = planner.planCommute(commute(usual));
         http.expectOne('/api/trips/?from=UT&to=ASD').flush(empty);
         await planned;
-        expect(planner.form.controls.time.value).toBe('');
+        expect(planner.form.controls.time.value).toBe('09:00');
       }
+      vi.advanceTimersByTime(60_000);
+      expect(planner.form.controls.time.value).toBe('09:01');
     });
 
     it('plans from the typed time, not around it, after editing a chip’s time', async () => {
@@ -431,12 +485,19 @@ describe('TripPlanner', () => {
         );
         expect(toggles[0].classList).toContain('mat-button-toggle-checked');
         expect(toggles[1].classList).not.toContain('mat-button-toggle-checked');
-        expect((fixture.nativeElement as HTMLElement).textContent).toContain('Departure time');
+        const label = (): string =>
+          (fixture.nativeElement as HTMLElement).querySelector('mat-label')!.textContent!;
+        expect(label()).toBe('From');
+        expect(text()).toContain('Departure');
+        click('mode-arrive');
+        expect(text()).toContain('Arrival');
+        expect(text()).not.toContain('Departure');
       });
 
-      it('disables Plan while the time is Now', async () => {
+      it('disables Plan while the time follows the clock', async () => {
         click('mode-arrive');
         expect(planButton().disabled).toBe(true);
+        expect(input().value).toBe('09:00');
         expect(text()).toContain('Pick a time to arrive by');
         choose(utrecht, amsterdam);
         await planner.plan();
@@ -444,9 +505,10 @@ describe('TripPlanner', () => {
         planner.form.controls.time.setValue('10:00');
         fixture.detectChanges();
         expect(planButton().disabled).toBe(false);
-        click('mode-depart');
-        planner.form.controls.time.setValue('');
+        nowButton().click();
         fixture.detectChanges();
+        expect(planButton().disabled).toBe(true);
+        click('mode-depart');
         expect(planButton().disabled).toBe(false);
       });
 
@@ -457,7 +519,7 @@ describe('TripPlanner', () => {
         const planned = planner.plan();
         expectTrips({ time: '10:00', arrive: 'true' }).flush(empty);
         await planned;
-        await settle(fixture);
+        await settled();
         expect(text()).toContain('Arriving by 10:00');
       });
 

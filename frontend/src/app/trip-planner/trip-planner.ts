@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
@@ -23,6 +23,13 @@ const SEARCH_DEBOUNCE_MS = 250;
 const MIN_QUERY_LENGTH = 2;
 
 const STORAGE_KEY = 'spitsrit.lastTrip';
+
+const MINUTE_MS = 60_000;
+
+/** The time of day as `HH:mm`, as a time input shows it. */
+function clock(now: Date): string {
+  return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+}
 
 /** Whether a `HH:MM` time of day has already passed today, to the minute. */
 function isEarlierThanNow(time: string, now: Date): boolean {
@@ -72,9 +79,12 @@ export class TripPlanner {
   protected readonly form = inject(NonNullableFormBuilder).group({
     origin: ['', Validators.required],
     destination: ['', Validators.required],
-    /** `HH:MM`, or empty to plan from now. Unlike the stations, it is not remembered. */
-    time: [''],
+    /** `HH:mm`. While `following` it shows the clock. Unlike the stations, it is not remembered. */
+    time: [clock(new Date())],
   });
+
+  /** Whether the time field follows the clock; planning then sends no time, so it is "now". */
+  protected readonly following = signal(true);
 
   private readonly timeValue = toSignal(this.form.controls.time.valueChanges, {
     initialValue: this.form.controls.time.value,
@@ -82,7 +92,7 @@ export class TripPlanner {
   /** Whether the chosen time is earlier than now, so the plan is for tomorrow. */
   protected readonly tomorrow = computed(() => {
     const time = this.timeValue();
-    return time !== '' && isEarlierThanNow(time, new Date());
+    return !this.following() && time !== '' && isEarlierThanNow(time, new Date());
   });
   /** Whether the time came from a commute chip, so the results are "around" it. */
   protected readonly around = signal(false);
@@ -92,18 +102,26 @@ export class TripPlanner {
   protected readonly arrive = signal(false);
   /** Whether the shown results are for arriving by `resultTime`. */
   protected readonly resultArrive = signal(false);
-  /** Arriving by needs a time: with "Now" there is nothing to arrive by. */
-  protected readonly needsTime = computed(() => this.arrive() && this.timeValue() === '');
+  /** Arriving by needs a chosen time: while following the clock there is nothing to arrive by. */
+  protected readonly needsTime = computed(
+    () => this.arrive() && (this.following() || this.timeValue() === ''),
+  );
 
+  /** Set while the component itself writes the time, so that is not taken for an edit. */
+  private writing = false;
+  private readonly destroyRef = inject(DestroyRef);
   private readonly api = inject(Api);
   private readonly picked: Record<Side, Station | null> = { origin: null, destination: null };
 
   constructor() {
     this.restore();
-    // Any edit of the time field, or its reset, ends "around" planning from a chip.
-    this.form.controls.time.valueChanges
-      .pipe(takeUntilDestroyed())
-      .subscribe(() => this.around.set(false));
+    // An edit of the time field stops it following the clock and ends "around" planning.
+    this.form.controls.time.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => {
+      if (this.writing) return;
+      this.following.set(false);
+      this.around.set(false);
+    });
+    this.tick();
     this.search('origin', this.originOptions);
     this.search('destination', this.destinationOptions);
   }
@@ -126,7 +144,8 @@ export class TripPlanner {
     }
     const usual = commute.usual_departure_time?.slice(0, 5) ?? '';
     const ahead = usual !== '' && !isEarlierThanNow(usual, new Date());
-    this.form.controls.time.setValue(ahead ? usual : '');
+    if (ahead) this.write(usual, false);
+    else this.followNow();
     this.around.set(ahead);
     this.arrive.set(false);
     return this.plan();
@@ -136,9 +155,29 @@ export class TripPlanner {
     this.arrive.set(arrive);
   }
 
-  /** Plans from now again. */
-  protected resetTime(): void {
-    this.form.controls.time.setValue('');
+  /** Puts the time field back to following the clock. */
+  protected followNow(): void {
+    this.write(clock(new Date()), true);
+  }
+
+  private write(time: string, following: boolean): void {
+    this.writing = true;
+    this.form.controls.time.setValue(time);
+    this.writing = false;
+    this.following.set(following);
+    this.around.set(false);
+  }
+
+  /** Keeps the field on the clock: refreshes it at the start of every minute while following. */
+  private tick(): void {
+    const timer = setTimeout(
+      () => {
+        if (this.following()) this.followNow();
+        this.tick();
+      },
+      MINUTE_MS - (Date.now() % MINUTE_MS),
+    );
+    this.destroyRef.onDestroy(() => clearTimeout(timer));
   }
 
   /** Opens the details of a trip, or closes them when its row is clicked again. */
@@ -190,7 +229,7 @@ export class TripPlanner {
 
   private timeParams(): { time?: string; around?: boolean; arrive?: boolean } {
     const time = this.form.controls.time.value;
-    if (time === '') return {};
+    if (this.following() || time === '') return {};
     if (this.arrive()) return { time, arrive: true };
     return this.around() ? { time, around: true } : { time };
   }
