@@ -12,9 +12,19 @@ import { CommuteTrips } from '../../models/commute-trips';
 export interface TripsRetrieve$Params {
 
 /**
+ * Plan from 15 minutes before `time`, as the commute board
+ */
+  around?: boolean;
+
+/**
  * Origin station code
  */
   from: string;
+
+/**
+ * Departure time as HH:MM, Dutch local time; earlier than now is tomorrow
+ */
+  time?: string;
 
 /**
  * Destination station code
@@ -25,7 +35,9 @@ export interface TripsRetrieve$Params {
 export function tripsRetrieve(http: HttpClient, rootUrl: string, params: TripsRetrieve$Params, context?: HttpContext): Observable<StrictHttpResponse<CommuteTrips>> {
   const rb = new RequestBuilder(rootUrl, tripsRetrieve.PATH, 'get');
   if (params) {
+    rb.query('around', params.around, {});
     rb.query('from', params.from, {});
+    rb.query('time', params.time, {});
     rb.query('to', params.to, {});
   }
 

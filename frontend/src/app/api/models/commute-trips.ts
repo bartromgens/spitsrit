@@ -6,6 +6,7 @@ export interface CommuteTrips {
   fetched_at: string;
   planned_from: string;
   planned_from_usual_time: boolean;
+  planned_tomorrow: boolean;
   recommended_uid: string | null;
   trips: Array<Trip>;
   wait_minutes: number | null;

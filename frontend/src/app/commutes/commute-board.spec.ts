@@ -54,6 +54,7 @@ function trips(overrides: Partial<CommuteTrips>): CommuteTrips {
     fetched_at: '',
     planned_from: '',
     planned_from_usual_time: false,
+    planned_tomorrow: false,
     trips: [],
     recommended_uid: null,
     wait_minutes: null,

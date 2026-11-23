@@ -18,6 +18,21 @@ form {
   gap: var(--sp-space-1);
 }
 
+.departure {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-space-1);
+
+  mat-form-field {
+    flex: 1;
+  }
+}
+
+.planned-from {
+  margin: var(--sp-space-2) 0 var(--sp-space-1);
+  font-size: var(--sp-text-sm);
+}
+
 app-commute-strip {
   display: block;
   margin-top: var(--sp-space-3);
