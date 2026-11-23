@@ -21,18 +21,32 @@ describe('sortCommutes', () => {
     expect(names(both, 7, 30)).toEqual(['08:05:00', '17:30:00']);
   });
 
-  it('keeps a commute on top within the 30 minute grace period', () => {
+  it('keeps a commute on top within the 3 hour grace period', () => {
     expect(names(both, 8, 20)).toEqual(['08:05:00', '17:30:00']);
-    expect(names(both, 8, 35)).toEqual(['08:05:00', '17:30:00']);
+    expect(names(both, 9, 0)).toEqual(['08:05:00', '17:30:00']);
+    expect(names(both, 11, 5)).toEqual(['08:05:00', '17:30:00']);
   });
 
   it('moves a commute to tomorrow after the grace period', () => {
-    expect(names(both, 8, 36)).toEqual(['17:30:00', '08:05:00']);
-    expect(names(both, 9, 0)).toEqual(['17:30:00', '08:05:00']);
+    expect(names(both, 11, 6)).toEqual(['17:30:00', '08:05:00']);
+    expect(names(both, 12, 0)).toEqual(['17:30:00', '08:05:00']);
+  });
+
+  it('orders 07:10 and 16:00 commutes through the day', () => {
+    const day = [at('07:10:00'), at('16:00:00')];
+    expect(names(day, 9, 30)).toEqual(['07:10:00', '16:00:00']);
+    expect(names(day, 10, 20)).toEqual(['16:00:00', '07:10:00']);
+    expect(names(day, 18, 30)).toEqual(['16:00:00', '07:10:00']);
+    expect(names(day, 19, 10)).toEqual(['07:10:00', '16:00:00']);
+  });
+
+  it('counts a 22:30 commute at 01:00 as within the grace period', () => {
+    expect(names([at('08:00:00'), at('22:30:00')], 1, 0)).toEqual(['22:30:00', '08:00:00']);
+    expect(names([at('08:00:00'), at('22:30:00')], 1, 31)).toEqual(['08:00:00', '22:30:00']);
   });
 
   it('puts the next morning commute first in the evening', () => {
-    expect(names(both, 18, 10)).toEqual(['08:05:00', '17:30:00']);
+    expect(names(both, 20, 40)).toEqual(['08:05:00', '17:30:00']);
   });
 
   it('counts a 23:50 commute at 00:10 as within the grace period', () => {
