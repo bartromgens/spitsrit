@@ -50,7 +50,8 @@ A real journey response is in `backend/tests/fixtures/ns_journey_3148.json`.
 - **`coachCrowdForecast` and `platformFeatures` are empty.** Across 24 journeys on five routes
   (November 2026, evening), stops had both as empty arrays, or did not have them at all.
 - **`bicycleSpotCount`** is on some train legs of `v3/trips` (seen: 0, 3, 4, 6, 16) and missing
-  on others. What 0 means (no places, or unknown) is not clear.
+  on others. 0 means unknown, not none: the NS app hides the value then, and such trains still
+  have the FIETS facility. We treat 0 as missing (`null`).
 
 ## Places API (`places-openapi.json`)
 

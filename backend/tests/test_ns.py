@@ -677,7 +677,7 @@ def test_parse_leg_without_station_codes() -> None:
 
 def test_parse_leg_reads_bicycle_spots() -> None:
     assert ns.parse_leg({**DETAILED_LEG, "bicycleSpotCount": 6}).bicycle_spots == 6
-    assert ns.parse_leg({**DETAILED_LEG, "bicycleSpotCount": 0}).bicycle_spots == 0
+    assert ns.parse_leg({**DETAILED_LEG, "bicycleSpotCount": 0}).bicycle_spots is None
     for missing in (None, -1, True, "6"):
         assert ns.parse_leg({**DETAILED_LEG, "bicycleSpotCount": missing}).bicycle_spots is None
 

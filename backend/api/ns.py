@@ -517,7 +517,7 @@ def parse_leg(leg: dict[str, Any]) -> Leg:
         shorter_stock_warning=_text(leg.get("shorterStockWarning")),
         origin_code=_text(origin.get("stationCode")),
         destination_code=_text(destination.get("stationCode")),
-        bicycle_spots=_count(leg.get("bicycleSpotCount")),
+        bicycle_spots=_positive_int(leg.get("bicycleSpotCount")),
     )
 
 
