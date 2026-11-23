@@ -12,7 +12,13 @@ mat-toolbar {
   --mat-button-text-state-layer-color: var(--sp-on-brand);
   --mat-icon-button-icon-color: var(--sp-on-brand);
   --mat-icon-button-state-layer-color: var(--sp-on-brand);
-  padding-inline: var(--sp-space-2);
+  padding-inline: 0;
+}
+
+// The toolbar's content lines up with the page content in the same centred container.
+.bar {
+  display: flex;
+  align-items: center;
 }
 
 .spacer {
@@ -67,7 +73,7 @@ mat-toolbar {
 
 main {
   flex: 1;
-  padding: var(--sp-space-3);
+  padding-block: var(--sp-space-3);
 }
 
 footer {
@@ -91,6 +97,6 @@ footer {
   }
 
   main {
-    padding: var(--sp-page-margin-mobile);
+    padding-block: var(--sp-page-margin-mobile);
   }
 }

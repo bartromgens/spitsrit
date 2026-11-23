@@ -109,4 +109,18 @@
   >
     <app-trip-details [trip]="trip" [destination]="destination()" (closed)="close()" />
   </aside>
+} @else if (wide()) {
+  <aside class="details empty" data-testid="trip-details-empty">
+    <p>
+      @if (result(); as r) {
+        @if (r.trips.length === 0) {
+          No trips to show.
+        } @else {
+          Select a trip to see its details.
+        }
+      } @else {
+        Plan a trip to see its details here.
+      }
+    </p>
+  </aside>
 }

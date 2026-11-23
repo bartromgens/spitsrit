@@ -12,7 +12,8 @@ import { MatInputModule } from '@angular/material/input';
 import { debounceTime, distinctUntilChanged, of, switchMap } from 'rxjs';
 import { Api } from '../api/api';
 import { commutesCreate, commutesDestroy, commutesList, stationsList } from '../api/functions';
-import { Commute, Station, Trip } from '../api/models';
+import { Commute, CommuteTrips, Station, Trip } from '../api/models';
+import { Desktop, defaultTrip } from '../shared/desktop/desktop';
 import { TripDetails } from '../shared/trip-details/trip-details';
 import { TripListSkeleton } from '../shared/trip-list-skeleton/trip-list-skeleton';
 import { CommuteBoard } from './commute-board';
@@ -86,6 +87,9 @@ export class Commutes {
   });
 
   private readonly api = inject(Api);
+  protected readonly wide = inject(Desktop).wide;
+  /** Whether the first board's trip was opened (or skipped on a phone); a later close stays closed. */
+  private autoSelected = false;
   private origin: Station | null = null;
   private destination: Station | null = null;
 
@@ -158,14 +162,25 @@ export class Commutes {
     this.selected.set(null);
   }
 
-  /** Keeps the open details current after a board refresh, and closes them when the trip is gone. */
-  protected tripsLoaded(commute: Commute, trips: Trip[]): void {
+  /**
+   * Keeps the open details current after a board refresh. Beside the boards the details are never
+   * empty: the first board's first load opens its recommended trip, and a trip that left falls
+   * back to its board's recommended one. On a phone a trip that left just closes the details.
+   */
+  protected tripsLoaded(commute: Commute, data: CommuteTrips): void {
     const current = this.selected();
-    if (current?.commuteId !== commute.id) {
-      return;
+    if (current?.commuteId === commute.id) {
+      const fresh = data.trips.find((t) => t.uid === current.trip.uid);
+      const next = fresh ?? (this.wide() ? defaultTrip(data.trips, data.recommended_uid) : null);
+      this.selected.set(next ? { commuteId: commute.id, trip: next } : null);
     }
-    const fresh = trips.find((t) => t.uid === current.trip.uid);
-    this.selected.set(fresh ? { commuteId: commute.id, trip: fresh } : null);
+    if (!this.autoSelected && commute.id === this.commutes()[0]?.id) {
+      this.autoSelected = true;
+      const first = this.wide() ? defaultTrip(data.trips, data.recommended_uid) : null;
+      if (first && this.selected() === null) {
+        this.selected.set({ commuteId: commute.id, trip: first });
+      }
+    }
   }
 
   protected async remove(commute: Commute): Promise<void> {

@@ -42,9 +42,9 @@
   --sp-space-2: 1rem;
   --sp-space-3: 1.5rem;
   --sp-space-4: 2rem;
-  --sp-page-width: 45rem;
+  --sp-container-width: 75rem; // the centred page container, toolbar included
   --sp-form-width: 25rem;
-  --sp-details-width: 32rem; // the trip details panel beside the results
+  --sp-list-width: 27.5rem; // the planner and results column beside the trip details
   --sp-page-margin-mobile: var(--sp-space-2); // page gutter below the mobile breakpoint
   --sp-row-inset: var(--sp-space-2); // inner padding of an edge-to-edge row
 

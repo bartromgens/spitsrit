@@ -44,8 +44,8 @@ export class CommuteBoard implements OnInit {
   readonly selectedUid = input<string | null>(null);
   readonly removed = output<Commute>();
   readonly tripSelected = output<Trip>();
-  /** Emits the trips after every successful load, so the page can drop a selection that left. */
-  readonly tripsLoaded = output<Trip[]>();
+  /** Emits the trips and recommendation after every successful load, so the page can keep its selection current. */
+  readonly tripsLoaded = output<CommuteTrips>();
 
   protected readonly data = signal<CommuteTrips | null>(null);
   protected readonly error = signal('');
@@ -118,7 +118,7 @@ export class CommuteBoard implements OnInit {
       });
       this.data.set(data);
       this.error.set('');
-      this.tripsLoaded.emit(data.trips);
+      this.tripsLoaded.emit(data);
     } catch {
       this.error.set('Train times are unavailable right now.');
     }
