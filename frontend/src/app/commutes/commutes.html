@@ -63,24 +63,17 @@
           <mat-label>Name</mat-label>
           <input matInput formControlName="name" />
         </mat-form-field>
-        <mat-form-field>
-          <mat-label>From</mat-label>
-          <input matInput formControlName="origin" [matAutocomplete]="fromAuto" />
-          <mat-autocomplete #fromAuto (optionSelected)="pick('origin', $event)">
-            @for (station of originOptions(); track station.code) {
-              <mat-option [value]="station">{{ station.name }}</mat-option>
-            }
-          </mat-autocomplete>
-        </mat-form-field>
-        <mat-form-field>
-          <mat-label>To</mat-label>
-          <input matInput formControlName="destination" [matAutocomplete]="toAuto" />
-          <mat-autocomplete #toAuto (optionSelected)="pick('destination', $event)">
-            @for (station of destinationOptions(); track station.code) {
-              <mat-option [value]="station">{{ station.name }}</mat-option>
-            }
-          </mat-autocomplete>
-        </mat-form-field>
+        <app-station-autocomplete
+          label="From"
+          [control]="form.controls.origin"
+          (optionSelected)="pick('origin', $event)"
+        />
+        <app-station-autocomplete
+          label="To"
+          [control]="form.controls.destination"
+          (optionSelected)="pick('destination', $event)"
+        />
+
         <mat-form-field>
           <mat-label>Usual departure (optional)</mat-label>
           <input matInput type="time" formControlName="usualTime" />
@@ -90,7 +83,7 @@
     </mat-card-content>
   </mat-card>
 </div>
-@if (selected(); as open) {
+@if (selection.selected(); as open) {
   <aside
     id="trip-details"
     class="details"
@@ -98,7 +91,11 @@
     aria-labelledby="trip-details-title"
     data-testid="trip-details"
   >
-    <app-trip-details [trip]="open.trip" [destination]="selectedDestination()" (closed)="close()" />
+    <app-trip-details
+      [trip]="open.trip"
+      [destination]="selectedDestination()"
+      (closed)="selection.close()"
+    />
   </aside>
 } @else if (wide()) {
   <aside class="details empty" data-testid="trip-details-empty">

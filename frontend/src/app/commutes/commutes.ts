@@ -1,28 +1,21 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import {
-  MatAutocompleteModule,
-  MatAutocompleteSelectedEvent,
-} from '@angular/material/autocomplete';
+import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { debounceTime, distinctUntilChanged, of, switchMap } from 'rxjs';
 import { RouterLink } from '@angular/router';
-import { Api } from '../api/api';
-import { stationsList } from '../api/functions';
 import { Commute, CommuteTrips, Station, Trip } from '../api/models';
 import { Auth } from '../auth';
-import { Desktop, defaultTrip } from '../shared/desktop/desktop';
+import { Desktop } from '../shared/desktop/desktop';
+import { StationAutocomplete } from '../shared/station-autocomplete/station-autocomplete';
 import { TripDetails } from '../shared/trip-details/trip-details';
 import { TripListSkeleton } from '../shared/trip-list-skeleton/trip-list-skeleton';
+import { TripSelection } from '../shared/trip-selection/trip-selection';
 import { CommuteBoard } from './commute-board';
 import { CommuteStore } from './commute-store';
 
-const SEARCH_DEBOUNCE_MS = 250;
-const MIN_QUERY_LENGTH = 2;
 /** How long after its usual time a commute still counts as today, so it stays on top. */
 const GRACE_MINUTES = 3 * 60;
 const DAY_MINUTES = 24 * 60;
@@ -54,32 +47,31 @@ export function sortCommutes(commutes: Commute[], now: Date): Commute[] {
 @Component({
   imports: [
     ReactiveFormsModule,
-    MatAutocompleteModule,
     MatButtonModule,
     MatCardModule,
     MatFormFieldModule,
     MatInputModule,
     RouterLink,
     CommuteBoard,
+    StationAutocomplete,
     TripDetails,
     TripListSkeleton,
   ],
   selector: 'app-commutes',
   styleUrl: './commutes.scss',
   templateUrl: './commutes.html',
-  host: { '[class.with-details]': 'selected() !== null' },
+  providers: [TripSelection],
+  host: { '[class.with-details]': 'selection.withDetails()' },
 })
 export class Commutes {
   protected readonly commutes = signal<Commute[]>([]);
   protected readonly loaded = signal(false);
   protected readonly error = signal('');
-  protected readonly originOptions = signal<Station[]>([]);
-  protected readonly destinationOptions = signal<Station[]>([]);
   /** The one open trip across all boards; the same train can show on several, so the board counts. */
-  protected readonly selected = signal<{ commuteId: number; trip: Trip } | null>(null);
+  protected readonly selection = inject(TripSelection);
   /** The destination of the selected trip's commute, for the details' OV-fiets count. */
   protected readonly selectedDestination = computed<Station | null>(() => {
-    const id = this.selected()?.commuteId;
+    const id = this.selection.selected()?.owner;
     const commute = this.commutes().find((c) => c.id === id);
     return commute ? { code: commute.destination_code, name: commute.destination_name } : null;
   });
@@ -91,21 +83,16 @@ export class Commutes {
     usualTime: [''],
   });
 
-  private readonly api = inject(Api);
   private readonly store = inject(CommuteStore);
   protected readonly loggedIn = inject(Auth).loggedIn;
   protected readonly storageUnavailable = this.store.storageUnavailable;
   protected readonly moveNotice = this.store.moveNotice;
   protected readonly wide = inject(Desktop).wide;
-  /** Whether the first board's trip was opened (or skipped on a phone); a later close stays closed. */
-  private autoSelected = false;
   private origin: Station | null = null;
   private destination: Station | null = null;
 
   constructor() {
     void this.load();
-    this.search('origin', this.originOptions);
-    this.search('destination', this.destinationOptions);
   }
 
   protected pick(side: 'origin' | 'destination', event: MatAutocompleteSelectedEvent): void {
@@ -152,50 +139,29 @@ export class Commutes {
   }
 
   protected selectedUid(commute: Commute): string | null {
-    const current = this.selected();
-    return current?.commuteId === commute.id ? current.trip.uid : null;
+    return this.selection.uidFor(commute.id);
   }
 
-  /** Opens the details of a trip, or closes them when the same trip is picked again. */
   protected select(commute: Commute, trip: Trip): void {
-    this.selected.update((current) =>
-      current?.commuteId === commute.id && current.trip.uid === trip.uid
-        ? null
-        : { commuteId: commute.id, trip },
-    );
-  }
-
-  protected close(): void {
-    this.selected.set(null);
+    this.selection.toggle(commute.id, trip);
   }
 
   /**
    * Keeps the open details current after a board refresh. Beside the boards the details are never
    * empty: the first board's first load opens its recommended trip, and a trip that left falls
-   * back to its board's recommended one. On a phone a trip that left just closes the details.
+   * back to its board's recommended one.
    */
   protected tripsLoaded(commute: Commute, data: CommuteTrips): void {
-    const current = this.selected();
-    if (current?.commuteId === commute.id) {
-      const fresh = data.trips.find((t) => t.uid === current.trip.uid);
-      const next = fresh ?? (this.wide() ? defaultTrip(data.trips, data.recommended_uid) : null);
-      this.selected.set(next ? { commuteId: commute.id, trip: next } : null);
-    }
-    if (!this.autoSelected && commute.id === this.commutes()[0]?.id) {
-      this.autoSelected = true;
-      const first = this.wide() ? defaultTrip(data.trips, data.recommended_uid) : null;
-      if (first && this.selected() === null) {
-        this.selected.set({ commuteId: commute.id, trip: first });
-      }
+    this.selection.refresh(commute.id, data.trips, data.recommended_uid);
+    if (commute.id === this.commutes()[0]?.id) {
+      this.selection.openFirst(commute.id, data.trips, data.recommended_uid);
     }
   }
 
   protected async remove(commute: Commute): Promise<void> {
     try {
       await this.store.remove(commute.id);
-      if (this.selected()?.commuteId === commute.id) {
-        this.close();
-      }
+      this.selection.closeFor(commute.id);
       this.commutes.update((all) =>
         sortCommutes(
           all.filter((c) => c.id !== commute.id),
@@ -214,20 +180,5 @@ export class Commutes {
       this.error.set('Your commutes could not be loaded.');
     }
     this.loaded.set(true);
-  }
-
-  private search(side: 'origin' | 'destination', options: typeof this.originOptions): void {
-    this.form.controls[side].valueChanges
-      .pipe(
-        debounceTime(SEARCH_DEBOUNCE_MS),
-        distinctUntilChanged(),
-        switchMap((q) =>
-          q.length < MIN_QUERY_LENGTH
-            ? of<Station[]>([])
-            : this.api.invoke(stationsList, { q }).catch(() => [] as Station[]),
-        ),
-        takeUntilDestroyed(),
-      )
-      .subscribe((found) => options.set(found));
   }
 }
