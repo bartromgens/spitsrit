@@ -125,7 +125,9 @@ def test_trips_ns_failures(
 
 
 def test_stations_search(logged_in: APIClient, monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(ns, "fetch_stations", lambda: [ns.Station("UT", "Utrecht Centraal")])
+    monkeypatch.setattr(
+        ns.stations, "fetch_stations", lambda: [ns.Station("UT", "Utrecht Centraal")]
+    )
     response = logged_in.get("/api/stations/?q=utr")
     assert response.status_code == 200
     assert response.json() == [{"code": "UT", "name": "Utrecht Centraal"}]
@@ -140,14 +142,16 @@ def test_stations_ns_down(logged_in: APIClient, monkeypatch: pytest.MonkeyPatch)
     def fail() -> list[ns.Station]:
         raise ns.NsError("boom")
 
-    monkeypatch.setattr(ns, "fetch_stations", fail)
+    monkeypatch.setattr(ns.stations, "fetch_stations", fail)
     assert logged_in.get("/api/stations/?q=utr").status_code == 502
 
 
 def test_plan_trip_and_stations_are_public(
     client_api: APIClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setattr(ns, "fetch_stations", lambda: [ns.Station("UT", "Utrecht Centraal")])
+    monkeypatch.setattr(
+        ns.stations, "fetch_stations", lambda: [ns.Station("UT", "Utrecht Centraal")]
+    )
     monkeypatch.setattr(
         ns, "fetch_trips", lambda *args: [make_trip("only", 5, base=timezone.now())]
     )
