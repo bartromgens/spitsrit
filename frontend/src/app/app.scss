@@ -28,6 +28,12 @@ mat-toolbar {
   text-decoration: none;
   cursor: pointer;
 
+  // The global link styles win on :visited and :hover by specificity.
+  &:visited,
+  &:hover {
+    color: inherit;
+  }
+
   &:focus-visible {
     outline: var(--sp-border-width-strong) solid currentColor;
     outline-offset: var(--sp-space-half);
