@@ -1,0 +1,106 @@
+@let t = trip();
+<section class="train" aria-labelledby="trip-details-train">
+  <h3 id="trip-details-train">Your train</h3>
+  <p class="train-size">
+    <app-train-length
+      [seats]="t.seats"
+      [trainType]="t.train_type"
+      [shorterStock]="t.shorter_stock"
+      [shorterStockWarning]="t.shorter_stock_warning"
+    />
+    @if (t.carriages) {
+      <span
+        ><span class="sp-mono">{{ t.carriages }}</span> carriages
+        @if (t.train_parts.length > 1) {
+          in <span class="sp-mono">{{ t.train_parts.length }}</span> units
+        }
+      </span>
+    }
+  </p>
+  @if (images().length > 0) {
+    <div
+      class="train-images"
+      data-testid="train-images"
+      role="img"
+      [attr.aria-label]="imagesLabel()"
+    >
+      @for (image of images(); track $index) {
+        <img
+          [src]="image.url"
+          [class.other]="image.other"
+          alt=""
+          loading="lazy"
+          (error)="hideImage($event)"
+        />
+      }
+    </div>
+  }
+  @if (coaches().length > 0) {
+    <div
+      class="coaches"
+      data-testid="coach-crowding"
+      role="list"
+      aria-label="Crowding per carriage"
+    >
+      @for (coach of coaches(); track $index) {
+        <span
+          role="listitem"
+          [class]="'coach ' + coach.level"
+          [style.left.%]="coach.left"
+          [style.width.%]="coach.width"
+          [attr.title]="coach.label"
+          [attr.aria-label]="'Carriage ' + ($index + 1) + ': ' + coach.label"
+        ></span>
+      }
+    </div>
+  }
+  @if (platform().length > 0) {
+    <div class="platform" data-testid="platform-features" aria-hidden="true">
+      @for (feature of platform(); track $index) {
+        <span
+          class="feature"
+          [style.left.%]="feature.left"
+          [style.width.%]="feature.width"
+          [attr.title]="feature.label"
+        ></span>
+      }
+    </div>
+  }
+  @if (platformLabels().length > 0) {
+    <p class="hint" data-testid="platform-labels">
+      On the platform: {{ platformLabels().join(', ') }}
+    </p>
+  }
+  @if (t.split_stations.length > 0) {
+    <p class="notice" data-testid="train-split">
+      Part of this train stays behind at {{ t.split_stations.join(', ') }}.
+      @if (t.board_destination) {
+        Board the part to <strong>{{ t.board_destination }}</strong>.
+      }
+    </p>
+  }
+  @if (t.train_parts.length > 0) {
+    <ol class="units" data-testid="train-units">
+      @for (part of t.train_parts; track $index) {
+        <li>
+          <span class="unit-number sp-mono">{{ part.stock_identifier || '?' }}</span>
+          @if (destinationsDiffer()) {
+            <span class="unit-destination" [class.muted]="otherPart(part)">
+              to {{ part.destination || 'unknown' }}
+              @if (part.destination && part.destination === t.board_destination) {
+                <strong class="your-part">your part</strong>
+              }
+            </span>
+          }
+          <span class="facilities">
+            @for (code of part.facilities; track code) {
+              <app-facility-icon [code]="code" />
+            } @empty {
+              <span class="muted">no facilities listed</span>
+            }
+          </span>
+        </li>
+      }
+    </ol>
+  }
+</section>
