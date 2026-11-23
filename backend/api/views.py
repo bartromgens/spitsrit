@@ -202,6 +202,24 @@ def station_toilets(request: Request, code: str) -> Response:
     return Response(StationToiletsSerializer(found).data)
 
 
+def _int_param(request: Request, name: str, minimum: int) -> int | Response | None:
+    """A whole-number query parameter, None when absent, or a 400 response when invalid."""
+    raw = request.query_params.get(name, "").strip()
+    if not raw:
+        return None
+    try:
+        value = int(raw)
+    except ValueError:
+        value = minimum - 1
+    if value < minimum:
+        kind = "a positive" if minimum > 0 else "a non-negative"
+        return Response(
+            {"detail": f"'{name}' must be {kind} whole number."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    return value
+
+
 @extend_schema(
     parameters=[
         OpenApiParameter("from", str, required=True, description="Origin station code"),
@@ -216,6 +234,20 @@ def station_toilets(request: Request, code: str) -> Response:
         ),
         OpenApiParameter(
             "around", bool, description="Plan from 15 minutes before `time`, as the commute board"
+        ),
+        OpenApiParameter(
+            "max_duration", int, description="Only trips of at most this many minutes (positive)"
+        ),
+        OpenApiParameter(
+            "max_transfers", int, description="Only trips with at most this many transfers (0+)"
+        ),
+        OpenApiParameter(
+            "usual",
+            str,
+            description=(
+                "Usual departure time as HH:MM, Dutch local time: plans from 15 minutes before it "
+                "while that is still ahead today, otherwise from now. Ignored when `time` is given"
+            ),
         ),
     ],
     responses={200: CommuteTripsSerializer, 400: None, 502: None, 503: None},
@@ -247,8 +279,30 @@ def plan_trip(request: Request) -> Response:
             {"detail": "Arriving by needs a 'time'."}, status=status.HTTP_400_BAD_REQUEST
         )
     around = request.query_params.get("around", "").lower() in ("1", "true")
+    usual_time: time | None = None
+    raw_usual = request.query_params.get("usual", "").strip()
+    if raw_usual:
+        try:
+            usual_time = datetime.strptime(raw_usual, "%H:%M").time()
+        except ValueError:
+            return Response(
+                {"detail": "'usual' must be HH:MM."}, status=status.HTTP_400_BAD_REQUEST
+            )
+    max_duration = _int_param(request, "max_duration", minimum=1)
+    max_transfers = _int_param(request, "max_transfers", minimum=0)
+    if isinstance(max_duration, Response):
+        return max_duration
+    if isinstance(max_transfers, Response):
+        return max_transfers
     return trips_response(
-        origin, destination, requested_time=requested_time, around=around, arrive=arrive
+        origin,
+        destination,
+        max_duration,
+        max_transfers,
+        usual_time,
+        requested_time=requested_time,
+        around=around,
+        arrive=arrive,
     )
 
 

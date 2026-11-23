@@ -27,6 +27,16 @@ export interface TripsRetrieve$Params {
   from: string;
 
 /**
+ * Only trips of at most this many minutes (positive)
+ */
+  max_duration?: number;
+
+/**
+ * Only trips with at most this many transfers (0+)
+ */
+  max_transfers?: number;
+
+/**
  * Departure time as HH:MM, Dutch local time; earlier than now is tomorrow
  */
   time?: string;
@@ -35,6 +45,11 @@ export interface TripsRetrieve$Params {
  * Destination station code
  */
   to: string;
+
+/**
+ * Usual departure time as HH:MM, Dutch local time: plans from 15 minutes before it while that is still ahead today, otherwise from now. Ignored when `time` is given
+ */
+  usual?: string;
 }
 
 export function tripsRetrieve(http: HttpClient, rootUrl: string, params: TripsRetrieve$Params, context?: HttpContext): Observable<StrictHttpResponse<CommuteTrips>> {
@@ -43,8 +58,11 @@ export function tripsRetrieve(http: HttpClient, rootUrl: string, params: TripsRe
     rb.query('around', params.around, {});
     rb.query('arrive', params.arrive, {});
     rb.query('from', params.from, {});
+    rb.query('max_duration', params.max_duration, {});
+    rb.query('max_transfers', params.max_transfers, {});
     rb.query('time', params.time, {});
     rb.query('to', params.to, {});
+    rb.query('usual', params.usual, {});
   }
 
   return http.request(

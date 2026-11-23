@@ -388,6 +388,16 @@ paths:
         description: Origin station code
         required: true
       - in: query
+        name: max_duration
+        schema:
+          type: integer
+        description: Only trips of at most this many minutes (positive)
+      - in: query
+        name: max_transfers
+        schema:
+          type: integer
+        description: Only trips with at most this many transfers (0+)
+      - in: query
         name: time
         schema:
           type: string
@@ -399,6 +409,13 @@ paths:
           type: string
         description: Destination station code
         required: true
+      - in: query
+        name: usual
+        schema:
+          type: string
+        description: 'Usual departure time as HH:MM, Dutch local time: plans from
+          15 minutes before it while that is still ahead today, otherwise from now.
+          Ignored when `time` is given'
       tags:
       - trips
       security:
