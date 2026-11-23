@@ -1,3 +1,18 @@
+.usual-time {
+  margin-left: var(--sp-space-1);
+  font-size: var(--sp-text-sm);
+}
+
+// Says the board follows the usual time, with a way back to planning from now.
+.planned-from {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-space-1);
+  margin: 0 0 var(--sp-space-1);
+  font-size: var(--sp-text-sm);
+}
+
 .advice {
   margin: 0 0 var(--sp-space-1);
   font-size: var(--sp-text-lg);

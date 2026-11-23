@@ -239,14 +239,21 @@ paths:
   /api/commutes/{id}/trips/:
     get:
       operationId: commutes_trips_retrieve
-      description: Upcoming trips for this commute within its saved filters, and which
-        one to take.
+      description: |-
+        Upcoming trips for this commute within its saved filters, and which one to take.
+
+        Plans from 15 minutes before the usual departure time while that is still ahead today.
       parameters:
       - in: path
         name: id
         schema:
           type: string
         required: true
+      - in: query
+        name: now
+        schema:
+          type: boolean
+        description: Plan from now, ignoring the commute's usual departure time
       tags:
       - commutes
       security:
@@ -508,6 +515,11 @@ components:
         fetched_at:
           type: string
           format: date-time
+        planned_from:
+          type: string
+          format: date-time
+        planned_from_usual_time:
+          type: boolean
         trips:
           type: array
           items:
@@ -520,6 +532,8 @@ components:
           nullable: true
       required:
       - fetched_at
+      - planned_from
+      - planned_from_usual_time
       - recommended_uid
       - trips
       - wait_minutes

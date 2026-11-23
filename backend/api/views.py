@@ -1,5 +1,7 @@
 import secrets
+from datetime import datetime, time, timedelta
 from typing import cast
+from zoneinfo import ZoneInfo
 
 from django.conf import settings
 from django.contrib.auth import authenticate, login, logout
@@ -43,16 +45,32 @@ def ns_error_response(error: ns.NsError) -> Response:
     return Response({"detail": "The NS API is not answering."}, status=status.HTTP_502_BAD_GATEWAY)
 
 
+DUTCH_TIME_ZONE = ZoneInfo("Europe/Amsterdam")
+USUAL_TIME_LEAD = timedelta(minutes=15)
+
+
+def usual_planning_time(usual: time | None, now: datetime) -> datetime | None:
+    """15 minutes before today's usual departure (Dutch local time), if that is still ahead."""
+    if usual is None:
+        return None
+    local_now = now.astimezone(DUTCH_TIME_ZONE)
+    usual_at = datetime.combine(local_now.date(), usual.replace(tzinfo=None), DUTCH_TIME_ZONE)
+    return usual_at - USUAL_TIME_LEAD if usual_at > now else None
+
+
 def trips_response(
     origin_code: str,
     destination_code: str,
     max_duration_minutes: int | None = None,
     max_transfers: int | None = None,
+    usual_time: time | None = None,
 ) -> Response:
     now = timezone.now()
+    usual_from = usual_planning_time(usual_time, now)
+    planned_from = usual_from or now
     try:
         trips = ns.fetch_trips(
-            origin_code, destination_code, now, max_duration_minutes, max_transfers
+            origin_code, destination_code, planned_from, max_duration_minutes, max_transfers
         )
     except ns.NsError as error:
         return ns_error_response(error)
@@ -66,6 +84,8 @@ def trips_response(
     return Response(
         {
             "fetched_at": now,
+            "planned_from": planned_from,
+            "planned_from_usual_time": usual_from is not None,
             "trips": TripSerializer(trips, many=True).data,
             "recommended_uid": advice.recommended_uid,
             "wait_minutes": advice.wait_minutes,
@@ -82,16 +102,30 @@ class CommuteViewSet(viewsets.ModelViewSet[Commute]):
     def perform_create(self, serializer: BaseSerializer[Commute]) -> None:
         serializer.save(user=self.request.user)
 
-    @extend_schema(responses={200: CommuteTripsSerializer, 502: None, 503: None})
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "now",
+                bool,
+                description="Plan from now, ignoring the commute's usual departure time",
+            )
+        ],
+        responses={200: CommuteTripsSerializer, 502: None, 503: None},
+    )
     @action(detail=True, methods=["get"])
     def trips(self, request: Request, pk: str | None = None) -> Response:
-        """Upcoming trips for this commute within its saved filters, and which one to take."""
+        """Upcoming trips for this commute within its saved filters, and which one to take.
+
+        Plans from 15 minutes before the usual departure time while that is still ahead today.
+        """
         commute = self.get_object()
+        from_now = request.query_params.get("now", "").lower() in ("1", "true")
         return trips_response(
             commute.origin_code,
             commute.destination_code,
             commute.max_duration_minutes,
             commute.max_transfers,
+            None if from_now else commute.usual_departure_time,
         )
 
 
