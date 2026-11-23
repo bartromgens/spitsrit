@@ -18,6 +18,11 @@ form {
   gap: var(--sp-space-1);
 }
 
+app-commute-strip {
+  display: block;
+  margin-top: var(--sp-space-1);
+}
+
 .details {
   @include layout.details-panel;
 }

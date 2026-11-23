@@ -24,6 +24,7 @@
       </mat-form-field>
       <button matButton="filled" type="submit" [disabled]="loading()">Plan</button>
     </form>
+    <app-commute-strip (chosen)="planCommute($event)" />
     @if (error()) {
       <p class="error" role="alert">{{ error() }}</p>
     }
