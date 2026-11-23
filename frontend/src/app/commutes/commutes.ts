@@ -23,10 +23,11 @@ import { CommuteStore } from './commute-store';
 
 const SEARCH_DEBOUNCE_MS = 250;
 const MIN_QUERY_LENGTH = 2;
-const GRACE_MINUTES = 30;
+/** How long after its usual time a commute still counts as today, so it stays on top. */
+const GRACE_MINUTES = 3 * 60;
 const DAY_MINUTES = 24 * 60;
 
-/** Minutes from `now` until the next usual departure; a time up to 30 minutes ago still counts as today. */
+/** Minutes from `now` until the next usual departure; a time up to GRACE_MINUTES ago still counts as today. */
 function minutesUntilNext(usualTime: string, now: Date): number {
   const [hours, minutes] = usualTime.split(':').map(Number);
   const nowMinutes = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
