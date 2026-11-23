@@ -18,6 +18,11 @@ form {
   gap: var(--sp-space-1);
 }
 
+app-commute-strip {
+  display: block;
+  margin-top: var(--sp-space-1);
+}
+
 // The whole row opens the trip's details; the button only adds a focus ring and a hover tint.
 .trip-button {
   all: unset;

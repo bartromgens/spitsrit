@@ -1,0 +1,29 @@
+// One row that scrolls on its own, so a long list never widens the page.
+.strip {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: var(--sp-space-1);
+  overflow-x: auto;
+  padding-bottom: var(--sp-space-half);
+}
+
+mat-chip {
+  flex: none;
+}
+
+.more {
+  flex: none;
+  color: var(--sp-link);
+  font-size: var(--mat-sys-body-small-size);
+  white-space: nowrap;
+}
+
+.save {
+  margin: 0;
+  font-size: var(--mat-sys-body-small-size);
+}
+
+.save a {
+  color: var(--sp-link);
+}

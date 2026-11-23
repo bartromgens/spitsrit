@@ -1,0 +1,17 @@
+@if (auth.loggedIn()) {
+  <div class="strip" data-testid="commute-strip">
+    @for (commute of commutes(); track commute.id) {
+      <mat-chip>
+        <button matChipAction type="button" (click)="chosen.emit(commute)">
+          {{ commute.name }}
+          @if (time(commute)) {
+            {{ time(commute) }}
+          }
+        </button>
+      </mat-chip>
+    }
+    <a class="more" routerLink="/commutes">My commutes</a>
+  </div>
+} @else {
+  <p class="save"><a routerLink="/login">Save your commutes</a></p>
+}

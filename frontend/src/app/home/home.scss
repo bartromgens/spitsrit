@@ -1,9 +1,4 @@
-mat-card {
-  max-width: var(--sp-form-width);
-}
-
 // Room for the trip details beside the planner; the planner itself keeps the form width.
 .planner {
   max-width: calc(var(--sp-form-width) + var(--sp-space-2) + var(--sp-details-width));
-  margin-top: var(--sp-space-2);
 }
