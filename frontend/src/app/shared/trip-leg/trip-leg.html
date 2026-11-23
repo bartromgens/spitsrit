@@ -1,0 +1,122 @@
+@let leg = view().leg;
+@if (view().ride) {
+  <div class="leg-head">
+    <span class="leg-name">
+      <strong>{{ leg.category || leg.name }}</strong>
+      @if (leg.category) {
+        <span class="sp-mono muted">{{ leg.name }}</span>
+      }
+    </span>
+    @if (leg.direction) {
+      <span class="direction">towards {{ leg.direction }}</span>
+    }
+    <span class="leg-meta">
+      <app-crowding [forecast]="leg.crowd_forecast" />
+      @if (leg.bicycle_spots !== null) {
+        <span data-testid="bicycle-spots"
+          ><span class="sp-mono">{{ leg.bicycle_spots }}</span> bicycle place{{
+            leg.bicycle_spots === 1 ? '' : 's'
+          }}</span
+        >
+      }
+      @if (leg.punctuality !== null) {
+        <span
+          ><span class="sp-mono">{{ leg.punctuality | number: '1.0-0' }}%</span> on time</span
+        >
+      }
+      @if (leg.operator) {
+        <span class="muted">{{ leg.operator }}</span>
+      }
+    </span>
+  </div>
+  @if (leg.cancelled) {
+    <p class="notice cancelled">This train is cancelled.</p>
+  }
+  @if (leg.shorter_stock_warning) {
+    <p class="notice">{{ leg.shorter_stock_warning }}</p>
+  }
+  @for (message of leg.messages; track message) {
+    <p class="notice">{{ message }}</p>
+  }
+  <ol class="stops" [attr.aria-label]="'Stops of ' + leg.name">
+    @for (stop of view().stops; track $index) {
+      <li
+        class="stop"
+        [class.endpoint]="stop.endpoint"
+        [class.passing]="stop.passing"
+        [class.cancelled]="stop.cancelled"
+      >
+        <span class="stop-time">
+          @if (stop.time && !stop.passing) {
+            <app-departure-time [time]="stop.time" [delayMinutes]="stop.delay" />
+          }
+        </span>
+        <span class="stop-dot" aria-hidden="true"></span>
+        <span class="stop-name"
+          ><span class="stop-label">{{ stop.name }}</span>
+          @if (stop.passing) {
+            <span class="muted">(passes)</span>
+          }
+          @if (stop.cancelled) {
+            <span class="stop-cancelled">cancelled</span>
+          }
+        </span>
+        <span class="stop-track">
+          @if (stop.track && !stop.passing) {
+            <app-platform-sign [class.changed]="stop.trackChanged" [track]="stop.track" />
+            @if (stop.trackChanged) {
+              <span class="sr-only">(changed)</span>
+            }
+          }
+        </span>
+      </li>
+    } @empty {
+      <li class="stop endpoint">
+        <span class="stop-time">
+          @if (leg.departure_actual ?? leg.departure_planned; as time) {
+            <app-departure-time [time]="time" [delayMinutes]="view().departureDelay" />
+          }
+        </span>
+        <span class="stop-dot" aria-hidden="true"></span>
+        <span class="stop-name">{{ leg.origin }}</span>
+        <span class="stop-track"><app-platform-sign [track]="leg.departure_track" /></span>
+      </li>
+      <li class="stop endpoint">
+        <span class="stop-time">
+          @if (leg.arrival_actual ?? leg.arrival_planned; as time) {
+            <app-departure-time [time]="time" [delayMinutes]="view().arrivalDelay" />
+          }
+        </span>
+        <span class="stop-dot" aria-hidden="true"></span>
+        <span class="stop-name">{{ leg.destination }}</span>
+        <span class="stop-track"><app-platform-sign [track]="leg.arrival_track" /></span>
+      </li>
+    }
+  </ol>
+  @if (view().exitSide) {
+    <p class="hint">Doors open on the {{ view().exitSide }} at {{ leg.destination }}.</p>
+  }
+  @if (leg.notes.length > 0) {
+    <ul class="notes">
+      @for (note of leg.notes; track note) {
+        <li>{{ note }}</li>
+      }
+    </ul>
+  }
+} @else {
+  <p class="walk-line">
+    {{ leg.travel_type === 'WALK' ? 'Walk' : leg.name || leg.travel_type.toLowerCase() }}
+    @if (leg.origin !== leg.destination) {
+      from {{ leg.origin }} to {{ leg.destination }}
+    }
+    @if (leg.departure_actual ?? leg.departure_planned; as from) {
+      <span class="muted"
+        >(<span class="sp-mono">{{ from | date: 'HH:mm' }}</span
+        >)</span
+      >
+    }
+  </p>
+}
+@for (message of leg.transfer_messages; track message) {
+  <p class="transfer">{{ message }}</p>
+}

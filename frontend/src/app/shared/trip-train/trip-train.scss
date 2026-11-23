@@ -1,0 +1,127 @@
+:host {
+  display: block;
+  margin-top: var(--sp-space-2);
+}
+
+h3 {
+  margin: 0 0 var(--sp-space-1);
+  font-size: var(--sp-text-md);
+  font-weight: var(--sp-weight-bold);
+}
+
+.muted {
+  opacity: 0.7;
+}
+
+.notice {
+  margin: var(--sp-space-1) 0 0;
+  padding: var(--sp-space-1);
+  border-radius: var(--sp-radius-sm);
+  background: var(--sp-signal-amber-surface);
+  color: var(--sp-signal-amber);
+}
+
+.hint {
+  margin: var(--sp-space-1) 0 0;
+}
+
+.train-size {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--sp-space-2);
+  margin: 0;
+}
+
+// The units side by side, scaled down together so the whole train fits the panel's width.
+// Each image shrinks in proportion to its own width, so they all keep the same height.
+.train-images {
+  display: flex;
+  margin-top: var(--sp-space-1);
+
+  img {
+    flex: 0 1 auto;
+    min-width: 0;
+    height: auto;
+  }
+
+  // Units that leave for another destination when the train splits.
+  img.other {
+    opacity: 0.35;
+  }
+}
+
+// Crowding per carriage under the train, and what stands on the platform under that, both
+// placed along the train's length.
+.coaches,
+.platform {
+  position: relative;
+  height: 0.5rem;
+  margin-top: var(--sp-space-half);
+}
+
+.coach,
+.feature {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+}
+
+.coach {
+  border-inline: 1px solid var(--mat-sys-surface-container-lowest);
+  border-radius: var(--sp-radius-xs);
+  background: var(--mat-sys-outline-variant);
+
+  &.low {
+    background: var(--sp-signal-green);
+  }
+
+  &.medium {
+    background: var(--sp-signal-amber);
+  }
+
+  &.high {
+    background: var(--sp-signal-red);
+  }
+}
+
+.platform {
+  border-top: var(--sp-border-width) solid var(--mat-sys-outline);
+}
+
+.feature {
+  min-width: 0.25rem;
+  border-radius: var(--sp-radius-xs);
+  background: var(--sp-blue);
+}
+
+.unit-destination {
+  grid-column: 2;
+}
+
+.your-part {
+  margin-left: var(--sp-space-half);
+  color: var(--sp-signal-green);
+}
+
+.units {
+  display: grid;
+  gap: var(--sp-space-half);
+  margin: var(--sp-space-1) 0 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: grid;
+    grid-template-columns: 3.5rem minmax(0, 1fr);
+    gap: var(--sp-space-1);
+    align-items: baseline;
+  }
+}
+
+.facilities {
+  grid-column: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-space-half);
+}

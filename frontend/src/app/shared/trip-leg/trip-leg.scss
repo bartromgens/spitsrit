@@ -1,0 +1,165 @@
+:host {
+  display: list-item;
+  list-style: none;
+  padding: var(--sp-space-2) 0;
+  border-top: var(--sp-border-width) solid var(--mat-sys-outline-variant);
+}
+
+:host(.cancelled) .stop-label {
+  text-decoration: line-through;
+}
+
+.muted {
+  opacity: 0.7;
+}
+
+// Disruptions, shorter trains and cancellations, in signal amber.
+.notice {
+  margin: var(--sp-space-1) 0 0;
+  padding: var(--sp-space-1);
+  border-radius: var(--sp-radius-sm);
+  background: var(--sp-signal-amber-surface);
+  color: var(--sp-signal-amber);
+
+  &.cancelled {
+    color: var(--sp-signal-red);
+    font-weight: var(--sp-weight-bold);
+  }
+}
+
+.leg-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: var(--sp-space-2);
+  row-gap: var(--sp-space-half);
+}
+
+.leg-name {
+  display: inline-flex;
+  gap: var(--sp-space-1);
+}
+
+.leg-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-space-2);
+  margin-left: auto;
+}
+
+// A timeline: time | dot on a line | station | platform.
+.stops {
+  margin: var(--sp-space-1) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stop {
+  position: relative;
+  display: grid;
+  grid-template-columns: 5.5rem 1rem minmax(0, 1fr) 2.5rem;
+  align-items: center;
+  column-gap: var(--sp-space-1);
+  min-height: 1.75rem;
+
+  &.endpoint .stop-name {
+    font-weight: var(--sp-weight-bold);
+  }
+
+  &.passing {
+    min-height: 1.25rem;
+    font-size: var(--sp-text-xs);
+    opacity: 0.6;
+  }
+
+  &.cancelled .stop-label {
+    text-decoration: line-through;
+  }
+}
+
+.stop-dot {
+  position: relative;
+  align-self: stretch;
+
+  // The line through all stops of the leg.
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0 auto 0 50%;
+    width: 2px;
+    transform: translateX(-50%);
+    background: var(--sp-blue);
+  }
+
+  // The stop itself.
+  &::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0.5rem;
+    height: 0.5rem;
+    border: 2px solid var(--sp-blue);
+    border-radius: 50%;
+    background: var(--mat-sys-surface-container-lowest);
+    transform: translate(-50%, -50%);
+  }
+}
+
+.stop:first-child .stop-dot::before {
+  top: 50%;
+}
+
+.stop:last-child .stop-dot::before {
+  bottom: 50%;
+}
+
+.stop.endpoint .stop-dot::after {
+  width: 0.75rem;
+  height: 0.75rem;
+  background: var(--sp-blue);
+}
+
+.stop.passing .stop-dot::after {
+  width: 0.25rem;
+  height: 0.25rem;
+  border-width: 1px;
+}
+
+.stop-cancelled {
+  margin-left: var(--sp-space-half);
+  color: var(--sp-signal-red);
+  font-weight: var(--sp-weight-bold);
+}
+
+.stop-track {
+  display: flex;
+  justify-content: flex-end;
+}
+
+// A changed platform is outlined in signal red, as on station displays.
+.changed {
+  outline: 2px solid var(--sp-signal-red);
+  outline-offset: 1px;
+  border-radius: var(--sp-radius-xs);
+}
+
+.hint,
+.walk-line,
+.transfer {
+  margin: var(--sp-space-1) 0 0;
+}
+
+.transfer {
+  font-style: italic;
+}
+
+.notes {
+  margin: var(--sp-space-1) 0 0;
+  padding-left: var(--sp-space-3);
+  opacity: 0.8;
+}
+
+.stop-name > .muted {
+  margin-left: var(--sp-space-half);
+}
