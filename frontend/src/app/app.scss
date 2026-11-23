@@ -24,6 +24,20 @@ mat-toolbar {
   font-size: var(--sp-text-xl);
   font-weight: var(--sp-weight-bold);
   letter-spacing: -0.02em;
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+
+  // The global link styles win on :visited and :hover by specificity.
+  &:visited,
+  &:hover {
+    color: inherit;
+  }
+
+  &:focus-visible {
+    outline: var(--sp-border-width-strong) solid currentColor;
+    outline-offset: var(--sp-space-half);
+  }
 }
 
 .nav {
