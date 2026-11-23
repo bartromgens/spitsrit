@@ -342,4 +342,24 @@ describe('TripDetails', () => {
       element.querySelector('[data-testid="trip-details-close"]'),
     );
   });
+
+  it('leaves focus alone when the same trip is refreshed', async () => {
+    const outside = document.createElement('input');
+    document.body.appendChild(outside);
+    outside.focus();
+    await render({ ...trip, status: 'DELAYED' });
+    expect(document.activeElement).toBe(outside);
+    outside.remove();
+  });
+
+  it('moves focus to the close button when another trip is shown', async () => {
+    const outside = document.createElement('input');
+    document.body.appendChild(outside);
+    outside.focus();
+    await render({ ...trip, uid: 'another-trip' });
+    expect(document.activeElement).toBe(
+      element.querySelector('[data-testid="trip-details-close"]'),
+    );
+    outside.remove();
+  });
 });
