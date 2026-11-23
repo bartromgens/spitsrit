@@ -1,4 +1,6 @@
 from dataclasses import replace
+from datetime import UTC, datetime, time
+from typing import Any
 
 import pytest
 from django.contrib.auth.models import User
@@ -221,3 +223,89 @@ def test_plan_trip_serializes_the_trip_details(
     assert [s["name"] for s in serialized["stops"]] == ["Utrecht Centraal", "Woerden", "Gouda"]
     assert serialized["stops"][1]["passing"] is True
     assert serialized["exit_side"] == "RIGHT"
+
+
+def _planned_for(
+    logged_in: APIClient,
+    user: User,
+    monkeypatch: pytest.MonkeyPatch,
+    now: datetime,
+    usual: time | None,
+    query: str = "",
+) -> tuple[datetime, dict[str, Any]]:
+    commute = CommuteFactory.create(user=user, usual_departure_time=usual)
+    asked: list[datetime] = []
+
+    def fake_fetch(
+        origin: str, destination: str, when: datetime, *filters: int | None
+    ) -> list[ns.Trip]:
+        asked.append(when)
+        return [make_trip("a", 40, base=now)]
+
+    monkeypatch.setattr(ns, "fetch_trips", fake_fetch)
+    monkeypatch.setattr(timezone, "now", lambda: now)
+    response = logged_in.get(f"/api/commutes/{commute.id}/trips/{query}")
+    assert response.status_code == 200
+    return asked[0], response.json()
+
+
+def test_trips_plan_from_before_the_usual_time(
+    logged_in: APIClient, user: User, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    now = datetime(2026, 11, 20, 6, 15, tzinfo=UTC)  # 07:15 in Amsterdam (CET)
+    asked, body = _planned_for(logged_in, user, monkeypatch, now, time(8, 5))
+    assert asked == datetime(2026, 11, 20, 6, 50, tzinfo=UTC)  # 07:50 local
+    assert datetime.fromisoformat(body["planned_from"]) == asked
+    assert body["planned_from_usual_time"] is True
+    assert body["wait_minutes"] == 40  # still relative to now
+
+
+def test_trips_plan_from_now_once_the_usual_time_has_passed(
+    logged_in: APIClient, user: User, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    now = datetime(2026, 11, 20, 7, 30, tzinfo=UTC)  # 08:30 local
+    asked, body = _planned_for(logged_in, user, monkeypatch, now, time(8, 5))
+    assert asked == now
+    assert body["planned_from_usual_time"] is False
+    assert datetime.fromisoformat(body["planned_from"]) == now
+
+
+def test_trips_plan_from_now_without_a_usual_time(
+    logged_in: APIClient, user: User, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    now = datetime(2026, 11, 20, 6, 15, tzinfo=UTC)
+    asked, body = _planned_for(logged_in, user, monkeypatch, now, None)
+    assert asked == now
+    assert body["planned_from_usual_time"] is False
+
+
+def test_trips_now_parameter_ignores_the_usual_time(
+    logged_in: APIClient, user: User, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    now = datetime(2026, 11, 20, 6, 15, tzinfo=UTC)
+    asked, body = _planned_for(logged_in, user, monkeypatch, now, time(8, 5), "?now=1")
+    assert asked == now
+    assert body["planned_from_usual_time"] is False
+    assert body["wait_minutes"] == 40
+
+
+@pytest.mark.parametrize(
+    ("now", "expected"),
+    [
+        # Summer time starts 2026-03-29 at 02:00 local: 08:05 is CET (UTC+1) on the 28th
+        # and CEST (UTC+2) on the 29th.
+        (datetime(2026, 3, 28, 6, 0, tzinfo=UTC), datetime(2026, 3, 28, 6, 50, tzinfo=UTC)),
+        (datetime(2026, 3, 29, 5, 0, tzinfo=UTC), datetime(2026, 3, 29, 5, 50, tzinfo=UTC)),
+        # Summer time ends 2026-10-25: 08:05 is CET again.
+        (datetime(2026, 10, 25, 5, 0, tzinfo=UTC), datetime(2026, 10, 25, 6, 50, tzinfo=UTC)),
+    ],
+)
+def test_usual_time_is_read_as_amsterdam_time_around_dst_changes(
+    logged_in: APIClient,
+    user: User,
+    monkeypatch: pytest.MonkeyPatch,
+    now: datetime,
+    expected: datetime,
+) -> None:
+    asked, _ = _planned_for(logged_in, user, monkeypatch, now, time(8, 5))
+    assert asked == expected

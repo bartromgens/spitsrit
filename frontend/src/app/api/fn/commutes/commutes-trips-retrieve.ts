@@ -11,12 +11,18 @@ import { CommuteTrips } from '../../models/commute-trips';
 
 export interface CommutesTripsRetrieve$Params {
   id: string;
+
+/**
+ * Plan from now, ignoring the commute's usual departure time
+ */
+  now?: boolean;
 }
 
 export function commutesTripsRetrieve(http: HttpClient, rootUrl: string, params: CommutesTripsRetrieve$Params, context?: HttpContext): Observable<StrictHttpResponse<CommuteTrips>> {
   const rb = new RequestBuilder(rootUrl, commutesTripsRetrieve.PATH, 'get');
   if (params) {
     rb.path('id', params.id, {});
+    rb.query('now', params.now, {});
   }
 
   return http.request(

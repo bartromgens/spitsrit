@@ -4,6 +4,8 @@
 import { Trip } from '../models/trip';
 export interface CommuteTrips {
   fetched_at: string;
+  planned_from: string;
+  planned_from_usual_time: boolean;
   recommended_uid: string | null;
   trips: Array<Trip>;
   wait_minutes: number | null;

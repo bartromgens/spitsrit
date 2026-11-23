@@ -50,7 +50,15 @@ function trip(overrides: Partial<Trip>): Trip {
 }
 
 function trips(overrides: Partial<CommuteTrips>): CommuteTrips {
-  return { fetched_at: '', trips: [], recommended_uid: null, wait_minutes: null, ...overrides };
+  return {
+    fetched_at: '',
+    planned_from: '',
+    planned_from_usual_time: false,
+    trips: [],
+    recommended_uid: null,
+    wait_minutes: null,
+    ...overrides,
+  };
 }
 
 describe('CommuteBoard', () => {
@@ -96,6 +104,45 @@ describe('CommuteBoard', () => {
   it('shows no placeholders when the trips fail to load', async () => {
     await flush(null, 503);
     expect(el().querySelector('[data-testid="trip-list-skeleton"]')).toBeNull();
+  });
+
+  it('shows the usual time in the subtitle only when it is set', async () => {
+    await flush(trips({}));
+    expect(el().querySelector('[data-testid="usual-time"]')).toBeNull();
+
+    const usual = TestBed.createComponent(CommuteBoard);
+    usual.componentRef.setInput('commute', { ...commute, usual_departure_time: '08:05:00' });
+    usual.detectChanges();
+    const label = (usual.nativeElement as HTMLElement).querySelector('[data-testid="usual-time"]');
+    expect(label?.textContent?.trim()).toBe('usually 08:05');
+    expect(label?.querySelector('.sp-mono')?.textContent).toBe('08:05');
+    http.match('/api/commutes/7/trips/').forEach((r) => r.flush(trips({})));
+    await settle(usual);
+  });
+
+  it('offers to leave now only when the board planned from the usual time', async () => {
+    await flush(trips({ planned_from_usual_time: false }));
+    expect(el().querySelector('[data-testid="planned-from"]')).toBeNull();
+    expect(el().querySelector('[data-testid="leave-now"]')).toBeNull();
+  });
+
+  it('says which usual time the board planned around', async () => {
+    fixture.componentRef.setInput('commute', { ...commute, usual_departure_time: '08:05:00' });
+    await flush(trips({ planned_from_usual_time: true }));
+    expect(el().querySelector('[data-testid="planned-from"]')?.textContent).toContain(
+      'Trains around 08:05',
+    );
+    expect(el().querySelector('[data-testid="leave-now"]')).not.toBeNull();
+  });
+
+  it('reloads planned from now when asked to leave now instead', async () => {
+    fixture.componentRef.setInput('commute', { ...commute, usual_departure_time: '08:05:00' });
+    await flush(trips({ planned_from_usual_time: true }));
+    el().querySelector<HTMLButtonElement>('[data-testid="leave-now"]')!.click();
+    const reload = http.expectOne('/api/commutes/7/trips/?now=true');
+    reload.flush(trips({ planned_from_usual_time: false }));
+    await settle(fixture);
+    expect(el().querySelector('[data-testid="planned-from"]')).toBeNull();
   });
 
   it('shows the route and tells you to leave now', async () => {

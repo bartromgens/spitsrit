@@ -3,6 +3,11 @@
     <mat-card-title>{{ commute().name }}</mat-card-title>
     <mat-card-subtitle>
       {{ commute().origin_name }} → {{ commute().destination_name }}
+      @if (usualTime(); as usual) {
+        <span class="usual-time" data-testid="usual-time"
+          >usually <span class="sp-mono">{{ usual }}</span></span
+        >
+      }
     </mat-card-subtitle>
     <button
       matIconButton
@@ -74,6 +79,16 @@
       <p class="error" role="alert">{{ error() }}</p>
     }
     @if (data(); as d) {
+      @if (d.planned_from_usual_time) {
+        <p class="planned-from" data-testid="planned-from">
+          <span
+            >Trains around <span class="sp-mono">{{ usualTime() }}</span></span
+          >
+          <button matButton type="button" data-testid="leave-now" (click)="refresh(true)">
+            Leave now instead
+          </button>
+        </p>
+      }
       <p class="advice" data-testid="advice">{{ advice() }}</p>
       <ul class="sp-trips sp-full-bleed">
         @for (trip of d.trips; track trip.uid) {

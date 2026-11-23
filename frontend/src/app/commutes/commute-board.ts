@@ -92,10 +92,19 @@ export class CommuteBoard implements OnInit {
     this.destroyRef.onDestroy(() => clearInterval(timer));
   }
 
-  protected async refresh(): Promise<void> {
+  /** The usual departure time as HH:mm, or null when none is set. */
+  protected readonly usualTime = computed(
+    () => this.commute().usual_departure_time?.slice(0, 5) || null,
+  );
+
+  /** Loads the trips; `fromNow` plans from now instead of the usual time, for this load only. */
+  protected async refresh(fromNow = false): Promise<void> {
     try {
       this.data.set(
-        await this.api.invoke(commutesTripsRetrieve, { id: String(this.commute().id) }),
+        await this.api.invoke(commutesTripsRetrieve, {
+          id: String(this.commute().id),
+          ...(fromNow ? { now: true } : {}),
+        }),
       );
       this.error.set('');
     } catch {
