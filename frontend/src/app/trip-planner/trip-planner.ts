@@ -14,8 +14,8 @@ import { Api } from '../api/api';
 import { stationsList, tripsRetrieve } from '../api/functions';
 import { CommuteTrips, Station, Trip } from '../api/models';
 import { TripDetails } from '../shared/trip-details/trip-details';
+import { TripList } from '../shared/trip-list/trip-list';
 import { TripListSkeleton } from '../shared/trip-list-skeleton/trip-list-skeleton';
-import { TripRow } from '../shared/trip-row/trip-row';
 
 const SEARCH_DEBOUNCE_MS = 250;
 const MIN_QUERY_LENGTH = 2;
@@ -39,8 +39,8 @@ function isStation(value: unknown): value is Station {
     MatFormFieldModule,
     MatInputModule,
     TripDetails,
+    TripList,
     TripListSkeleton,
-    TripRow,
   ],
   selector: 'app-trip-planner',
   styleUrl: './trip-planner.scss',

@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
@@ -12,7 +12,8 @@ import { MatInputModule } from '@angular/material/input';
 import { debounceTime, distinctUntilChanged, of, switchMap } from 'rxjs';
 import { Api } from '../api/api';
 import { commutesCreate, commutesDestroy, commutesList, stationsList } from '../api/functions';
-import { Commute, Station } from '../api/models';
+import { Commute, Station, Trip } from '../api/models';
+import { TripDetails } from '../shared/trip-details/trip-details';
 import { TripListSkeleton } from '../shared/trip-list-skeleton/trip-list-skeleton';
 import { CommuteBoard } from './commute-board';
 
@@ -54,11 +55,13 @@ export function sortCommutes(commutes: Commute[], now: Date): Commute[] {
     MatFormFieldModule,
     MatInputModule,
     CommuteBoard,
+    TripDetails,
     TripListSkeleton,
   ],
   selector: 'app-commutes',
   styleUrl: './commutes.scss',
   templateUrl: './commutes.html',
+  host: { '[class.with-details]': 'selected() !== null' },
 })
 export class Commutes {
   protected readonly commutes = signal<Commute[]>([]);
@@ -66,6 +69,14 @@ export class Commutes {
   protected readonly error = signal('');
   protected readonly originOptions = signal<Station[]>([]);
   protected readonly destinationOptions = signal<Station[]>([]);
+  /** The one open trip across all boards; the same train can show on several, so the board counts. */
+  protected readonly selected = signal<{ commuteId: number; trip: Trip } | null>(null);
+  /** The destination of the selected trip's commute, for the details' OV-fiets count. */
+  protected readonly selectedDestination = computed<Station | null>(() => {
+    const id = this.selected()?.commuteId;
+    const commute = this.commutes().find((c) => c.id === id);
+    return commute ? { code: commute.destination_code, name: commute.destination_name } : null;
+  });
 
   protected readonly form = inject(NonNullableFormBuilder).group({
     name: ['', Validators.required],
@@ -129,9 +140,40 @@ export class Commutes {
     }
   }
 
+  protected selectedUid(commute: Commute): string | null {
+    const current = this.selected();
+    return current?.commuteId === commute.id ? current.trip.uid : null;
+  }
+
+  /** Opens the details of a trip, or closes them when the same trip is picked again. */
+  protected select(commute: Commute, trip: Trip): void {
+    this.selected.update((current) =>
+      current?.commuteId === commute.id && current.trip.uid === trip.uid
+        ? null
+        : { commuteId: commute.id, trip },
+    );
+  }
+
+  protected close(): void {
+    this.selected.set(null);
+  }
+
+  /** Keeps the open details current after a board refresh, and closes them when the trip is gone. */
+  protected tripsLoaded(commute: Commute, trips: Trip[]): void {
+    const current = this.selected();
+    if (current?.commuteId !== commute.id) {
+      return;
+    }
+    const fresh = trips.find((t) => t.uid === current.trip.uid);
+    this.selected.set(fresh ? { commuteId: commute.id, trip: fresh } : null);
+  }
+
   protected async remove(commute: Commute): Promise<void> {
     try {
       await this.api.invoke(commutesDestroy, { id: String(commute.id) });
+      if (this.selected()?.commuteId === commute.id) {
+        this.close();
+      }
       this.commutes.update((all) =>
         sortCommutes(
           all.filter((c) => c.id !== commute.id),

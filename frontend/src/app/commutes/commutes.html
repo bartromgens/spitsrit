@@ -1,66 +1,89 @@
-<h1>My commutes</h1>
+<div class="main">
+  <h1>My commutes</h1>
 
-@if (error()) {
-  <p class="error" role="alert">{{ error() }}</p>
-}
-
-@for (commute of commutes(); track commute.id) {
-  <app-commute-board [commute]="commute" (removed)="remove($event)" />
-} @empty {
-  @if (loaded()) {
-    <p>No commutes yet. Add your first one below.</p>
-  } @else {
-    <mat-card class="sp-card board-skeleton" appearance="outlined" data-testid="commutes-skeleton">
-      <mat-card-header aria-hidden="true">
-        <mat-card-title><span class="sp-skeleton title"></span></mat-card-title>
-        <mat-card-subtitle><span class="sp-skeleton subtitle"></span></mat-card-subtitle>
-        <span class="sp-skeleton header-button"></span>
-      </mat-card-header>
-      <mat-card-content>
-        <span class="sp-skeleton advice" aria-hidden="true"></span>
-        <app-trip-list-skeleton />
-      </mat-card-content>
-      <mat-card-actions aria-hidden="true">
-        <span class="sp-skeleton action"></span>
-        <span class="sp-skeleton action"></span>
-      </mat-card-actions>
-    </mat-card>
+  @if (error()) {
+    <p class="error" role="alert">{{ error() }}</p>
   }
-}
 
-<mat-card appearance="outlined" class="add">
-  <mat-card-header>
-    <mat-card-title>Add a commute</mat-card-title>
-  </mat-card-header>
-  <mat-card-content>
-    <form [formGroup]="form" (ngSubmit)="add()">
-      <mat-form-field>
-        <mat-label>Name</mat-label>
-        <input matInput formControlName="name" />
-      </mat-form-field>
-      <mat-form-field>
-        <mat-label>From</mat-label>
-        <input matInput formControlName="origin" [matAutocomplete]="fromAuto" />
-        <mat-autocomplete #fromAuto (optionSelected)="pick('origin', $event)">
-          @for (station of originOptions(); track station.code) {
-            <mat-option [value]="station">{{ station.name }}</mat-option>
-          }
-        </mat-autocomplete>
-      </mat-form-field>
-      <mat-form-field>
-        <mat-label>To</mat-label>
-        <input matInput formControlName="destination" [matAutocomplete]="toAuto" />
-        <mat-autocomplete #toAuto (optionSelected)="pick('destination', $event)">
-          @for (station of destinationOptions(); track station.code) {
-            <mat-option [value]="station">{{ station.name }}</mat-option>
-          }
-        </mat-autocomplete>
-      </mat-form-field>
-      <mat-form-field>
-        <mat-label>Usual departure (optional)</mat-label>
-        <input matInput type="time" formControlName="usualTime" />
-      </mat-form-field>
-      <button matButton="filled" type="submit">Save</button>
-    </form>
-  </mat-card-content>
-</mat-card>
+  @for (commute of commutes(); track commute.id) {
+    <app-commute-board
+      [commute]="commute"
+      [selectedUid]="selectedUid(commute)"
+      (tripSelected)="select(commute, $event)"
+      (tripsLoaded)="tripsLoaded(commute, $event)"
+      (removed)="remove($event)"
+    />
+  } @empty {
+    @if (loaded()) {
+      <p>No commutes yet. Add your first one below.</p>
+    } @else {
+      <mat-card
+        class="sp-card board-skeleton"
+        appearance="outlined"
+        data-testid="commutes-skeleton"
+      >
+        <mat-card-header aria-hidden="true">
+          <mat-card-title><span class="sp-skeleton title"></span></mat-card-title>
+          <mat-card-subtitle><span class="sp-skeleton subtitle"></span></mat-card-subtitle>
+          <span class="sp-skeleton header-button"></span>
+        </mat-card-header>
+        <mat-card-content>
+          <span class="sp-skeleton advice" aria-hidden="true"></span>
+          <app-trip-list-skeleton />
+        </mat-card-content>
+        <mat-card-actions aria-hidden="true">
+          <span class="sp-skeleton action"></span>
+          <span class="sp-skeleton action"></span>
+        </mat-card-actions>
+      </mat-card>
+    }
+  }
+
+  <mat-card appearance="outlined" class="add">
+    <mat-card-header>
+      <mat-card-title>Add a commute</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <form [formGroup]="form" (ngSubmit)="add()">
+        <mat-form-field>
+          <mat-label>Name</mat-label>
+          <input matInput formControlName="name" />
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>From</mat-label>
+          <input matInput formControlName="origin" [matAutocomplete]="fromAuto" />
+          <mat-autocomplete #fromAuto (optionSelected)="pick('origin', $event)">
+            @for (station of originOptions(); track station.code) {
+              <mat-option [value]="station">{{ station.name }}</mat-option>
+            }
+          </mat-autocomplete>
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>To</mat-label>
+          <input matInput formControlName="destination" [matAutocomplete]="toAuto" />
+          <mat-autocomplete #toAuto (optionSelected)="pick('destination', $event)">
+            @for (station of destinationOptions(); track station.code) {
+              <mat-option [value]="station">{{ station.name }}</mat-option>
+            }
+          </mat-autocomplete>
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>Usual departure (optional)</mat-label>
+          <input matInput type="time" formControlName="usualTime" />
+        </mat-form-field>
+        <button matButton="filled" type="submit">Save</button>
+      </form>
+    </mat-card-content>
+  </mat-card>
+</div>
+@if (selected(); as open) {
+  <aside
+    id="trip-details"
+    class="details"
+    role="dialog"
+    aria-labelledby="trip-details-title"
+    data-testid="trip-details"
+  >
+    <app-trip-details [trip]="open.trip" [destination]="selectedDestination()" (closed)="close()" />
+  </aside>
+}

@@ -1,6 +1,33 @@
+@use '../../styles/layout';
+
+// The boards in one column; with a trip open, its details sit in a second column beside them.
 :host {
-  display: block;
-  max-width: var(--sp-page-width);
+  display: grid;
+  grid-template-columns: minmax(0, min(100%, var(--sp-page-width)));
+  align-items: start;
+  gap: var(--sp-space-2);
+}
+
+:host(.with-details) {
+  grid-template-columns: minmax(0, min(100%, var(--sp-page-width))) minmax(
+      0,
+      var(--sp-details-width)
+    );
+}
+
+.details {
+  @include layout.details-panel;
+}
+
+// Too narrow for two columns: the boards keep their column and the details cover the screen.
+@include layout.details-narrow {
+  :host(.with-details) {
+    grid-template-columns: minmax(0, min(100%, var(--sp-page-width)));
+  }
+
+  .details {
+    @include layout.details-overlay;
+  }
 }
 
 app-commute-board,

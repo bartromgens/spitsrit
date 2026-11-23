@@ -1,8 +1,41 @@
 // Layout breakpoints, defined once. Below $sp-bp-mobile the trip results go edge to edge.
 $sp-bp-mobile: 600px;
+// Below $sp-bp-details the trip details no longer fit beside the results and cover them.
+$sp-bp-details: 52rem;
 
 @mixin mobile {
   @media (max-width: $sp-bp-mobile) {
+    @content;
+  }
+}
+
+// The trip details panel: a sticky card beside the results.
+@mixin details-panel {
+  position: sticky;
+  top: var(--sp-space-2);
+  max-height: calc(100vh - 2 * var(--sp-space-2));
+  overflow-y: auto;
+  padding: var(--sp-space-2);
+  border: var(--sp-border-width) solid var(--mat-sys-outline-variant);
+  border-radius: var(--mat-card-outlined-container-shape, var(--sp-radius-md));
+  background: var(--mat-sys-surface-container-lowest);
+}
+
+// The trip details panel on narrow screens: it covers the whole screen.
+@mixin details-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  max-height: none;
+  padding: var(--sp-space-2) calc(var(--sp-space-2) + env(safe-area-inset-right, 0px))
+    calc(var(--sp-space-2) + env(safe-area-inset-bottom, 0px))
+    calc(var(--sp-space-2) + env(safe-area-inset-left, 0px));
+  border: 0;
+  border-radius: 0;
+}
+
+@mixin details-narrow {
+  @media (max-width: $sp-bp-details) {
     @content;
   }
 }
