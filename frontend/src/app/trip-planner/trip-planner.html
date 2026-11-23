@@ -4,65 +4,67 @@
   </mat-card-header>
   <mat-card-content>
     <form [formGroup]="form" (ngSubmit)="plan()">
-      <mat-form-field>
-        <mat-label>From</mat-label>
-        <input matInput formControlName="origin" [matAutocomplete]="fromAuto" />
-        <mat-autocomplete #fromAuto (optionSelected)="pick('origin', $event)">
-          @for (station of originOptions(); track station.code) {
-            <mat-option [value]="station">{{ station.name }}</mat-option>
-          }
-        </mat-autocomplete>
-      </mat-form-field>
-      <mat-form-field>
-        <mat-label>To</mat-label>
-        <input matInput formControlName="destination" [matAutocomplete]="toAuto" />
-        <mat-autocomplete #toAuto (optionSelected)="pick('destination', $event)">
-          @for (station of destinationOptions(); track station.code) {
-            <mat-option [value]="station">{{ station.name }}</mat-option>
-          }
-        </mat-autocomplete>
-      </mat-form-field>
-      <div class="when">
-        <mat-button-toggle-group
-          class="mode"
-          aria-label="Time is for"
-          hideSingleSelectionIndicator
-          [value]="arrive()"
-          (change)="setArrive($event.value)"
-        >
-          <mat-button-toggle [value]="false" data-testid="mode-depart">Depart</mat-button-toggle>
-          <mat-button-toggle [value]="true" data-testid="mode-arrive">Arrive</mat-button-toggle>
-        </mat-button-toggle-group>
-        <mat-form-field class="time" subscriptSizing="dynamic">
-          <mat-label>{{ arrive() ? 'Arrival' : 'Departure' }}</mat-label>
-          <input
-            matInput
-            type="time"
-            class="sp-mono"
-            formControlName="time"
-            data-testid="departure-time"
-          />
+      <div class="fields">
+        <mat-form-field subscriptSizing="dynamic">
+          <mat-label>From</mat-label>
+          <input matInput formControlName="origin" [matAutocomplete]="fromAuto" />
+          <mat-autocomplete #fromAuto (optionSelected)="pick('origin', $event)">
+            @for (station of originOptions(); track station.code) {
+              <mat-option [value]="station">{{ station.name }}</mat-option>
+            }
+          </mat-autocomplete>
         </mat-form-field>
-        <button
-          matButton="outlined"
-          type="button"
-          class="now"
-          data-testid="time-now"
-          [class.subdued]="following()"
-          (click)="followNow()"
-        >
-          Now
-        </button>
+        <mat-form-field subscriptSizing="dynamic">
+          <mat-label>To</mat-label>
+          <input matInput formControlName="destination" [matAutocomplete]="toAuto" />
+          <mat-autocomplete #toAuto (optionSelected)="pick('destination', $event)">
+            @for (station of destinationOptions(); track station.code) {
+              <mat-option [value]="station">{{ station.name }}</mat-option>
+            }
+          </mat-autocomplete>
+        </mat-form-field>
+        <div class="when">
+          <mat-button-toggle-group
+            class="mode"
+            aria-label="Time is for"
+            hideSingleSelectionIndicator
+            [value]="arrive()"
+            (change)="setArrive($event.value)"
+          >
+            <mat-button-toggle [value]="false" data-testid="mode-depart">Depart</mat-button-toggle>
+            <mat-button-toggle [value]="true" data-testid="mode-arrive">Arrive</mat-button-toggle>
+          </mat-button-toggle-group>
+          <mat-form-field class="time" subscriptSizing="dynamic">
+            <mat-label>{{ arrive() ? 'Arrival' : 'Departure' }}</mat-label>
+            <input
+              matInput
+              type="time"
+              class="sp-mono"
+              formControlName="time"
+              data-testid="departure-time"
+            />
+          </mat-form-field>
+          <button
+            matButton="text"
+            type="button"
+            class="now"
+            data-testid="time-now"
+            [class.subdued]="following()"
+            (click)="followNow()"
+          >
+            Now
+          </button>
+        </div>
+        @if (needsTime()) {
+          <p class="hint" data-testid="departure-hint">
+            <span data-testid="needs-time">Pick a time to arrive by</span>
+          </p>
+        } @else if (tomorrow()) {
+          <p class="hint" data-testid="departure-hint">
+            <span data-testid="tomorrow">tomorrow</span>
+          </p>
+        }
       </div>
-      @if (needsTime()) {
-        <p class="hint" data-testid="departure-hint">
-          <span data-testid="needs-time">Pick a time to arrive by</span>
-        </p>
-      } @else if (tomorrow()) {
-        <p class="hint" data-testid="departure-hint">
-          <span data-testid="tomorrow">tomorrow</span>
-        </p>
-      }
       <button
         matButton="filled"
         type="submit"
