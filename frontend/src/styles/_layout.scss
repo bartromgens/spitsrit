@@ -34,6 +34,13 @@ $sp-bp-details: 52rem;
   border-radius: 0;
 }
 
+// Wide enough for the trip details beside the results (the opposite of details-narrow).
+@mixin details-wide {
+  @media not all and (max-width: $sp-bp-details) {
+    @content;
+  }
+}
+
 @mixin details-narrow {
   @media (max-width: $sp-bp-details) {
     @content;

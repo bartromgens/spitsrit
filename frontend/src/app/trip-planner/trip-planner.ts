@@ -15,6 +15,7 @@ import { Api } from '../api/api';
 import { stationsList, tripsRetrieve } from '../api/functions';
 import { Commute, CommuteTrips, Station, Trip } from '../api/models';
 import { CommuteStrip } from '../commutes/commute-strip/commute-strip';
+import { Desktop, defaultTrip } from '../shared/desktop/desktop';
 import { TripDetails } from '../shared/trip-details/trip-details';
 import { TripList } from '../shared/trip-list/trip-list';
 import { TripListSkeleton } from '../shared/trip-list-skeleton/trip-list-skeleton';
@@ -111,6 +112,7 @@ export class TripPlanner {
   private writing = false;
   private readonly destroyRef = inject(DestroyRef);
   private readonly api = inject(Api);
+  protected readonly wide = inject(Desktop).wide;
   private readonly picked: Record<Side, Station | null> = { origin: null, destination: null };
 
   constructor() {
@@ -209,13 +211,14 @@ export class TripPlanner {
     this.error.set('');
     this.selected.set(null);
     try {
-      this.result.set(
-        await this.api.invoke(tripsRetrieve, {
-          from: from.code,
-          to: to.code,
-          ...this.timeParams(),
-        }),
-      );
+      const result = await this.api.invoke(tripsRetrieve, {
+        from: from.code,
+        to: to.code,
+        ...this.timeParams(),
+      });
+      this.result.set(result);
+      // Beside the results the details pane is never empty; on a phone details open on tap.
+      if (this.wide()) this.selected.set(defaultTrip(result.trips, result.recommended_uid));
       this.resultTime.set(this.form.controls.time.value);
       this.resultArrive.set(this.arrive());
       this.destination.set(to);

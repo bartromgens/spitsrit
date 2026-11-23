@@ -3,7 +3,7 @@ import { smokeUser } from './smoke-user';
 
 test('home page loads without the health debug card', { tag: '@smoke' }, async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByText('Plan a trip')).toBeVisible();
+  await expect(page.getByText('Plan a trip', { exact: true })).toBeVisible();
   await expect(page.getByTestId('health')).toHaveCount(0);
 });
 

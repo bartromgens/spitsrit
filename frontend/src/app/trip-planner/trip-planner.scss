@@ -1,6 +1,7 @@
 @use '../../styles/layout';
 
-// The planner card on its own; with a trip open, its details sit in a second column beside it.
+// The planner card on its own; on wide screens the details pane fills the rest of the container
+// beside it, and with a trip open on narrow ones the details cover the screen.
 :host {
   display: grid;
   grid-template-columns: minmax(0, var(--sp-form-width));
@@ -8,8 +9,19 @@
   gap: var(--sp-space-2);
 }
 
-:host(.with-details) {
-  grid-template-columns: minmax(0, var(--sp-form-width)) minmax(0, var(--sp-details-width));
+@include layout.details-wide {
+  :host {
+    grid-template-columns: minmax(0, var(--sp-list-width)) minmax(0, 1fr);
+  }
+}
+
+.empty {
+  color: var(--mat-sys-on-surface-variant);
+  text-align: center;
+
+  p {
+    margin: var(--sp-space-4) 0;
+  }
 }
 
 // One rhythm: --sp-space-2 between rows (the fields reserve no subscript space), more above Plan.
@@ -80,10 +92,6 @@ app-commute-strip {
 
 // Too narrow for two columns: the planner keeps its column and the details cover the screen.
 @include layout.details-narrow {
-  :host(.with-details) {
-    grid-template-columns: minmax(0, var(--sp-form-width));
-  }
-
   .details {
     @include layout.details-overlay;
   }

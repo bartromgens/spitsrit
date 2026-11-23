@@ -86,4 +86,14 @@
   >
     <app-trip-details [trip]="open.trip" [destination]="selectedDestination()" (closed)="close()" />
   </aside>
+} @else if (wide()) {
+  <aside class="details empty" data-testid="trip-details-empty">
+    <p>
+      @if (loaded() && commutes().length === 0) {
+        No trips to show.
+      } @else {
+        Select a trip to see its details.
+      }
+    </p>
+  </aside>
 }
