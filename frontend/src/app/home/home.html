@@ -1,14 +1,1 @@
-<mat-card appearance="outlined">
-  <mat-card-header>
-    <mat-card-title>Your commutes</mat-card-title>
-  </mat-card-header>
-  <mat-card-content>
-    @if (auth.loggedIn()) {
-      <a routerLink="/commutes">See when your next train leaves</a>
-    } @else {
-      <a routerLink="/login">Log in</a>
-    }
-  </mat-card-content>
-</mat-card>
-
 <app-trip-planner class="planner" />

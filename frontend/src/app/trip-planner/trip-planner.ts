@@ -12,7 +12,8 @@ import { MatInputModule } from '@angular/material/input';
 import { debounceTime, distinctUntilChanged, of, switchMap } from 'rxjs';
 import { Api } from '../api/api';
 import { stationsList, tripsRetrieve } from '../api/functions';
-import { CommuteTrips, Station, Trip } from '../api/models';
+import { Commute, CommuteTrips, Station, Trip } from '../api/models';
+import { CommuteStrip } from '../commutes/commute-strip/commute-strip';
 import { TripDetails } from '../shared/trip-details/trip-details';
 import { TripListSkeleton } from '../shared/trip-list-skeleton/trip-list-skeleton';
 import { TripRow } from '../shared/trip-row/trip-row';
@@ -38,6 +39,7 @@ function isStation(value: unknown): value is Station {
     MatCardModule,
     MatFormFieldModule,
     MatInputModule,
+    CommuteStrip,
     TripDetails,
     TripListSkeleton,
     TripRow,
@@ -77,6 +79,19 @@ export class TripPlanner {
     const station = event.option.value as Station;
     this.picked[side] = station;
     this.form.controls[side].setValue(station.name, { emitEvent: false });
+  }
+
+  /** Fills in a commute's stations and plans it, as if both were picked and Plan pressed. */
+  protected planCommute(commute: Commute): Promise<void> {
+    const stations: Record<Side, Station> = {
+      origin: { code: commute.origin_code, name: commute.origin_name },
+      destination: { code: commute.destination_code, name: commute.destination_name },
+    };
+    for (const side of ['origin', 'destination'] as const) {
+      this.picked[side] = stations[side];
+      this.form.controls[side].setValue(stations[side].name, { emitEvent: false });
+    }
+    return this.plan();
   }
 
   /** Opens the details of a trip, or closes them when its row is clicked again. */
