@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.urls import include, path, re_path
 
-from api.views import spa_index
+from api.views.app import spa_index
 
 urlpatterns = [
     path("admin/", admin.site.urls),

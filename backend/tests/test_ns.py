@@ -176,7 +176,7 @@ def trips_with_journey(
         return journeys
 
     cache.clear()
-    monkeypatch.setattr(ns, "_get", fake_get)
+    monkeypatch.setattr(ns.client, "get", fake_get)
     return calls
 
 
@@ -244,7 +244,7 @@ def test_parse_boarding_stock_reads_the_units_and_facilities() -> None:
     [None, {}, {"uri": ""}, {"uri": "http://vt.ns-mlab.nl/a.png"}, {"uri": "javascript:x"}, "x"],
 )
 def test_train_part_without_a_usable_image(image: Any) -> None:
-    [part] = ns._train_parts([{"stockIdentifier": "1", "facilities": [], "image": image}])
+    [part] = ns.parse._train_parts([{"stockIdentifier": "1", "facilities": [], "image": image}])
     assert part.image_url is None
 
 
@@ -471,7 +471,7 @@ STATIONS = [
 def test_search_stations_ranks_code_then_prefix_then_substring(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr(ns, "fetch_stations", lambda: STATIONS)
+    monkeypatch.setattr(ns.stations, "fetch_stations", lambda: STATIONS)
     names = [s.name for s in ns.search_stations("ut")]
     assert names == ["Utrecht Centraal", "Utrecht Leidsche Rijn", "Duitsland-Utrecht"]
     assert ns.search_stations("   ") == []
@@ -486,7 +486,7 @@ def test_search_stations_puts_big_stations_first(monkeypatch: pytest.MonkeyPatch
         ns.Station("UT", "Utrecht Centraal", rank("MEGA_STATION")),
         ns.Station("DUT", "Duitsland-Utrecht", rank("MEGA_STATION")),
     ]
-    monkeypatch.setattr(ns, "fetch_stations", lambda: stations)
+    monkeypatch.setattr(ns.stations, "fetch_stations", lambda: stations)
     names = [s.name for s in ns.search_stations("Utrecht")]
     assert names == [
         "Utrecht Centraal",
@@ -505,7 +505,7 @@ def test_fetch_stations_is_cached(monkeypatch: pytest.MonkeyPatch) -> None:
         calls.append(path)
         return {"payload": [{"code": "UT", "namen": {"lang": "Utrecht Centraal"}}]}
 
-    monkeypatch.setattr(ns, "_get", fake_get)
+    monkeypatch.setattr(ns.client, "get", fake_get)
     assert ns.fetch_stations() == ns.fetch_stations() == [ns.Station("UT", "Utrecht Centraal")]
     assert calls == ["v2/stations"]
     cache.clear()
@@ -521,7 +521,7 @@ def test_fetch_trips_limits_and_filters(monkeypatch: pytest.MonkeyPatch) -> None
         items = [page_item(f"t{i}", i) for i in range(20)]
         return {"trips": [*items, {"legs": []}]}
 
-    monkeypatch.setattr(ns, "_get", fake_get)
+    monkeypatch.setattr(ns.client, "get", fake_get)
     trips = ns.fetch_trips("UT", "ASD", NOW)
     assert len(trips) == ns.MAX_TRIPS
     assert seen["path"] == "v3/trips"
@@ -561,7 +561,7 @@ def serve_pages(
             payload["scrollRequestForwardContext"] = f"ctx{index + 1}"
         return payload
 
-    monkeypatch.setattr(ns, "_get", fake_get)
+    monkeypatch.setattr(ns.client, "get", fake_get)
     return calls
 
 
@@ -781,7 +781,7 @@ def test_fetch_trips_adds_split_and_layout_of_the_boarding_stop(
 
 
 def test_train_parts_read_their_destination() -> None:
-    parts = ns._train_parts(
+    parts = ns.parse._train_parts(
         [
             {"stockIdentifier": "1", "destination": {"name": "Zwolle"}},
             {"stockIdentifier": "2", "destination": {"namen": {"lang": "Enschede"}}},

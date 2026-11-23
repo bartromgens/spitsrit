@@ -24,6 +24,7 @@ Only rules you cannot discover from the repository. Lint, format and type rules 
 ## Code
 
 - No `# type: ignore`, `any` or lint suppressions without a comment giving the reason.
+- Keep modules cohesive: when a file passes about 300 lines or takes on a second responsibility, split it. Put new logic in the module it belongs to, not the nearest existing file.
 - Do not add a dependency without stating why in the PR description. Prefer the standard library and existing dependencies.
 - Database migrations follow expand-contract: additive and backward-compatible. The old version keeps serving while migrations run, and reverting a commit does not revert schema. Destructive changes ship as a separate, later PR.
 - Other PRs merge while you work, and each may add a migration. Before you push, merge the default branch and run `uv --directory backend run python manage.py makemigrations --check --dry-run`: it must report no changes. If it reports conflicting migrations, delete your migration and generate it again on top of the merged branch; never use `makemigrations --merge`.
