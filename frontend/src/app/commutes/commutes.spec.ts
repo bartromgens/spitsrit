@@ -1,6 +1,7 @@
 import { HttpTestingController } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Commute, Trip } from '../api/models';
+import { Commute, Trip, User } from '../api/models';
+import { Auth } from '../auth';
 import { settle, testProviders } from '../testing';
 import { Commutes } from './commutes';
 
@@ -31,7 +32,9 @@ describe('Commutes', () => {
   });
 
   beforeEach(() => {
+    localStorage.clear();
     TestBed.configureTestingModule({ imports: [Commutes], providers: testProviders });
+    TestBed.inject(Auth).user.set({ id: 1 } as User);
     fixture = TestBed.createComponent(Commutes);
     page = fixture.componentInstance as unknown as Internals;
     http = TestBed.inject(HttpTestingController);

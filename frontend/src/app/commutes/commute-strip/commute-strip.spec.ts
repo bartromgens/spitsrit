@@ -3,6 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { Commute, User } from '../../api/models';
 import { Auth } from '../../auth';
 import { settle, testProviders } from '../../testing';
+import { STORAGE_KEY } from '../commute-store';
 import { CommuteStrip } from './commute-strip';
 
 function commute(id: number, name: string, usual: string | null): Commute {
@@ -20,6 +21,7 @@ function commute(id: number, name: string, usual: string | null): Commute {
 
 describe('CommuteStrip', () => {
   beforeEach(() => {
+    localStorage.clear();
     TestBed.configureTestingModule({ imports: [CommuteStrip], providers: testProviders });
   });
 
@@ -79,7 +81,32 @@ describe('CommuteStrip', () => {
   it('offers to save commutes when logged out', async () => {
     const { element } = await render(false);
     expect(element.querySelector('button.sp-chip')).toBeNull();
-    expect(element.querySelector('a[href="/login"]')?.textContent).toContain('Save your commutes');
+    expect(element.querySelector('a[href="/commutes"]')?.textContent).toContain(
+      'Save your commutes',
+    );
+    TestBed.inject(HttpTestingController).expectNone('/api/commutes/');
+  });
+
+  it('shows the commutes saved on this device when logged out, in the same order', async () => {
+    const now = new Date();
+    const at = (offsetMinutes: number): string => {
+      const d = new Date(now.getTime() + offsetMinutes * 60_000);
+      return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:00`;
+    };
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify([
+        commute(1, 'Later', at(180)),
+        commute(2, 'Sooner', at(120)),
+        commute(3, 'Anytime', null),
+      ]),
+    );
+    const { element } = await render(false);
+    const names = Array.from(element.querySelectorAll('button.sp-chip')).map(
+      (c) => c.textContent?.replace(/\s+/g, ' ').trim().split(' ')[0],
+    );
+    expect(names).toEqual(['Sooner', 'Later', 'Anytime']);
+    expect(element.querySelector('a[href="/commutes"]')?.textContent).toContain('All commutes');
     TestBed.inject(HttpTestingController).expectNone('/api/commutes/');
   });
 });

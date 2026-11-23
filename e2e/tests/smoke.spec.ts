@@ -10,8 +10,7 @@ test('home page loads without the health debug card', { tag: '@smoke' }, async (
 test('log in and open the commutes page', { tag: '@smoke' }, async ({ page }) => {
   const { username, password } = smokeUser();
 
-  await page.goto('/commutes');
-  await expect(page).toHaveURL(/\/login/);
+  await page.goto('/login');
   await page.getByLabel('Email').fill(username);
   await page.getByLabel('Password').fill(password);
   await page.getByRole('button', { name: 'Log in' }).click();
@@ -20,6 +19,40 @@ test('log in and open the commutes page', { tag: '@smoke' }, async ({ page }) =>
   // Read-only: saving a commute needs station search, which needs the NS API key.
   await expect(page.getByRole('heading', { name: 'My commutes' })).toBeVisible();
   await expect(page.getByText('Add a commute')).toBeVisible();
+});
+
+test('keep a commute on this device without an account', { tag: '@smoke' }, async ({ page }) => {
+  // Seeded directly: saving through the form needs station search, which needs the NS API key.
+  // The browser context is fresh per test, so nothing is left behind; the delete is the cleanup.
+  await page.goto('/');
+  await page.evaluate(() =>
+    localStorage.setItem(
+      'spitsrit.commutes.v1',
+      JSON.stringify([
+        {
+          id: 1,
+          name: 'Smoke commute',
+          origin_code: 'UT',
+          origin_name: 'Utrecht Centraal',
+          destination_code: 'ASD',
+          destination_name: 'Amsterdam Centraal',
+          created_at: '2026-01-01T00:00:00Z',
+        },
+      ]),
+    ),
+  );
+
+  await page.goto('/commutes');
+  await expect(page.getByText('Saved on this device.')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Create an account' })).toBeVisible();
+  await expect(page.getByText('Smoke commute')).toBeVisible();
+
+  await page.reload();
+  await expect(page.getByText('Smoke commute')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Delete' }).click();
+  await expect(page.getByText('Smoke commute')).toHaveCount(0);
+  expect(await page.evaluate(() => localStorage.getItem('spitsrit.commutes.v1'))).toBeNull();
 });
 
 test('serves the favicon', { tag: '@smoke' }, async ({ page, request }) => {

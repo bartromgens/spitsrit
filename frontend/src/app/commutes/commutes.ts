@@ -10,13 +10,16 @@ import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { debounceTime, distinctUntilChanged, of, switchMap } from 'rxjs';
+import { RouterLink } from '@angular/router';
 import { Api } from '../api/api';
-import { commutesCreate, commutesDestroy, commutesList, stationsList } from '../api/functions';
+import { stationsList } from '../api/functions';
 import { Commute, CommuteTrips, Station, Trip } from '../api/models';
+import { Auth } from '../auth';
 import { Desktop, defaultTrip } from '../shared/desktop/desktop';
 import { TripDetails } from '../shared/trip-details/trip-details';
 import { TripListSkeleton } from '../shared/trip-list-skeleton/trip-list-skeleton';
 import { CommuteBoard } from './commute-board';
+import { CommuteStore } from './commute-store';
 
 const SEARCH_DEBOUNCE_MS = 250;
 const MIN_QUERY_LENGTH = 2;
@@ -55,6 +58,7 @@ export function sortCommutes(commutes: Commute[], now: Date): Commute[] {
     MatCardModule,
     MatFormFieldModule,
     MatInputModule,
+    RouterLink,
     CommuteBoard,
     TripDetails,
     TripListSkeleton,
@@ -87,6 +91,10 @@ export class Commutes {
   });
 
   private readonly api = inject(Api);
+  private readonly store = inject(CommuteStore);
+  protected readonly loggedIn = inject(Auth).loggedIn;
+  protected readonly storageUnavailable = this.store.storageUnavailable;
+  protected readonly moveNotice = this.store.moveNotice;
   protected readonly wide = inject(Desktop).wide;
   /** Whether the first board's trip was opened (or skipped on a phone); a later close stays closed. */
   private autoSelected = false;
@@ -124,15 +132,13 @@ export class Commutes {
       return;
     }
     try {
-      const created = await this.api.invoke(commutesCreate, {
-        body: {
-          name,
-          origin_code: this.origin.code,
-          origin_name: this.origin.name,
-          destination_code: this.destination.code,
-          destination_name: this.destination.name,
-          usual_departure_time: usualTime ? `${usualTime}:00` : null,
-        },
+      const created = await this.store.add({
+        name,
+        origin_code: this.origin.code,
+        origin_name: this.origin.name,
+        destination_code: this.destination.code,
+        destination_name: this.destination.name,
+        usual_departure_time: usualTime ? `${usualTime}:00` : null,
       });
       this.commutes.update((all) => sortCommutes([...all, created], new Date()));
       this.form.reset();
@@ -185,7 +191,7 @@ export class Commutes {
 
   protected async remove(commute: Commute): Promise<void> {
     try {
-      await this.api.invoke(commutesDestroy, { id: String(commute.id) });
+      await this.store.remove(commute.id);
       if (this.selected()?.commuteId === commute.id) {
         this.close();
       }
@@ -202,7 +208,7 @@ export class Commutes {
 
   private async load(): Promise<void> {
     try {
-      this.commutes.set(sortCommutes((await this.api.invoke(commutesList)).results, new Date()));
+      this.commutes.set(sortCommutes(await this.store.list(), new Date()));
     } catch {
       this.error.set('Your commutes could not be loaded.');
     }

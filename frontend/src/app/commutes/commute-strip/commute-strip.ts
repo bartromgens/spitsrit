@@ -1,9 +1,8 @@
 import { Component, effect, inject, output, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { Api } from '../../api/api';
-import { commutesList } from '../../api/functions';
 import { Commute } from '../../api/models';
 import { Auth } from '../../auth';
+import { CommuteStore } from '../commute-store';
 import { sortCommutes } from '../commutes';
 
 /** A row of the user's commutes as chips; tapping one reports it so the planner can run it. */
@@ -19,15 +18,13 @@ export class CommuteStrip {
   protected readonly auth = inject(Auth);
   protected readonly commutes = signal<Commute[]>([]);
 
-  private readonly api = inject(Api);
+  private readonly store = inject(CommuteStore);
 
   constructor() {
     effect(() => {
-      if (this.auth.loggedIn()) {
-        void this.load();
-      } else {
-        this.commutes.set([]);
-      }
+      // Reload when logging in or out: the commutes come from the account or this browser.
+      this.auth.loggedIn();
+      void this.load();
     });
   }
 
@@ -38,7 +35,7 @@ export class CommuteStrip {
 
   private async load(): Promise<void> {
     try {
-      this.commutes.set(sortCommutes((await this.api.invoke(commutesList)).results, new Date()));
+      this.commutes.set(sortCommutes(await this.store.list(), new Date()));
     } catch {
       // The strip is a shortcut; without it the planner still works.
       this.commutes.set([]);
