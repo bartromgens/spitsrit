@@ -30,21 +30,12 @@
     </button>
   </mat-card-header>
   <mat-card-content>
-    @if (!filtersOpen() && chips().length > 0) {
-      <ul class="filter-chips" aria-label="Active filters">
-        @for (chip of chips(); track chip) {
-          <li>
-            <button
-              type="button"
-              class="sp-chip"
-              data-testid="filter-chip"
-              (click)="filtersOpen.set(true)"
-            >
-              {{ chip }}
-            </button>
-          </li>
-        }
-      </ul>
+    @if (!filtersOpen()) {
+      <app-filter-chips
+        [maxDuration]="savedDuration()"
+        [maxTransfers]="savedTransfers()"
+        (chosen)="filtersOpen.set(true)"
+      />
     }
     @if (filtersOpen()) {
       <div class="filters">

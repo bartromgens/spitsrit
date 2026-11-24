@@ -1,0 +1,11 @@
+@if (chips().length > 0) {
+  <ul aria-label="Active filters">
+    @for (chip of chips(); track chip) {
+      <li>
+        <button type="button" class="sp-chip" data-testid="filter-chip" (click)="chosen.emit()">
+          {{ chip }}
+        </button>
+      </li>
+    }
+  </ul>
+}

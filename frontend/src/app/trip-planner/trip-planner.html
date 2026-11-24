@@ -19,6 +19,55 @@
         />
         <app-time-control [model]="time" />
       </div>
+      <div class="filters">
+        <div class="filters-row">
+          <button
+            matButton
+            type="button"
+            data-testid="filters-toggle"
+            [attr.aria-expanded]="filtersOpen()"
+            (click)="filtersOpen.set(!filtersOpen())"
+          >
+            Filters
+          </button>
+          @if (!filtersOpen()) {
+            <app-filter-chips
+              [maxDuration]="maxDuration()"
+              [maxTransfers]="maxTransfers()"
+              (chosen)="filtersOpen.set(true)"
+            />
+          }
+        </div>
+        @if (filtersOpen()) {
+          <div class="filter-fields">
+            <mat-form-field subscriptSizing="dynamic">
+              <mat-label>Max transfers</mat-label>
+              <select
+                matNativeControl
+                data-testid="max-transfers"
+                [formControl]="filters.controls.maxTransfers"
+                (change)="filterChanged()"
+              >
+                <option [ngValue]="null">Any</option>
+                <option [ngValue]="0">Direct only</option>
+                <option [ngValue]="1">1 or fewer</option>
+                <option [ngValue]="2">2 or fewer</option>
+              </select>
+            </mat-form-field>
+            <mat-form-field subscriptSizing="dynamic">
+              <mat-label>Max duration (min)</mat-label>
+              <input
+                matInput
+                type="number"
+                min="1"
+                data-testid="max-duration"
+                [formControl]="filters.controls.maxDuration"
+                (change)="filterChanged()"
+              />
+            </mat-form-field>
+          </div>
+        }
+      </div>
       <button
         matButton="filled"
         type="submit"

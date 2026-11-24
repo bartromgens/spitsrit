@@ -51,7 +51,7 @@ describe('shared chip style', () => {
   });
 
   it.each([
-    'src/app/commutes/commute-board.html',
+    'src/app/shared/filter-chips/filter-chips.html',
     'src/app/commutes/commute-strip/commute-strip.html',
   ])('is used by %s', (file) => {
     expect(read(file)).toContain('class="sp-chip"');
@@ -59,6 +59,7 @@ describe('shared chip style', () => {
 
   it.each([
     'src/app/commutes/commute-board.scss',
+    'src/app/shared/filter-chips/filter-chips.scss',
     'src/app/commutes/commute-strip/commute-strip.scss',
   ])('is not restyled in %s', (file) => {
     expect(read(file)).not.toMatch(/chip\s*\{|border-radius/);

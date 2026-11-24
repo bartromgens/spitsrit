@@ -1,0 +1,9 @@
+// The filters as small pills (.sp-chip).
+ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}

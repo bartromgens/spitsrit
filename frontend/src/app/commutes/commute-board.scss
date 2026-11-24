@@ -38,14 +38,14 @@
   height: 1.5rem;
 }
 
-// The saved filters as small pills (.sp-chip); tapping one opens the filter fields.
-.filter-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--sp-space-1);
+app-filter-chips {
+  display: block;
   margin: var(--sp-space-1) 0 var(--sp-space-2);
-  padding: 0;
-  list-style: none;
+
+  // No active filters: no chips, so no gap either.
+  &:empty {
+    display: none;
+  }
 }
 
 .filters {
