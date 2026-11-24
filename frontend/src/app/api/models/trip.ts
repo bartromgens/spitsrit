@@ -20,6 +20,7 @@ export interface Trip {
   duration_minutes: number;
   legs: Array<Leg>;
   messages: Array<string>;
+  min_seats: number | null;
   platform_features: Array<Span>;
   punctuality: number | null;
   seats: number | null;

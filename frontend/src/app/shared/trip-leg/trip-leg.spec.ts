@@ -31,6 +31,15 @@ const leg: Leg = {
   origin_code: 'UT',
   destination_code: 'GD',
   bicycle_spots: 1,
+  seats: null,
+  carriages: null,
+  train_type: null,
+  train_origin: null,
+  train_parts: [],
+  coach_crowding: [],
+  platform_features: [],
+  split_stations: [],
+  board_destination: null,
 };
 
 const view: LegView = {

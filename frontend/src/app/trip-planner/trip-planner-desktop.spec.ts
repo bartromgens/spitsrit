@@ -40,6 +40,7 @@ const trip = (uid: string): Trip => ({
   platform_features: [],
   split_stations: [],
   board_destination: null,
+  min_seats: null,
 });
 
 interface Internals {

@@ -39,6 +39,12 @@ def parse_stations(payload: Any) -> list[Station]:
     return stations
 
 
+def train_leg_indexes(item: dict[str, Any]) -> list[int]:
+    """The positions in `item["legs"]` (and in the parsed trip's `legs`) of the train rides."""
+    legs = [leg for leg in item.get("legs") or [] if isinstance(leg, dict)]
+    return [i for i, leg in enumerate(legs) if leg.get("travelType") == "PUBLIC_TRANSIT"]
+
+
 def train_leg(item: dict[str, Any]) -> dict[str, Any] | None:
     """The first leg that is a public-transit ride: the one whose train size we show."""
     for leg in item.get("legs") or []:

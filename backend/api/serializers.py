@@ -147,6 +147,15 @@ class LegSerializer(serializers.Serializer[Any]):
     origin_code = serializers.CharField(allow_null=True)
     destination_code = serializers.CharField(allow_null=True)
     bicycle_spots = serializers.IntegerField(allow_null=True)
+    seats = serializers.IntegerField(allow_null=True)
+    carriages = serializers.IntegerField(allow_null=True)
+    train_type = serializers.CharField(allow_null=True)
+    train_origin = serializers.CharField(allow_null=True)
+    train_parts = TrainPartSerializer(many=True)
+    coach_crowding = SpanSerializer(many=True)
+    platform_features = SpanSerializer(many=True)
+    split_stations = serializers.ListField(child=serializers.CharField())
+    board_destination = serializers.CharField(allow_null=True)
 
 
 class TripSerializer(serializers.Serializer[Any]):
@@ -164,7 +173,8 @@ class TripSerializer(serializers.Serializer[Any]):
     cancelled = serializers.BooleanField()
     crowd_forecast = serializers.CharField()
     train = serializers.CharField()
-    seats = serializers.IntegerField(allow_null=True)
+    seats = serializers.IntegerField(allow_null=True)  # of the first train
+    min_seats = serializers.IntegerField(allow_null=True)  # fewest of all train legs
     carriages = serializers.IntegerField(allow_null=True)
     train_type = serializers.CharField(allow_null=True)
     shorter_stock = serializers.CharField(allow_null=True)  # null, "BUSY" or "EXTRA_BUSY"

@@ -397,7 +397,11 @@ def test_malformed_journey_leaves_size_unknown(monkeypatch: pytest.MonkeyPatch) 
 
 
 def test_journey_is_cached(monkeypatch: pytest.MonkeyPatch) -> None:
-    calls = trips_with_journey(monkeypatch, journey(stop("8400621", actualStock=stock(620))))
+    # A single-train trip: the second train of TRIP_ITEM would add its own journey call.
+    one_train = {**TRIP_ITEM, "legs": TRIP_ITEM["legs"][:1]}
+    calls = trips_with_journey(
+        monkeypatch, journey(stop("8400621", actualStock=stock(620))), one_train
+    )
     assert ns.fetch_trips("UT", "ASD", NOW)[0].seats == 620
     assert ns.fetch_trips("UT", "ASD", NOW)[0].seats == 620
     assert [path for path, _ in calls].count("v2/journey") == 1
