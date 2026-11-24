@@ -11,6 +11,8 @@ from typing import Any
 from django.core.cache import cache
 
 from api import ns
+from api.ns import budget
+from api.ns.client import NsBudgetExceeded
 
 BASE_URL = "https://gateway.apiportal.ns.nl/places-api"
 # The count changes as bikes are rented and returned; a minute matches the trips refresh.
@@ -66,6 +68,8 @@ class StationToilets:
 
 
 def _get(path: str, params: dict[str, str] | None = None) -> Any:
+    if not budget.allow_places():
+        raise NsBudgetExceeded("Skipped: the NS call budget is used up.")
     return ns.get_json(f"{BASE_URL}/{path}", params)
 
 
