@@ -421,3 +421,24 @@ describe('CommuteBoard', () => {
     expect(el().querySelectorAll('input').length).toBe(2);
   });
 });
+
+describe('CommuteBoard refresh', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('reloads the trips every two minutes, not every minute', async () => {
+    vi.useFakeTimers();
+    TestBed.configureTestingModule({ imports: [CommuteBoard], providers: testProviders });
+    TestBed.inject(Auth).user.set({ id: 1 } as User);
+    const fixture = TestBed.createComponent(CommuteBoard);
+    fixture.componentRef.setInput('commute', commute);
+    const http = TestBed.inject(HttpTestingController);
+    fixture.detectChanges();
+    http.expectOne('/api/commutes/7/trips/').flush(trips({}));
+    await vi.advanceTimersByTimeAsync(60_000);
+    http.expectNone('/api/commutes/7/trips/');
+    await vi.advanceTimersByTimeAsync(60_000);
+    http.expectOne('/api/commutes/7/trips/').flush(trips({}));
+  });
+});
