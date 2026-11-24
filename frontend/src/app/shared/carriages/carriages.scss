@@ -25,16 +25,11 @@
   line-height: 1;
 }
 
-// Several trains: shrink the spacing and numbers so three still fit a 360 px row.
+// Several trains: tighten the spacing only, the text keeps its size, so three still fit a 360 px row.
 .multi {
-  gap: var(--sp-space-half);
-
-  .count {
-    font-size: var(--sp-text-sm);
-  }
+  gap: 0;
 
   .arrow {
     padding-inline: 0.125rem;
-    font-size: var(--sp-text-xs);
   }
 }

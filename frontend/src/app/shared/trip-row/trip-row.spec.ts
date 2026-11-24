@@ -212,7 +212,7 @@ describe('TripRow', () => {
       ).toBe('8 carriages, then 4 carriages');
     });
 
-    it('shows three trains without wrapping', async () => {
+    it('shows three trains in the compact layout', async () => {
       await render({ transfers: 2, legs: [ride(8), ride(4), ride(6)] });
       expect(counts()).toEqual(['8', '4', '6']);
       expect(element().querySelector('app-carriages .multi')).not.toBeNull();
