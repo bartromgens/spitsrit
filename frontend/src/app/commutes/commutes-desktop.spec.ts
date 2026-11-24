@@ -149,7 +149,7 @@ describe('Commutes on desktop', () => {
       await settle(fixture);
       expect(expanded(0)).toEqual(['false', 'true']);
 
-      await vi.advanceTimersByTimeAsync(60_000);
+      await vi.advanceTimersByTimeAsync(120_000);
       await flushBoard(1, board(['c', 'd'], 'd'));
       expect(expanded(0)).toEqual(['false', 'true']);
       expect(details()).not.toBeNull();
@@ -165,7 +165,7 @@ describe('Commutes on desktop', () => {
       await flushBoard(1, board(['a'], 'a'));
       element().querySelector<HTMLButtonElement>('[data-testid="trip-details-close"]')!.click();
       await settle(fixture);
-      await vi.advanceTimersByTimeAsync(60_000);
+      await vi.advanceTimersByTimeAsync(120_000);
       await flushBoard(1, board(['a'], 'a'));
       expect(details()).toBeNull();
     } finally {

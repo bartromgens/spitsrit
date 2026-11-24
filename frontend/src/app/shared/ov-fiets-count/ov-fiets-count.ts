@@ -1,17 +1,9 @@
-import {
-  Component,
-  DestroyRef,
-  computed,
-  effect,
-  inject,
-  input,
-  output,
-  signal,
-} from '@angular/core';
+import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { Api } from '../../api/api';
 import { stationsOvFietsRetrieve } from '../../api/functions';
 import { OvFiets } from '../../api/models';
 import { FacilityIcon } from '../facility-icon/facility-icon';
+import { visibleInterval } from '../visible-interval/visible-interval';
 
 const REFRESH_MS = 60_000;
 
@@ -96,8 +88,7 @@ export class OvFietsCount {
   constructor() {
     effect(() => void this.load(this.stationCode()));
     effect(() => this.present.emit(this.summary() !== ''));
-    const timer = setInterval(() => void this.load(this.stationCode()), REFRESH_MS);
-    inject(DestroyRef).onDestroy(() => clearInterval(timer));
+    visibleInterval(() => void this.load(this.stationCode()), REFRESH_MS);
   }
 
   private async load(code: string): Promise<void> {
