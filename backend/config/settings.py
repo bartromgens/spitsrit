@@ -30,6 +30,9 @@ CACHES = {
         "LOCATION": os.environ.get(
             "CACHE_DIR", str(Path(tempfile.gettempdir()) / "spitsrit-cache")
         ),
+        # Django culls a random third of the files at 300 entries, which would drop live
+        # budget-counter buckets; expired files linger until read, so leave plenty of room.
+        "OPTIONS": {"MAX_ENTRIES": 100_000},
     }
 }
 # The NS key allows 300 calls per 5 minutes; above these counts optional calls are skipped.

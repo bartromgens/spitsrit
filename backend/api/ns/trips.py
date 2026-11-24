@@ -63,9 +63,8 @@ def _journey_request(leg: dict[str, Any]) -> tuple[str, dict[str, str]] | None:
 
 def _journey_cache_seconds(leg: dict[str, Any]) -> int:
     """How long to keep the leg's journey: briefly when the train leaves soon, else longer."""
-    departure = (leg.get("origin") or {}).get("actualDateTime") or (leg.get("origin") or {}).get(
-        "plannedDateTime"
-    )
+    origin = leg.get("origin") or {}
+    departure = origin.get("actualDateTime") or origin.get("plannedDateTime")
     try:
         leaves_in = datetime.fromisoformat(departure) - timezone.now() if departure else None
     except ValueError:

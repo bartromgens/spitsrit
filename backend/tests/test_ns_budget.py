@@ -292,3 +292,11 @@ def test_other_http_errors_are_not_reported(monkeypatch: pytest.MonkeyPatch, clo
     with pytest.raises(ns.NsError):
         ns.fetch_trips("UT", "ASD", clock.now)
     assert messages == []
+
+
+def test_call_count_survives_a_cache_holding_many_entries(clock: Clock) -> None:
+    for _ in range(5):
+        budget.record_call()
+    for i in range(400):
+        cache.set(f"ns:journey:filler:{i}", i, 600)
+    assert budget.call_count() == 5
