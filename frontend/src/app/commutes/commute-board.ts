@@ -19,8 +19,9 @@ import { DepartureTime } from '../shared/departure-time/departure-time';
 import { FilterChips } from '../shared/filter-chips/filter-chips';
 import { TripList } from '../shared/trip-list/trip-list';
 import { TripListSkeleton } from '../shared/trip-list-skeleton/trip-list-skeleton';
+import { visibleInterval } from '../shared/visible-interval/visible-interval';
 
-const REFRESH_MS = 60_000;
+const REFRESH_MS = 120_000;
 
 /** Live upcoming trips for one commute, with the trip to take highlighted. */
 @Component({
@@ -84,8 +85,7 @@ export class CommuteBoard implements OnInit {
     this.savedDuration.set(this.commute().max_duration_minutes ?? null);
     this.savedTransfers.set(this.commute().max_transfers ?? null);
     void this.refresh();
-    const timer = setInterval(() => void this.refresh(), REFRESH_MS);
-    this.destroyRef.onDestroy(() => clearInterval(timer));
+    visibleInterval(() => void this.refresh(), REFRESH_MS, this.destroyRef);
   }
 
   /** The usual departure time as HH:mm, or null when none is set. */

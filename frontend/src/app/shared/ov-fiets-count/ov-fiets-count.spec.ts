@@ -132,6 +132,7 @@ describe('OvFietsCount', () => {
 
 describe('OvFietsCount refresh', () => {
   afterEach(() => {
+    vi.restoreAllMocks();
     vi.useRealTimers();
   });
 
@@ -149,5 +150,22 @@ describe('OvFietsCount refresh', () => {
     await vi.advanceTimersByTimeAsync(0);
     fixture.detectChanges();
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('5 OV-fietsen');
+  });
+
+  it('does not reload while the page is hidden', async () => {
+    vi.useFakeTimers();
+    let state: DocumentVisibilityState = 'visible';
+    vi.spyOn(document, 'visibilityState', 'get').mockImplementation(() => state);
+    TestBed.configureTestingModule({ imports: [OvFietsCount], providers: testProviders });
+    const fixture = TestBed.createComponent(OvFietsCount);
+    fixture.componentRef.setInput('stationCode', 'UT');
+    fixture.componentRef.setInput('stationName', 'Utrecht Centraal');
+    const http = TestBed.inject(HttpTestingController);
+    fixture.detectChanges();
+    http.expectOne('/api/stations/UT/ov-fiets/').flush(ovFiets(point({})));
+    state = 'hidden';
+    document.dispatchEvent(new Event('visibilitychange'));
+    await vi.advanceTimersByTimeAsync(300_000);
+    http.expectNone('/api/stations/UT/ov-fiets/');
   });
 });
