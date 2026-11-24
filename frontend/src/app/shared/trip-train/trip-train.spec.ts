@@ -44,6 +44,7 @@ const trip: Trip = {
   platform_features: [],
   split_stations: ['Amersfoort Centraal'],
   board_destination: 'Enschede',
+  min_seats: null,
 };
 
 describe('TripTrain', () => {

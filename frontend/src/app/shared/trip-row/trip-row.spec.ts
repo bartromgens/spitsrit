@@ -33,6 +33,7 @@ const trip: Trip = {
   platform_features: [],
   split_stations: [],
   board_destination: null,
+  min_seats: null,
 };
 
 // The pipe shows times in the runner's timezone; derive the expectation the same way.
