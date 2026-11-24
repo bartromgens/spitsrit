@@ -21,6 +21,9 @@ GIT_SHA = os.environ.get("GIT_SHA", "dev")
 SENTRY_DSN = os.environ.get("SENTRY_DSN", "")
 SENTRY_ENVIRONMENT = os.environ.get("SENTRY_ENVIRONMENT", "production")
 NS_API_KEY = os.environ.get("NS_API_KEY", "")
+# The NS key allows 300 calls per 5 minutes; above these counts optional calls are skipped.
+NS_JOURNEY_CALL_LIMIT = int(os.environ.get("NS_JOURNEY_CALL_LIMIT", "250"))
+NS_PLACES_CALL_LIMIT = int(os.environ.get("NS_PLACES_CALL_LIMIT", "290"))
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")
 GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "")
 

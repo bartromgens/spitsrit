@@ -69,3 +69,24 @@ as Reisinformatie; our existing key works.
   `openingHours`. A station without a toilet has no such place.
 - **Lift status.** `GET /v1/stationfacility/lifts?stationCode=UT` returns a plain array (not
   wrapped in `payload`) with `open` and `statusLabel` per lift; `platform` can be missing.
+
+## Rate limit and cache rules
+
+The key allows **300 calls per 5 minutes**, shared by Reisinformatie and Places. A search looks up
+the journey of every train leg, so it costs roughly 10–20 calls (up to about 45 with two transfers).
+
+- **Journeys** (`v2/journey`) give only composition: seats, carriages, units, facilities, train
+  origin, splits, boarding layout and carriage crowding. Cached **60 s** for legs departing within
+  10 minutes of now (a last-minute change of train shows quickly), **5 min** for later legs.
+- **Delays, platforms, cancellations, crowd forecasts and the shorter-stock warning** come from
+  the trips call and are never cached per leg.
+- **Trip searches** are cached **60 s**, fully built (journeys included), keyed on origin,
+  destination, planning time to the minute, depart/arrive and the filters. A cached search makes
+  zero NS calls. The advice (`wait_minutes`) is computed from the real time on every request.
+- **Places**: OV-fiets 60 s, toilets 15 min.
+- **Budget guard** (`api/ns/budget.py`): calls are counted over a rolling 5 minutes in the Django
+  cache. Above `NS_JOURNEY_CALL_LIMIT` (250) journey lookups are skipped, so sizes are unknown;
+  above `NS_PLACES_CALL_LIMIT` (290) Places calls are skipped too (those endpoints answer 502).
+  Trip searches always go through.
+- **Visibility**: every 429 and every skip is logged and sent to Sentry as a warning with the
+  call count, at most once a minute per kind.

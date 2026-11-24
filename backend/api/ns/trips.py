@@ -7,8 +7,9 @@ from datetime import datetime, timedelta
 from typing import Any
 
 from django.core.cache import cache
+from django.utils import timezone
 
-from api.ns import client
+from api.ns import budget, client
 from api.ns.client import NsError
 from api.ns.models import JourneyInfo, Trip
 from api.ns.parse import (
@@ -23,7 +24,17 @@ from api.ns.parse import (
 MAX_TRIPS = 15
 MAX_TRIP_REQUESTS = 3
 COVERED_MINUTES = 60
-JOURNEY_CACHE_SECONDS = 2 * 60
+
+# Cache rules (also in docs/ns-api/NOTES.md). A journey only gives a train's composition: seats,
+# carriages, units, facilities, origin, splits, the boarding layout and carriage crowding. That
+# changes rarely, so it is cached: a minute for a train leaving within `SOON_DEPARTURE` (a
+# last-minute change of train shows up quickly), five minutes for later trains. Delays, platforms,
+# cancellations, crowd forecasts and the shorter-stock warning come from the trips call, which is
+# never cached per leg, so they stay live; a whole search is cached for `TRIPS_CACHE_SECONDS`.
+SOON_DEPARTURE = timedelta(minutes=10)
+JOURNEY_SOON_CACHE_SECONDS = 60
+JOURNEY_CACHE_SECONDS = 5 * 60
+TRIPS_CACHE_SECONDS = 60
 
 logger = logging.getLogger(__name__)
 
@@ -50,13 +61,33 @@ def _journey_request(leg: dict[str, Any]) -> tuple[str, dict[str, str]] | None:
     return None
 
 
-def _journey_stops(key: str, params: dict[str, str]) -> list[Any]:
-    """The stops of a journey, cached briefly so repeated lookups don't multiply NS calls."""
+def _journey_cache_seconds(leg: dict[str, Any]) -> int:
+    """How long to keep the leg's journey: briefly when the train leaves soon, else longer."""
+    departure = (leg.get("origin") or {}).get("actualDateTime") or (leg.get("origin") or {}).get(
+        "plannedDateTime"
+    )
+    try:
+        leaves_in = datetime.fromisoformat(departure) - timezone.now() if departure else None
+    except ValueError:
+        leaves_in = None
+    if leaves_in is not None and leaves_in <= SOON_DEPARTURE:
+        return JOURNEY_SOON_CACHE_SECONDS
+    return JOURNEY_CACHE_SECONDS
+
+
+def _journey_stops(leg: dict[str, Any], key: str, params: dict[str, str]) -> list[Any] | None:
+    """The stops of a journey, cached so repeated lookups don't multiply NS calls.
+
+    `None` when the call budget says to skip the lookup. The cache time depends on the departure
+    (see the cache rules at the top of this module).
+    """
     cached: list[Any] | None = cache.get(key)
     if cached is not None:
         return cached
+    if not budget.allow_journeys():
+        return None
     stops = (client.get("v2/journey", params).get("payload") or {}).get("stops") or []
-    cache.set(key, stops, JOURNEY_CACHE_SECONDS)
+    cache.set(key, stops, _journey_cache_seconds(leg))
     return stops
 
 
@@ -67,7 +98,9 @@ def _leg_journey(leg: dict[str, Any] | None) -> JourneyInfo | None:
         return None
     key, params = request
     try:
-        stops = _journey_stops(key, params)
+        stops = _journey_stops(leg, key, params)
+        if stops is None:
+            return None
         boarding = (leg.get("origin") or {}).get("uicCode")
         alighting = (leg.get("destination") or {}).get("uicCode")
         coaches, platform = parse_boarding_layout(stops, boarding)
@@ -150,6 +183,35 @@ def fetch_trips(
     max_duration_minutes: int | None = None,
     max_transfers: int | None = None,
     arrive: bool = False,
+) -> list[Trip]:
+    """The trips of `_search_trips`, cached for a minute per search so a repeat makes no NS calls.
+
+    The key holds the stations, the planning time to the minute, depart or arrive, and the
+    filters. The cached trips are fully built, journeys included. Advice is not part of them: it
+    is computed from the current time on every request.
+    """
+    minute = when.replace(second=0, microsecond=0).isoformat()
+    key = (
+        f"ns:trips:{origin_code}:{destination_code}:{minute}:{'arrive' if arrive else 'depart'}"
+        f":{max_duration_minutes}:{max_transfers}"
+    )
+    cached: list[Trip] | None = cache.get(key)
+    if cached is not None:
+        return cached
+    trips = _search_trips(
+        origin_code, destination_code, when, max_duration_minutes, max_transfers, arrive
+    )
+    cache.set(key, trips, TRIPS_CACHE_SECONDS)
+    return trips
+
+
+def _search_trips(
+    origin_code: str,
+    destination_code: str,
+    when: datetime,
+    max_duration_minutes: int | None,
+    max_transfers: int | None,
+    arrive: bool,
 ) -> list[Trip]:
     """Trips from `when` on, within the filters, covering at least the next hour.
 
