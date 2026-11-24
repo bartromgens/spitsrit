@@ -1,11 +1,11 @@
-@let t = trip();
-<section class="train" aria-labelledby="trip-details-train">
-  <h3 id="trip-details-train">Your train</h3>
+@let t = leg();
+<section class="train" [attr.aria-labelledby]="headingId">
+  <h3 [id]="headingId">Your train</h3>
   <p class="train-size">
     <app-train-length
       [seats]="t.seats"
       [trainType]="t.train_type"
-      [shorterStock]="t.shorter_stock"
+      [shorterStock]="t.shorter_stock_warning ? 'SHORTER' : null"
       [shorterStockWarning]="t.shorter_stock_warning"
     />
     @if (t.carriages) {

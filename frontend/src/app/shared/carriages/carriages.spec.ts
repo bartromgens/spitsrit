@@ -24,6 +24,16 @@ describe('Carriages', () => {
     expect(element().querySelector('.count')?.textContent).toBe('4');
   });
 
+  it('shows several trains in order with arrows and a spoken label', async () => {
+    fixture.componentRef.setInput('counts', [8, 4, null]);
+    await fixture.whenStable();
+    expect(element().querySelectorAll('.count')).toHaveLength(3);
+    expect(element().querySelector('.counts')?.textContent?.replace(/\s+/g, ' ')).toBe('8→4→?');
+    expect(element().querySelector('[role="img"]')?.getAttribute('aria-label')).toBe(
+      '8 carriages, then 4 carriages, then number of carriages unknown',
+    );
+  });
+
   it('shows a ? with the icon when unknown', async () => {
     await fixture.whenStable();
     expect(element().querySelector('svg')).not.toBeNull();

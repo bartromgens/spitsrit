@@ -40,6 +40,7 @@ function tripWith(uid: string, transfers: number): Trip {
     platform_features: [],
     split_stations: [],
     board_destination: null,
+    min_seats: null,
   };
 }
 

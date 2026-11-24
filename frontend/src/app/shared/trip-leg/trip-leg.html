@@ -38,6 +38,9 @@
   @for (message of leg.messages; track message) {
     <p class="notice">{{ message }}</p>
   }
+  @if (leg.train_type || leg.seats || leg.train_parts.length > 0) {
+    <app-trip-train [leg]="leg" />
+  }
   <ol class="stops" [attr.aria-label]="'Stops of ' + leg.name">
     @for (stop of view().stops; track $index) {
       <li

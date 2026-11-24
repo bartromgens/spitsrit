@@ -3,7 +3,7 @@
 // seats, then arrival, duration and transfers.
 :host {
   display: grid;
-  grid-template-columns: 6.5rem minmax(0, 1fr) 3rem 5.5rem;
+  grid-template-columns: 6.5rem minmax(0, 1fr) 3rem 7.5rem;
   align-items: center;
   column-gap: var(--sp-space-1);
   row-gap: var(--sp-space-half);
@@ -31,7 +31,8 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  column-gap: var(--sp-space-1);
+  column-gap: var(--sp-space-half);
+  min-width: 0;
 }
 
 // The train's whole route, muted, with the seats and train stock at the far end of the line.

@@ -26,6 +26,13 @@ describe('TrainLength', () => {
     expect(element().textContent).not.toContain('carriages');
   });
 
+  it('reads the seats out as a minimum when asked', async () => {
+    await render({ seats: 366, atLeast: true });
+    expect(element().querySelector('.seats')?.getAttribute('aria-label')).toBe(
+      'at least 366 seats',
+    );
+  });
+
   it('shows nothing when the size is unknown', async () => {
     await render({ seats: null, trainType: null });
     expect(element().textContent?.trim()).toBe('');

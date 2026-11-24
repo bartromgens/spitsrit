@@ -39,7 +39,7 @@ const trip: Trip = {
   platform_features: [],
   split_stations: [],
   board_destination: null,
-  min_seats: null,
+  min_seats: 620,
 };
 
 /** The protected members the template uses, reachable from the test. */

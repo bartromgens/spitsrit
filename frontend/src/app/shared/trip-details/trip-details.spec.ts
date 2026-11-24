@@ -66,11 +66,19 @@ const ride: Leg = {
   origin_code: 'UT',
   destination_code: 'GD',
   bicycle_spots: 6,
-  seats: null,
-  carriages: null,
-  train_type: null,
-  train_origin: null,
-  train_parts: [],
+  seats: 740,
+  carriages: 8,
+  train_type: 'VIRM',
+  train_origin: 'Utrecht Centraal',
+  train_parts: [
+    {
+      stock_identifier: '9469',
+      facilities: ['WIFI', 'STILTE', 'NEW_THING'],
+      image_url: 'https://vt.ns-mlab.nl/v1/images/virmm1_4.png',
+      destination: null,
+    },
+    { stock_identifier: '9596', facilities: [], image_url: null, destination: null },
+  ],
   coach_crowding: [],
   platform_features: [],
   split_stations: [],
@@ -150,6 +158,9 @@ describe('TripDetails', () => {
   });
 
   const text = (): string => element.textContent?.replace(/\s+/g, ' ') ?? '';
+  // The train blocks come from the legs, so change the train through the leg.
+  const renderRide = (changes: Partial<Leg>): Promise<void> =>
+    render({ ...trip, legs: [{ ...ride, ...changes }, walk] });
 
   it('shows the OV-fiets count at the destination when it is known', async () => {
     expect(element.querySelector('app-ov-fiets-count')).toBeNull();
@@ -265,6 +276,64 @@ describe('TripDetails', () => {
     expect(text()).toContain('8 carriages in 2 units');
   });
 
+  describe('with transfers', () => {
+    const second: Leg = {
+      ...ride,
+      name: 'SPR 4411',
+      category: 'Sprinter',
+      origin: 'Gouda',
+      destination: 'Rotterdam Centraal',
+      seats: 366,
+      carriages: 4,
+      train_type: 'SLT',
+      train_parts: [
+        {
+          stock_identifier: '2412',
+          facilities: ['TOILET'],
+          image_url: 'https://vt.ns-mlab.nl/v1/images/slt_4.png',
+          destination: null,
+        },
+      ],
+      coach_crowding: [{ kind: 'LOW', start: 0, width: 100, description: '' }],
+    };
+
+    beforeEach(async () => {
+      await render({ ...trip, legs: [ride, walk, second] });
+    });
+
+    it('shows a train block inside each train leg and none for the walk', () => {
+      const legs = [...element.querySelectorAll('li.leg')];
+      expect(legs.map((leg) => leg.querySelectorAll('app-trip-train').length)).toEqual([1, 0, 1]);
+      expect(element.querySelectorAll('app-trip-train')).toHaveLength(2);
+      expect(
+        element.querySelector('.legs')?.parentElement?.querySelector(':scope > app-trip-train'),
+      ).toBeNull();
+    });
+
+    it('shows each leg its own seats, carriages, units and drawing', () => {
+      const [first, , last] = [...element.querySelectorAll('li.leg')];
+      expect(first.querySelector('.seats')?.getAttribute('aria-label')).toBe('740 seats');
+      expect(first.textContent?.replace(/\s+/g, ' ')).toContain('8 carriages in 2 units');
+      expect(last.querySelector('.seats')?.getAttribute('aria-label')).toBe('366 seats');
+      expect(last.textContent?.replace(/\s+/g, ' ')).toContain('4 carriages');
+      expect(last.querySelectorAll('[data-testid="train-units"] li')).toHaveLength(1);
+      expect(last.querySelector('[data-testid="train-images"] img')?.getAttribute('src')).toBe(
+        'https://vt.ns-mlab.nl/v1/images/slt_4.png',
+      );
+      expect(first.querySelector('[data-testid="coach-crowding"]')).toBeNull();
+      expect(last.querySelectorAll('.coach')).toHaveLength(1);
+    });
+
+    it('gives every train block its own heading id', () => {
+      const ids = [...element.querySelectorAll('app-trip-train h3')].map((h) => h.id);
+      expect(new Set(ids).size).toBe(2);
+      const labelled = [...element.querySelectorAll('app-trip-train section')].map((s) =>
+        s.getAttribute('aria-labelledby'),
+      );
+      expect(labelled).toEqual(ids);
+    });
+  });
+
   it('shows the side views of the units that have one, in train order', () => {
     const strip = element.querySelector('[data-testid="train-images"]')!;
     const images = [...strip.querySelectorAll('img')].map((img) => img.getAttribute('src'));
@@ -279,9 +348,8 @@ describe('TripDetails', () => {
   });
 
   it('leaves out the image strip when no unit has an image', async () => {
-    await render({
-      ...trip,
-      train_parts: trip.train_parts.map((part) => ({ ...part, image_url: null })),
+    await renderRide({
+      train_parts: ride.train_parts.map((part) => ({ ...part, image_url: null })),
     });
     expect(element.querySelector('[data-testid="train-images"]')).toBeNull();
   });
@@ -295,14 +363,13 @@ describe('TripDetails', () => {
   });
 
   it('says where the train splits and which part to board', async () => {
-    await render({
-      ...trip,
+    await renderRide({
       split_stations: ['Amersfoort Centraal'],
       board_destination: 'Enschede',
       train_parts: [
-        { ...trip.train_parts[0], destination: 'Zwolle' },
+        { ...ride.train_parts[0], destination: 'Zwolle' },
         {
-          ...trip.train_parts[1],
+          ...ride.train_parts[1],
           destination: 'Enschede',
           image_url: 'https://vt.ns-mlab.nl/v1/images/virm_4.png',
         },
@@ -319,14 +386,13 @@ describe('TripDetails', () => {
   });
 
   it('says where part of the train stays behind without a part to pick', async () => {
-    await render({ ...trip, split_stations: ['Alkmaar'] });
+    await renderRide({ split_stations: ['Alkmaar'] });
     expect(text()).toContain('Part of this train stays behind at Alkmaar.');
     expect(text()).not.toContain('Board the part');
   });
 
   it('places the crowding per carriage and the platform features along the train', async () => {
-    await render({
-      ...trip,
+    await renderRide({
       coach_crowding: [
         { start: 0, width: 100, kind: 'LOW', description: '' },
         { start: 100, width: 100, kind: 'HIGH', description: '' },
@@ -358,8 +424,7 @@ describe('TripDetails', () => {
   });
 
   it('leaves the platform off without carriages to place it along', async () => {
-    await render({
-      ...trip,
+    await renderRide({
       platform_features: [{ start: 1, width: 1, kind: 'LIFT', description: 'Lift' }],
     });
     expect(element.querySelector('[data-testid="platform-features"]')).toBeNull();
@@ -400,7 +465,7 @@ describe('TripDetails', () => {
   });
 
   it('leaves out the train section when nothing is known about it', async () => {
-    await render({ ...trip, seats: null, train_type: null, train_parts: [] });
+    await renderRide({ seats: null, train_type: null, train_parts: [] });
     expect(text()).not.toContain('Your train');
   });
 

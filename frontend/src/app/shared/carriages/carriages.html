@@ -1,8 +1,4 @@
-<span
-  class="carriages"
-  role="img"
-  [attr.aria-label]="count() ? count() + ' carriages' : 'Number of carriages unknown'"
->
+<span class="carriages" role="img" [class.multi]="shown().length > 1" [attr.aria-label]="label()">
   <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
     <rect
       x="2"
@@ -18,5 +14,12 @@
     <circle cx="7" cy="20" r="1.5" fill="currentColor" />
     <circle cx="17" cy="20" r="1.5" fill="currentColor" />
   </svg>
-  <span class="sp-mono count" aria-hidden="true">{{ count() || '?' }}</span>
+  <span class="counts" aria-hidden="true">
+    @for (count of shown(); track $index) {
+      @if (!$first) {
+        <span class="arrow">→</span>
+      }
+      <span class="sp-mono count">{{ count || '?' }}</span>
+    }
+  </span>
 </span>

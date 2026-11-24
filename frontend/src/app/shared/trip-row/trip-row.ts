@@ -28,6 +28,19 @@ export class TripRow {
   protected readonly trainType = computed(() => this.trip().train.replace(/\s*\d+$/, ''));
   protected readonly trainTypeName = computed(() => TRAIN_TYPE_NAMES[this.trainType()] ?? '');
 
+  /** The carriage count of every train of the trip, in order; null counts are unknown. */
+  protected readonly carriageCounts = computed(() => {
+    const trip = this.trip();
+    const rides = trip.legs.filter((leg) => leg.travel_type === 'PUBLIC_TRANSIT');
+    return rides.length > 0 ? rides.map((leg) => leg.carriages) : [trip.carriages];
+  });
+  protected readonly carriagesKnown = computed(() =>
+    this.carriageCounts().some((count) => !!count),
+  );
+
+  /** The seats shown are the lowest of several trains, not the first train's. */
+  protected readonly multipleTrains = computed(() => this.carriageCounts().length > 1);
+
   /** The whole train's route, when both ends are known. */
   protected readonly route = computed(() => {
     const { train_origin: origin, train_destination: destination } = this.trip();

@@ -12,7 +12,6 @@ import { Leg, LegStop, Station, Trip } from '../../api/models';
 import { DepartureTime } from '../departure-time/departure-time';
 import { StationSection } from '../station-section/station-section';
 import { LegView, StopView, TripLeg } from '../trip-leg/trip-leg';
-import { TripTrain } from '../trip-train/trip-train';
 
 const EXIT_SIDES: Record<string, string> = { LEFT: 'left', RIGHT: 'right' };
 
@@ -43,12 +42,12 @@ function stopView(stop: LegStop, index: number, leg: Leg): StopView {
 }
 
 /**
- * Everything known about one trip: disruptions, the boarding train's units and facilities, and
- * each leg with its stops, tracks, crowding, punctuality and notes. Shown beside the results on
+ * Everything known about one trip: disruptions, and each leg with its train (units and
+ * facilities), stops, tracks, crowding, punctuality and notes. Shown beside the results on
  * wide screens and as a full-screen overlay on phones; the parent decides where.
  */
 @Component({
-  imports: [DecimalPipe, DepartureTime, StationSection, TripLeg, TripTrain],
+  imports: [DecimalPipe, DepartureTime, StationSection, TripLeg],
   selector: 'app-trip-details',
   styleUrl: './trip-details.scss',
   templateUrl: './trip-details.html',
