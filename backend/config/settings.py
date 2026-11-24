@@ -5,6 +5,7 @@ contract. Local development overrides them in settings_local.py (gitignored).
 """
 
 import os
+import tempfile
 from pathlib import Path
 
 import dj_database_url
@@ -21,6 +22,16 @@ GIT_SHA = os.environ.get("GIT_SHA", "dev")
 SENTRY_DSN = os.environ.get("SENTRY_DSN", "")
 SENTRY_ENVIRONMENT = os.environ.get("SENTRY_ENVIRONMENT", "production")
 NS_API_KEY = os.environ.get("NS_API_KEY", "")
+# The NS call budget and the NS caches must be shared by all gunicorn workers, so a file-based
+# cache (LocMemCache is per process). It is per container, which is enough: one container runs.
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.filebased.FileBasedCache",
+        "LOCATION": os.environ.get(
+            "CACHE_DIR", str(Path(tempfile.gettempdir()) / "spitsrit-cache")
+        ),
+    }
+}
 # The NS key allows 300 calls per 5 minutes; above these counts optional calls are skipped.
 NS_JOURNEY_CALL_LIMIT = int(os.environ.get("NS_JOURNEY_CALL_LIMIT", "250"))
 NS_PLACES_CALL_LIMIT = int(os.environ.get("NS_PLACES_CALL_LIMIT", "290"))

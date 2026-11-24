@@ -10,7 +10,7 @@ from django.core.cache import cache
 from django.test import override_settings
 from django.utils import timezone
 
-from api import ns, places
+from api import ns, places, planning
 from api.ns import budget, trips
 
 from .test_ns_leg_journeys import JOURNEYS, item, train
@@ -141,8 +141,6 @@ def test_search_cache_key_includes_the_filters_and_direction(
 def test_advice_is_computed_from_the_current_time_for_a_cached_search(
     monkeypatch: pytest.MonkeyPatch, clock: Clock
 ) -> None:
-    from api import planning
-
     trip_item = {
         **item("t", leg_leaving_in(clock, 20)),
         "legs": [

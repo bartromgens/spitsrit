@@ -87,6 +87,9 @@ the journey of every train leg, so it costs roughly 10–20 calls (up to about 4
 - **Budget guard** (`api/ns/budget.py`): calls are counted over a rolling 5 minutes in the Django
   cache. Above `NS_JOURNEY_CALL_LIMIT` (250) journey lookups are skipped, so sizes are unknown;
   above `NS_PLACES_CALL_LIMIT` (290) Places calls are skipped too (those endpoints answer 502).
-  Trip searches always go through.
+  Trip searches always go through. The cache is a `FileBasedCache` (`CACHES` in settings), so the
+  3 gunicorn workers share one counter; the default LocMemCache is per process and would count
+  only a third of the calls. `incr` on it is not atomic, so under heavy concurrency a few calls
+  may go uncounted; the 250/290 limits leave margin below NS's 300. It is per container.
 - **Visibility**: every 429 and every skip is logged and sent to Sentry as a warning with the
   call count, at most once a minute per kind.
