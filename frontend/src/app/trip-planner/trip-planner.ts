@@ -1,5 +1,15 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { toSignal } from '@angular/core/rxjs-interop';
+import {
+  FormControl,
+  FormGroup,
+  NonNullableFormBuilder,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { map } from 'rxjs';
 import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -8,6 +18,7 @@ import { tripsRetrieve } from '../api/functions';
 import { Commute, CommuteTrips, Station, Trip } from '../api/models';
 import { CommuteStrip } from '../commutes/commute-strip/commute-strip';
 import { Desktop } from '../shared/desktop/desktop';
+import { FilterChips } from '../shared/filter-chips/filter-chips';
 import { StationAutocomplete } from '../shared/station-autocomplete/station-autocomplete';
 import { TimeControl } from '../shared/time-control/time-control';
 import { TimeModel, clock, isEarlierThanNow } from '../shared/time-control/time-model';
@@ -28,7 +39,10 @@ type Side = 'origin' | 'destination';
     ReactiveFormsModule,
     MatButtonModule,
     MatCardModule,
+    MatFormFieldModule,
+    MatInputModule,
     CommuteStrip,
+    FilterChips,
     StationAutocomplete,
     TimeControl,
     TripDetails,
@@ -55,6 +69,25 @@ export class TripPlanner {
     /** `HH:mm`. While following it shows the clock. Unlike the stations, it is not remembered. */
     time: [clock(new Date())],
   });
+
+  /** Trip filters; like the time they are not remembered. `null` means no limit. */
+  protected readonly filters = new FormGroup({
+    maxTransfers: new FormControl<number | null>(null),
+    maxDuration: new FormControl<number | null>(null, [Validators.min(1)]),
+  });
+  protected readonly filtersOpen = signal(false);
+  protected readonly maxTransfers = toSignal(this.filters.controls.maxTransfers.valueChanges, {
+    initialValue: null,
+  });
+  /** The duration limit in force; an invalid value limits nothing. */
+  protected readonly maxDuration = toSignal(
+    this.filters.controls.maxDuration.valueChanges.pipe(
+      map(() =>
+        this.filters.controls.maxDuration.valid ? this.filters.controls.maxDuration.value : null,
+      ),
+    ),
+    { initialValue: null },
+  );
 
   /** The time field's state: following the clock, depart or arrive, and "around" a commute's time. */
   protected readonly time = new TimeModel(this.form.controls.time);
@@ -105,6 +138,11 @@ export class TripPlanner {
     this.selection.toggle(RESULTS, trip);
   }
 
+  /** Plans again under the changed filters, when there is something to update. */
+  protected filterChanged(): void {
+    if (this.result() !== null) void this.plan();
+  }
+
   protected async plan(): Promise<void> {
     const { origin, destination } = this.form.getRawValue();
     const from = this.picked.origin;
@@ -121,14 +159,22 @@ export class TripPlanner {
       this.fail('Pick a time to arrive by.');
       return;
     }
+    if (this.filters.controls.maxDuration.invalid) {
+      this.filtersOpen.set(true);
+      this.fail('Max duration must be at least 1 minute.');
+      return;
+    }
     this.loading.set(true);
     this.error.set('');
     this.selection.close();
+    const { maxTransfers, maxDuration } = this.filters.getRawValue();
     try {
       const result = await this.api.invoke(tripsRetrieve, {
         from: from.code,
         to: to.code,
         ...this.time.params(),
+        ...(maxTransfers !== null && { max_transfers: maxTransfers }),
+        ...(maxDuration !== null && { max_duration: maxDuration }),
       });
       this.result.set(result);
       // Beside the results the details pane is never empty; on a phone details open on tap.

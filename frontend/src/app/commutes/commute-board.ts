@@ -16,6 +16,7 @@ import { MatInputModule } from '@angular/material/input';
 import { Commute, CommuteTrips, Trip } from '../api/models';
 import { CommuteStore } from './commute-store';
 import { DepartureTime } from '../shared/departure-time/departure-time';
+import { FilterChips } from '../shared/filter-chips/filter-chips';
 import { TripList } from '../shared/trip-list/trip-list';
 import { TripListSkeleton } from '../shared/trip-list-skeleton/trip-list-skeleton';
 
@@ -30,6 +31,7 @@ const REFRESH_MS = 60_000;
     MatFormFieldModule,
     MatInputModule,
     DepartureTime,
+    FilterChips,
     TripList,
     TripListSkeleton,
   ],
@@ -50,26 +52,9 @@ export class CommuteBoard implements OnInit {
   protected readonly error = signal('');
   protected readonly filterError = signal('');
   protected readonly filtersOpen = signal(false);
-  private readonly savedDuration = signal<number | null>(null);
-  private readonly savedTransfers = signal<number | null>(null);
-
-  /** Chip labels for the saved filters, shown while the fields are collapsed. */
-  protected readonly chips = computed(() => {
-    const chips: string[] = [];
-    const duration = this.savedDuration();
-    const transfers = this.savedTransfers();
-    if (duration !== null) {
-      chips.push(`Max ${duration} min`);
-    }
-    if (transfers !== null) {
-      chips.push(
-        transfers === 0
-          ? 'Direct only'
-          : `Max ${transfers} ${transfers === 1 ? 'transfer' : 'transfers'}`,
-      );
-    }
-    return chips;
-  });
+  /** The saved filters, shown as chips while the fields are collapsed. */
+  protected readonly savedDuration = signal<number | null>(null);
+  protected readonly savedTransfers = signal<number | null>(null);
 
   protected readonly maxDuration = new FormControl<number | null>(null, [Validators.min(1)]);
   protected readonly maxTransfers = new FormControl<number | null>(null, [Validators.min(0)]);

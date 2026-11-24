@@ -37,6 +37,21 @@ form {
   gap: var(--sp-space-2);
 }
 
+// Collapsed: the Filters button with the active chips beside it. Open: the fields below it.
+.filters-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-space-1);
+}
+
+.filter-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-space-2);
+  margin-top: var(--sp-space-2);
+}
+
 .planned-from {
   margin: var(--sp-space-2) 0 var(--sp-space-1);
   font-size: var(--sp-text-sm);
