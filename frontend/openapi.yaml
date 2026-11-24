@@ -658,14 +658,48 @@ components:
         bicycle_spots:
           type: integer
           nullable: true
+        seats:
+          type: integer
+          nullable: true
+        carriages:
+          type: integer
+          nullable: true
+        train_type:
+          type: string
+          nullable: true
+        train_origin:
+          type: string
+          nullable: true
+        train_parts:
+          type: array
+          items:
+            $ref: '#/components/schemas/TrainPart'
+        coach_crowding:
+          type: array
+          items:
+            $ref: '#/components/schemas/Span'
+        platform_features:
+          type: array
+          items:
+            $ref: '#/components/schemas/Span'
+        split_stations:
+          type: array
+          items:
+            type: string
+        board_destination:
+          type: string
+          nullable: true
       required:
       - arrival_actual
       - arrival_planned
       - arrival_track
       - arrival_track_changed
       - bicycle_spots
+      - board_destination
       - cancelled
+      - carriages
       - category
+      - coach_crowding
       - crowd_forecast
       - departure_actual
       - departure_planned
@@ -681,9 +715,15 @@ components:
       - operator
       - origin
       - origin_code
+      - platform_features
       - punctuality
+      - seats
       - shorter_stock_warning
+      - split_stations
       - stops
+      - train_origin
+      - train_parts
+      - train_type
       - transfer_messages
       - travel_type
     LegStop:
@@ -951,6 +991,9 @@ components:
         seats:
           type: integer
           nullable: true
+        min_seats:
+          type: integer
+          nullable: true
         carriages:
           type: integer
           nullable: true
@@ -1016,6 +1059,7 @@ components:
       - duration_minutes
       - legs
       - messages
+      - min_seats
       - platform_features
       - punctuality
       - seats

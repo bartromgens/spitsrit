@@ -17,7 +17,7 @@ from api.ns.parse import (
     parse_split,
     parse_train_origin,
     parse_trip,
-    train_leg,
+    train_leg_indexes,
 )
 
 MAX_TRIPS = 15
@@ -83,22 +83,55 @@ def _leg_journey(leg: dict[str, Any] | None) -> JourneyInfo | None:
         return None
 
 
-def _with_journey(trip: Trip, info: JourneyInfo | None) -> Trip:
-    if info is None:
-        return trip
+def _journey_fields(info: JourneyInfo) -> dict[str, Any]:
+    """The fields of a `Leg` or `Trip` that a journey fills in."""
     stock = info.stock
-    return replace(
-        trip,
-        seats=stock.seats if stock else None,
-        carriages=stock.carriages if stock else None,
-        train_type=stock.train_type if stock else None,
-        train_parts=stock.parts if stock else (),
-        train_origin=info.origin,
-        coach_crowding=info.coach_crowding,
-        platform_features=info.platform_features,
-        split_stations=info.split.split_stations,
-        board_destination=info.split.board_destination,
-    )
+    return {
+        "seats": stock.seats if stock else None,
+        "carriages": stock.carriages if stock else None,
+        "train_type": stock.train_type if stock else None,
+        "train_parts": stock.parts if stock else (),
+        "train_origin": info.origin,
+        "coach_crowding": info.coach_crowding,
+        "platform_features": info.platform_features,
+        "split_stations": info.split.split_stations,
+        "board_destination": info.split.board_destination,
+    }
+
+
+def _with_journeys(trip: Trip, infos: dict[int, JourneyInfo | None]) -> Trip:
+    """The trip with each train leg's journey (by leg position), and the first train's on it."""
+    legs = list(trip.legs)
+    for index, info in infos.items():
+        if info is not None and index < len(legs):
+            legs[index] = replace(legs[index], **_journey_fields(info))
+    first = infos[min(infos)] if infos else None
+    trip = replace(trip, legs=tuple(legs))
+    return replace(trip, **_journey_fields(first)) if first is not None else trip
+
+
+def _dedup_key(leg: dict[str, Any]) -> tuple[str, str] | None:
+    """What makes two legs share a lookup: the same train, boarding stop and alighting stop."""
+    request = _journey_request(leg)
+    if request is None:
+        return None
+    return request[0], str((leg.get("destination") or {}).get("uicCode"))
+
+
+def _fetch_journeys(items: list[dict[str, Any]]) -> list[dict[int, JourneyInfo | None]]:
+    """Per trip item, the journey of each train leg by leg position, fetched once per train."""
+    wanted: dict[tuple[str, str], dict[str, Any]] = {}
+    per_trip: list[dict[int, tuple[str, str] | None]] = []
+    for item in items:
+        legs = [leg for leg in item.get("legs") or [] if isinstance(leg, dict)]
+        keys = {i: _dedup_key(legs[i]) for i in train_leg_indexes(item)}
+        for i, key in keys.items():
+            if key is not None:
+                wanted.setdefault(key, legs[i])
+        per_trip.append(keys)
+    with ThreadPoolExecutor(max_workers=MAX_TRIPS) as pool:
+        results = dict(zip(wanted, pool.map(_leg_journey, wanted.values()), strict=True))
+    return [{i: results[key] if key else None for i, key in keys.items()} for keys in per_trip]
 
 
 def _forward_context(payload: dict[str, Any]) -> str | None:
@@ -164,7 +197,6 @@ def fetch_trips(
         kept = kept[-MAX_TRIPS:]
     else:
         kept = kept[:MAX_TRIPS]
-    # Only the first train leg of a trip is shown, so only its journey is fetched.
-    with ThreadPoolExecutor(max_workers=MAX_TRIPS) as pool:
-        journeys = list(pool.map(_leg_journey, [train_leg(item) for _, item in kept]))
-    return [_with_journey(trip, info) for (trip, _), info in zip(kept, journeys, strict=True)]
+    # Every train leg gets its size; the same train in several trips is looked up once.
+    journeys = _fetch_journeys([item for _, item in kept])
+    return [_with_journeys(trip, infos) for (trip, _), infos in zip(kept, journeys, strict=True)]

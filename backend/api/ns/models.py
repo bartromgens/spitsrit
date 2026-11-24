@@ -99,6 +99,18 @@ class Leg:
     origin_code: str | None = None
     destination_code: str | None = None
     bicycle_spots: int | None = None
+    # The train's size and layout at this leg's own boarding stop; unknown for walks and when
+    # the journey could not be read. Same meaning as the fields of `Trip`, which has the first
+    # train's.
+    seats: int | None = None
+    carriages: int | None = None
+    train_type: str | None = None
+    train_origin: str | None = None
+    train_parts: tuple[TrainPart, ...] = ()
+    coach_crowding: tuple[Span, ...] = ()
+    platform_features: tuple[Span, ...] = ()
+    split_stations: tuple[str, ...] = ()
+    board_destination: str | None = None
 
 
 @dataclass(frozen=True)
@@ -132,6 +144,12 @@ class Trip:
     split_stations: tuple[str, ...] = ()
     # Only when some units stop short of the rider's stop: where the part to board goes.
     board_destination: str | None = None
+
+    @property
+    def min_seats(self) -> int | None:
+        """The fewest seats of any train leg with a known size, `None` when none is known."""
+        known = [leg.seats for leg in self.legs if leg.seats is not None]
+        return min(known) if known else None
 
     @property
     def departure_delay_minutes(self) -> int:
