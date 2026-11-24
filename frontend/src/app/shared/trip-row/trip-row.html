@@ -19,7 +19,9 @@
   <app-platform-sign class="platform" [track]="t.departure_track" />
   <span class="load">
     <app-crowding [forecast]="t.crowd_forecast" />
-    <app-carriages [count]="t.carriages" />
+    @if (carriagesKnown()) {
+      <app-carriages [counts]="carriageCounts()" />
+    }
   </span>
   <span class="meta">
     @if (route(); as r) {
@@ -27,7 +29,8 @@
     }
     <app-train-length
       class="stock"
-      [seats]="t.seats"
+      [seats]="t.min_seats"
+      [atLeast]="multipleTrains()"
       [trainType]="t.train_type"
       [shorterStock]="t.shorter_stock"
       [shorterStockWarning]="t.shorter_stock_warning"

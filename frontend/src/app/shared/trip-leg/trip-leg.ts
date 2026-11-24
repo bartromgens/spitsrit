@@ -4,6 +4,7 @@ import { Leg } from '../../api/models';
 import { Crowding } from '../crowding/crowding';
 import { DepartureTime } from '../departure-time/departure-time';
 import { PlatformSign } from '../platform-sign/platform-sign';
+import { TripTrain } from '../trip-train/trip-train';
 
 /** One stop of a leg as shown: the time to show, its delay and the track. */
 export interface StopView {
@@ -29,11 +30,11 @@ export interface LegView {
 }
 
 /**
- * One leg of a trip: a ride with its crowding, bicycle places, stop list, door side and notes,
+ * One leg of a trip: a ride with its crowding, its train, bicycle places, stop list, door side and notes,
  * or a walk or transfer line. Used as the `<li>` of the trip's list of legs.
  */
 @Component({
-  imports: [DatePipe, DecimalPipe, Crowding, DepartureTime, PlatformSign],
+  imports: [DatePipe, DecimalPipe, Crowding, DepartureTime, PlatformSign, TripTrain],
   // eslint-disable-next-line @angular-eslint/component-selector -- the attribute form keeps the host a valid `<li>` inside the legs' `<ol>`
   selector: 'li[app-trip-leg]',
   styleUrl: './trip-leg.scss',

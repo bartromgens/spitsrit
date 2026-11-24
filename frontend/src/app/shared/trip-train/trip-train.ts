@@ -1,5 +1,5 @@
 import { Component, computed, input } from '@angular/core';
-import { Span, Trip, TrainPart } from '../../api/models';
+import { Leg, Span, TrainPart } from '../../api/models';
 import { FacilityIcon } from '../facility-icon/facility-icon';
 import { TrainLength } from '../train-length/train-length';
 
@@ -32,8 +32,10 @@ function featureLabel(span: Span): string {
   return span.description || span.kind.toLowerCase().replaceAll('_', ' ');
 }
 
+let nextId = 0;
+
 /**
- * The "Your train" section of a trip: seats, carriages and units, the train drawing with its
+ * The "Your train" section of a train leg: seats, carriages and units, the train drawing with its
  * crowding and platform features, and each unit with its facilities.
  */
 @Component({
@@ -43,27 +45,31 @@ function featureLabel(span: Span): string {
   templateUrl: './trip-train.html',
 })
 export class TripTrain {
-  readonly trip = input.required<Trip>();
+  /** The train leg to show; each leg of a trip has its own train. */
+  readonly leg = input.required<Leg>();
+
+  /** Unique per instance: a trip with transfers shows several of these at once. */
+  protected readonly headingId = `train-heading-${nextId++}`;
 
   /** NS's side views of the units in train order, for those that have one. */
   protected readonly images = computed(() =>
-    this.trip()
+    this.leg()
       .train_parts.filter((part) => !!part.image_url)
       .map((part) => ({ url: part.image_url!, other: this.otherPart(part) })),
   );
 
   /** Whether the units go to different places, so each unit's destination is worth showing. */
   protected readonly destinationsDiffer = computed(
-    () => new Set(this.trip().train_parts.map((part) => part.destination ?? '')).size > 1,
+    () => new Set(this.leg().train_parts.map((part) => part.destination ?? '')).size > 1,
   );
 
   /** The length of the train in NS's layout units: where the last coach ends. */
   private readonly trainLength = computed(() =>
-    Math.max(0, ...this.trip().coach_crowding.map((span) => span.start + span.width)),
+    Math.max(0, ...this.leg().coach_crowding.map((span) => span.start + span.width)),
   );
 
   protected readonly coaches = computed(() =>
-    place(this.trip().coach_crowding, this.trainLength(), (span) => {
+    place(this.leg().coach_crowding, this.trainLength(), (span) => {
       const level = COACH_LEVELS[span.kind];
       return level ? COACH_LABELS[level] : 'unknown';
     }),
@@ -72,22 +78,22 @@ export class TripTrain {
   /** Platform features along the train; without coaches there is no scale to place them on. */
   protected readonly platform = computed(() =>
     this.trainLength() > 0
-      ? place(this.trip().platform_features, this.trainLength(), featureLabel)
+      ? place(this.leg().platform_features, this.trainLength(), featureLabel)
       : [],
   );
 
   protected readonly platformLabels = computed(() => [
-    ...new Set(this.trip().platform_features.map(featureLabel)),
+    ...new Set(this.leg().platform_features.map(featureLabel)),
   ]);
 
   protected readonly imagesLabel = computed(() => {
     const count = this.images().length;
-    return `${this.trip().train_type ?? 'Train'}, ${count} unit${count === 1 ? '' : 's'}`;
+    return `${this.leg().train_type ?? 'Train'}, ${count} unit${count === 1 ? '' : 's'}`;
   });
 
   /** A unit that does not go where the rider needs to, once the train splits. */
   protected otherPart(part: TrainPart): boolean {
-    const wanted = this.trip().board_destination;
+    const wanted = this.leg().board_destination;
     return !!wanted && !!part.destination && part.destination !== wanted;
   }
 

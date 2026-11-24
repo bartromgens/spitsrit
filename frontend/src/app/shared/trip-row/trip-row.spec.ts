@@ -1,7 +1,46 @@
 import { formatDate } from '@angular/common';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Trip } from '../../api/models';
+import { Leg, Trip } from '../../api/models';
 import { TripRow } from './trip-row';
+
+const leg: Leg = {
+  travel_type: 'PUBLIC_TRANSIT',
+  name: 'IC 2736',
+  category: 'Intercity',
+  operator: 'NS',
+  direction: null,
+  origin: 'Nijmegen',
+  origin_code: 'NM',
+  departure_planned: '2026-05-01T08:00:00Z',
+  departure_actual: '2026-05-01T08:00:00Z',
+  departure_track: '5',
+  departure_track_changed: false,
+  destination: 'Den Haag C.',
+  destination_code: 'GVC',
+  arrival_planned: '2026-05-01T08:30:00Z',
+  arrival_actual: '2026-05-01T08:30:00Z',
+  arrival_track: '3',
+  arrival_track_changed: false,
+  exit_side: null,
+  cancelled: false,
+  crowd_forecast: 'LOW',
+  punctuality: null,
+  stops: [],
+  notes: [],
+  messages: [],
+  transfer_messages: [],
+  bicycle_spots: null,
+  shorter_stock_warning: null,
+  seats: null,
+  carriages: null,
+  train_type: null,
+  train_origin: null,
+  train_parts: [],
+  coach_crowding: [],
+  platform_features: [],
+  split_stations: [],
+  board_destination: null,
+};
 
 const trip: Trip = {
   uid: 'a',
@@ -33,7 +72,7 @@ const trip: Trip = {
   platform_features: [],
   split_stations: [],
   board_destination: null,
-  min_seats: null,
+  min_seats: 620,
 };
 
 // The pipe shows times in the runner's timezone; derive the expectation the same way.
@@ -67,7 +106,11 @@ describe('TripRow', () => {
   });
 
   it('hides the size when unknown and flags a shorter train', async () => {
-    await render({ seats: null, shorter_stock: 'BUSY', shorter_stock_warning: 'Kortere trein' });
+    await render({
+      min_seats: null,
+      shorter_stock: 'BUSY',
+      shorter_stock_warning: 'Kortere trein',
+    });
     expect(element().querySelector('.seats')).toBeNull();
     expect(element().querySelector('.shorter')?.getAttribute('title')).toBe('Kortere trein');
   });
@@ -144,10 +187,72 @@ describe('TripRow', () => {
     expect(element().textContent).not.toContain('carriages');
   });
 
-  it('shows a ? for the carriages and hides the seats when unknown', async () => {
-    await render({ carriages: null, seats: null });
-    expect(element().querySelector('app-carriages .count')?.textContent).toBe('?');
+  it('hides the carriages and the seats when unknown', async () => {
+    await render({ carriages: null, min_seats: null });
+    expect(element().querySelector('app-carriages')).toBeNull();
     expect(element().querySelector('.seats')).toBeNull();
+  });
+
+  describe('with transfers', () => {
+    const ride = (carriages: number | null): Leg => ({
+      ...leg,
+      carriages,
+    });
+    const counts = (): string[] =>
+      Array.from(element().querySelectorAll('app-carriages .count')).map((c) => c.textContent!);
+
+    it('shows every train in order: 8 → 4', async () => {
+      await render({ transfers: 1, legs: [ride(8), ride(4)] });
+      expect(counts()).toEqual(['8', '4']);
+      expect(
+        element().querySelector('app-carriages .counts')?.textContent?.replace(/\s+/g, ' '),
+      ).toBe('8→4');
+      expect(
+        element().querySelector('app-carriages [role="img"]')?.getAttribute('aria-label'),
+      ).toBe('8 carriages, then 4 carriages');
+    });
+
+    it('shows three trains without wrapping', async () => {
+      await render({ transfers: 2, legs: [ride(8), ride(4), ride(6)] });
+      expect(counts()).toEqual(['8', '4', '6']);
+      expect(element().querySelector('app-carriages .multi')).not.toBeNull();
+      expect(element().querySelector('.load')?.children).toHaveLength(2);
+    });
+
+    it('shows a ? for a train of unknown size', async () => {
+      await render({ transfers: 1, legs: [ride(8), ride(null)] });
+      expect(counts()).toEqual(['8', '?']);
+    });
+
+    it('hides the carriages when every train is unknown', async () => {
+      await render({ transfers: 1, legs: [ride(null), ride(null)] });
+      expect(element().querySelector('app-carriages')).toBeNull();
+    });
+
+    it('ignores walks between the trains', async () => {
+      await render({
+        transfers: 1,
+        legs: [ride(8), { ...leg, travel_type: 'WALK', carriages: null }, ride(4)],
+      });
+      expect(counts()).toEqual(['8', '4']);
+    });
+
+    it('shows the lowest seat count, read out as a minimum', async () => {
+      await render({ transfers: 1, legs: [ride(8), ride(4)], seats: 740, min_seats: 366 });
+      const seats = element().querySelector('.seats');
+      expect(seats?.getAttribute('aria-label')).toBe('at least 366 seats');
+      expect(seats?.textContent).toContain('366');
+    });
+
+    it('keeps the first train type', async () => {
+      await render({ transfers: 1, legs: [ride(8), ride(4)], train_type: 'VIRM', min_seats: 366 });
+      expect(element().querySelector('.type')?.textContent).toBe('VIRM');
+    });
+
+    it('does not say at least for a direct trip', async () => {
+      await render({ legs: [ride(8)] });
+      expect(element().querySelector('.seats')?.getAttribute('aria-label')).toBe('620 seats');
+    });
   });
 
   it('shows the seats with an icon and the train type', async () => {

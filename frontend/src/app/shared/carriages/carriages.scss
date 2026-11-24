@@ -14,8 +14,27 @@
   height: 1.25em;
 }
 
+.counts {
+  display: inline-flex;
+  align-items: baseline;
+}
+
 .count {
   font-size: var(--sp-text-lg);
   font-weight: var(--sp-weight-bold);
   line-height: 1;
+}
+
+// Several trains: shrink the spacing and numbers so three still fit a 360 px row.
+.multi {
+  gap: var(--sp-space-half);
+
+  .count {
+    font-size: var(--sp-text-sm);
+  }
+
+  .arrow {
+    padding-inline: 0.125rem;
+    font-size: var(--sp-text-xs);
+  }
 }

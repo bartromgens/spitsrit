@@ -54,10 +54,6 @@
   <p class="notice" data-testid="trip-message">{{ message }}</p>
 }
 
-@if (t.train_type || t.seats || t.train_parts.length > 0) {
-  <app-trip-train [trip]="t" />
-}
-
 <ol class="legs">
   @for (view of legs(); track $index) {
     <li app-trip-leg [view]="view"></li>

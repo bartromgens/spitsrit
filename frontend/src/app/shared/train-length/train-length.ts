@@ -12,6 +12,8 @@ import { Component, input } from '@angular/core';
 })
 export class TrainLength {
   readonly seats = input<number | null | undefined>(null);
+  /** The seats are the lowest of several trains, so they are read out as a minimum. */
+  readonly atLeast = input(false);
   readonly trainType = input<string | null | undefined>(null);
   readonly shorterStock = input<string | null | undefined>(null);
   readonly shorterStockWarning = input<string | null | undefined>(null);
