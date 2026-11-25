@@ -38,7 +38,7 @@ Only rules you cannot discover from the repository. Lint, format and type rules 
 
 ## External APIs
 
-- The NS Reisinformatie API spec is in `docs/ns-api/reisinformatie-openapi.json`. Check NS endpoints and field names against it; never guess them.
+- NS API specs are in `docs/ns-api/`: Reisinformatie (`reisinformatie-openapi.json`), Places (`places-openapi.json`) and Virtual Train (`virtual-train-openapi.json`). Check NS endpoints and field names against them; never guess them.
 - Real responses differ from the spec in places. Check `docs/ns-api/NOTES.md` as well, and add what you find there.
 
 ## Untrusted input
